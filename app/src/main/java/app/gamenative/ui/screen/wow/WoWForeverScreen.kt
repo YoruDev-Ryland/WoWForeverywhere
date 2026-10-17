@@ -3,6 +3,7 @@ package app.gamenative.ui.screen.wow
 import android.content.Context
 import android.os.Build
 import android.os.Environment
+import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -58,6 +59,7 @@ import com.winlator.core.GPUInformation
 import com.winlator.core.TarCompressorUtils
 import com.winlator.xenvironment.ImageFs
 import com.winlator.xenvironment.ImageFsInstaller
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -196,8 +198,9 @@ fun WoWForeverScreen(
 
         launchJob = scope.launch {
             try {
+                val screenSize = fitScreenSizeToWindow(context, gpu.screenSize)
                 val containerId = withContext(Dispatchers.IO) {
-                    prepareLaunch(context, File(gamePath), gpu) { msg ->
+                    prepareLaunch(context, File(gamePath), gpu, screenSize) { msg ->
                         scope.launch(Dispatchers.Main) { statusText = msg }
                     }
                 }
@@ -890,12 +893,38 @@ private data class GpuProfile(val driver: String, val tuDebug: String, val scree
     }
 }
 
-private fun prepareLaunch(context: Context, gameRoot: File, gpu: GpuProfile, onStatus: (String) -> Unit): String {
+/**
+ * Scales the GPU's 16:9 render budget to the current window's aspect ratio so the game fills
+ * non-16:9 screens (e.g. a foldable's near-square inner display) instead of being letterboxed.
+ * The result always fits inside [baseSize], so it never costs more pixels than the 16:9 default.
+ */
+private fun fitScreenSizeToWindow(context: Context, baseSize: String): String {
+    val (windowWidth, windowHeight) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        context.getSystemService(WindowManager::class.java).currentWindowMetrics.bounds.let { it.width() to it.height() }
+    } else {
+        context.resources.displayMetrics.let { it.widthPixels to it.heightPixels }
+    }
+    return fitScreenSize(baseSize, windowWidth, windowHeight)
+}
+
+internal fun fitScreenSize(baseSize: String, windowWidth: Int, windowHeight: Int): String {
+    if (windowWidth <= 0 || windowHeight <= 0) return baseSize
+    val (baseWidth, baseHeight) = baseSize.split("x").map { it.toInt() }
+    val aspect = maxOf(windowWidth, windowHeight).toFloat() / minOf(windowWidth, windowHeight)
+    val (width, height) = if (aspect < baseWidth.toFloat() / baseHeight) {
+        baseHeight * aspect to baseHeight.toFloat()
+    } else {
+        baseWidth.toFloat() to baseWidth / aspect
+    }
+    return "${(width / 2).roundToInt() * 2}x${(height / 2).roundToInt() * 2}"
+}
+
+private fun prepareLaunch(context: Context, gameRoot: File, gpu: GpuProfile, screenSize: String, onStatus: (String) -> Unit): String {
     installBundledComponents(context, onStatus)
 
     check(File(gameRoot, BUILD_INFO).exists()) { "Missing $BUILD_INFO in $gameRoot. Copy it from your WoW install." }
     try {
-        ensureGameConfig(gameRoot)
+        ensureGameConfig(gameRoot, screenSize)
     } catch (e: Exception) {
         if (e.isPermissionDenied()) throw StorageAccessDeniedException(e)
         throw e
@@ -917,7 +946,7 @@ private fun prepareLaunch(context: Context, gameRoot: File, gpu: GpuProfile, onS
 
     onStatus("Configuring ${gpu.label} container...")
     val containerManager = ContainerManager(context)
-    val config = containerConfig(gameRoot, gpu)
+    val config = containerConfig(gameRoot, gpu, screenSize)
     val container = containerManager.getContainerById(CONTAINER_ID)
     if (container == null) {
         onStatus("Creating prefix environment (first boot)...")
@@ -930,13 +959,13 @@ private fun prepareLaunch(context: Context, gameRoot: File, gpu: GpuProfile, onS
     return CONTAINER_ID
 }
 
-private fun containerConfig(gameRoot: File, gpu: GpuProfile): JSONObject {
+private fun containerConfig(gameRoot: File, gpu: GpuProfile, screenSize: String): JSONObject {
     val samsungEnv = if (Build.MANUFACTURER.equals("samsung", ignoreCase = true)) " FD_DEV_FEATURES=enable_tp_ubwc_flag_hint=1" else ""
     val envVars = "WRAPPER_MAX_IMAGE_COUNT=0 ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact,deck_emu MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=0 MESA_VK_WSI_PRESENT_MODE=mailbox TU_DEBUG=${gpu.tuDebug} VKD3D_SHADER_MODEL=6_0 PULSE_LATENCY_MSEC=144$samsungEnv"
     return JSONObject().apply {
         put("id", CONTAINER_ID)
         put("name", "WoW Forever")
-        put("screenSize", gpu.screenSize)
+        put("screenSize", screenSize)
         put("envVars", envVars)
         put("graphicsDriver", "Wrapper")
         put("graphicsDriverVersion", gpu.driver)
@@ -964,7 +993,6 @@ private val CONFIG_DEFAULTS = linkedMapOf(
     "textLocale" to "\"enUS\"",
     "audioLocale" to "\"enUS\"",
     "gxMaximize" to "\"1\"",
-    "gxWindowedResolution" to "\"1920x1080\"",
     "graphicsQuality" to "\"0\"",
     "ResampleQuality" to "\"0\"",
     "RenderScale" to "\"1\"",
@@ -988,51 +1016,27 @@ private val CONFIG_DEFAULTS = linkedMapOf(
     "InputDeviceInterfaceStyle" to "\"1\"",
 )
 
-private val FORCED_CONFIG_KEYS = listOf("gxApi", "RenderScale", "ResampleQuality", "GamePadEnable", "InputDeviceInterfaceStyle")
-
-private val LEGACY_CONFIG_VALUES = mapOf(
-    "farclip" to "\"3000\"",
-    "horizonClip" to "\"3000\"",
-    "RAIDfarclip" to "\"3000\"",
-    "RAIDhorizonClip" to "\"3000\"",
-    "worldBaseMip" to "\"2\"",
-    "RAIDworldBaseMip" to "\"2\"",
-    "graphicsTextureResolution" to "\"0\"",
-    "raidGraphicsTextureResolution" to "\"0\"",
-    "componentTextureLevel" to "\"1\"",
-    "RAIDcomponentTextureLevel" to "\"1\"",
-)
-
-private fun ensureGameConfig(root: File) {
+private fun ensureGameConfig(root: File, screenSize: String) {
     val flavorDir = File(root, FLAVOR_DIR)
     flavorDir.mkdirs()
     val flavorInfo = File(flavorDir, ".flavor.info")
     if (!flavorInfo.exists()) {
         flavorInfo.writeText("Product Flavor!STRING:0\n$TARGET_PRODUCT\n")
     }
+    // Handheld defaults are only written on first boot so in-game changes stick. The one exception is
+    // gxApi: DXVK only works with D3D11, and a config copied from a Mac would otherwise select Metal.
     val configWtf = File(flavorDir, "WTF/Config.wtf")
     if (!configWtf.exists()) {
         configWtf.parentFile?.mkdirs()
-        configWtf.writeText(CONFIG_DEFAULTS.entries.joinToString("\n") { "SET ${it.key} ${it.value}" } + "\n")
+        val defaults = CONFIG_DEFAULTS + ("gxWindowedResolution" to "\"$screenSize\"")
+        configWtf.writeText(defaults.entries.joinToString("\n") { "SET ${it.key} ${it.value}" } + "\n")
         return
     }
 
-    val original = configWtf.readLines().filterNot { it.startsWith("SET ResampleSharpness", ignoreCase = true) }
-    val existingKeys = mutableSetOf<String>()
-    val updated = original.map { line ->
-        val parts = line.takeIf { it.startsWith("SET ", ignoreCase = true) }?.removePrefix("SET ")?.trim()?.split(" ", limit = 2)
-        if (parts?.size != 2) return@map line
-        val (key, value) = parts
-        existingKeys.add(key)
-        val forcedKey = FORCED_CONFIG_KEYS.firstOrNull { it.equals(key, ignoreCase = true) }
-        when {
-            forcedKey != null && value != CONFIG_DEFAULTS.getValue(forcedKey) -> "SET $forcedKey ${CONFIG_DEFAULTS.getValue(forcedKey)}"
-            LEGACY_CONFIG_VALUES[key] == value -> "SET $key ${CONFIG_DEFAULTS.getValue(key)}"
-            else -> line
-        }
-    } + CONFIG_DEFAULTS.filterKeys { it !in existingKeys }.map { (k, v) -> "SET $k $v" }
-
-    if (updated != original) {
+    val gxApi = "SET gxApi ${CONFIG_DEFAULTS.getValue("gxApi")}"
+    val original = configWtf.readLines()
+    val updated = original.filterNot { it.startsWith("SET gxApi ", ignoreCase = true) } + gxApi
+    if (original.none { it == gxApi }) {
         configWtf.writeText(updated.joinToString("\n") + "\n")
     }
 }
