@@ -1021,22 +1021,38 @@ private fun ensureGameConfig(root: File, screenSize: String) {
     if (!flavorInfo.exists()) {
         flavorInfo.writeText("Product Flavor!STRING:0\n$TARGET_PRODUCT\n")
     }
-    // Handheld defaults are only written on first boot so in-game changes stick. The one exception is
-    // gxApi: DXVK only works with D3D11, and a config copied from a Mac would otherwise select Metal.
+    // Handheld defaults are only written on first boot so in-game changes stick, with two exceptions.
+    // gxApi is always forced: DXVK only works with D3D11, and a config copied from a Mac would otherwise
+    // select Metal. Resolutions are reset when missing or no longer fitting the screen (e.g. after a fold
+    // or unfold): WoW's "auto" otherwise picks a 720p size because it sees a low-end Intel GPU via Wine.
     val configWtf = File(flavorDir, "WTF/Config.wtf")
     if (!configWtf.exists()) {
         configWtf.parentFile?.mkdirs()
-        val defaults = CONFIG_DEFAULTS + ("gxWindowedResolution" to "\"$screenSize\"")
+        val defaults = CONFIG_DEFAULTS + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
         configWtf.writeText(defaults.entries.joinToString("\n") { "SET ${it.key} ${it.value}" } + "\n")
         return
     }
 
     val gxApi = "SET gxApi ${CONFIG_DEFAULTS.getValue("gxApi")}"
     val original = configWtf.readLines()
-    val updated = original.filterNot { it.startsWith("SET gxApi ", ignoreCase = true) } + gxApi
-    if (original.none { it == gxApi }) {
+    val staleResolutionKeys = RESOLUTION_KEYS.filter { key ->
+        val line = original.firstOrNull { it.startsWith("SET $key ", ignoreCase = true) }
+        line == null || !fitsScreen(line.substringAfter(" ").substringAfter(" ").trim('"'), screenSize)
+    }
+    val updated = original.filterNot { line ->
+        line.startsWith("SET gxApi ", ignoreCase = true) || staleResolutionKeys.any { line.startsWith("SET $it ", ignoreCase = true) }
+    } + gxApi + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
+    if (original.none { it == gxApi } || staleResolutionKeys.isNotEmpty()) {
         configWtf.writeText(updated.joinToString("\n") + "\n")
     }
+}
+
+private val RESOLUTION_KEYS = listOf("gxFullscreenResolution", "gxWindowedResolution")
+
+internal fun fitsScreen(resolution: String, screenSize: String): Boolean {
+    val (width, height) = resolution.split("x").map { it.toIntOrNull() ?: return false }.takeIf { it.size == 2 } ?: return false
+    val (screenWidth, screenHeight) = screenSize.split("x").map { it.toInt() }
+    return width in 1..screenWidth && height in 1..screenHeight
 }
 
 private fun installBundledComponents(context: Context, onStatus: (String) -> Unit) {
