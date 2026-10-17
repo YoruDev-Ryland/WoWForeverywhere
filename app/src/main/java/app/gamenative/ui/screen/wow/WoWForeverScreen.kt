@@ -60,6 +60,7 @@ import com.winlator.core.TarCompressorUtils
 import com.winlator.xenvironment.ImageFs
 import com.winlator.xenvironment.ImageFsInstaller
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -894,9 +895,9 @@ private data class GpuProfile(val driver: String, val tuDebug: String, val scree
 }
 
 /**
- * Scales the GPU's 16:9 render budget to the current window's aspect ratio so the game fills
+ * Reshapes the GPU's 16:9 render budget to the current window's aspect ratio so the game fills
  * non-16:9 screens (e.g. a foldable's near-square inner display) instead of being letterboxed.
- * The result always fits inside [baseSize], so it never costs more pixels than the 16:9 default.
+ * The pixel count stays the same as [baseSize], so GPU cost matches the 16:9 default.
  */
 private fun fitScreenSizeToWindow(context: Context, baseSize: String): String {
     val (windowWidth, windowHeight) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -911,11 +912,8 @@ internal fun fitScreenSize(baseSize: String, windowWidth: Int, windowHeight: Int
     if (windowWidth <= 0 || windowHeight <= 0) return baseSize
     val (baseWidth, baseHeight) = baseSize.split("x").map { it.toInt() }
     val aspect = maxOf(windowWidth, windowHeight).toFloat() / minOf(windowWidth, windowHeight)
-    val (width, height) = if (aspect < baseWidth.toFloat() / baseHeight) {
-        baseHeight * aspect to baseHeight.toFloat()
-    } else {
-        baseWidth.toFloat() to baseWidth / aspect
-    }
+    val height = sqrt(baseWidth * baseHeight / aspect)
+    val width = height * aspect
     return "${(width / 2).roundToInt() * 2}x${(height / 2).roundToInt() * 2}"
 }
 

@@ -11,23 +11,23 @@ class FitScreenSizeTest {
     }
 
     @Test
-    fun foldInnerScreen_narrowsWidth() {
-        assertEquals("1198x1080", fitScreenSize("1920x1080", 2184, 1968))
+    fun foldInnerScreen_keepsPixelBudget() {
+        assertEquals("1104x834", fitScreenSize("1280x720", 2448, 1848))
     }
 
     @Test
     fun portraitWindow_usesLandscapeAspect() {
-        assertEquals("1198x1080", fitScreenSize("1920x1080", 1968, 2184))
+        assertEquals("1104x834", fitScreenSize("1280x720", 1848, 2448))
     }
 
     @Test
-    fun widePhone_shortensHeight() {
-        assertEquals("1920x864", fitScreenSize("1920x1080", 2400, 1080))
+    fun adreno740Base_onFoldInnerScreen() {
+        assertEquals("1658x1252", fitScreenSize("1920x1080", 2448, 1848))
     }
 
     @Test
-    fun adreno8xxBase_scalesFromSmallerBudget() {
-        assertEquals("800x720", fitScreenSize("1280x720", 2184, 1968))
+    fun widePhone_widensAndShortens() {
+        assertEquals("2146x966", fitScreenSize("1920x1080", 2400, 1080))
     }
 
     @Test
