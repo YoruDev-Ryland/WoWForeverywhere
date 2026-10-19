@@ -1,0 +1,39 @@
+[
+  {
+    "UID": "90001",
+    "UICATID": "19",
+    "UIVersion": "2.0.0",
+    "UIDate": 1792000000000,
+    "UIName": "Forever Questing",
+    "UIAuthorName": "someone",
+    "UIFileInfoURL": "https://www.wowinterface.com/downloads/info90001-ForeverQuesting.html",
+    "UIDownloadTotal": "1234",
+    "UIDownloadMonthly": "100",
+    "UIFavoriteTotal": "5",
+    "UICompatibility": [
+      { "version": "1.15.7", "name": "Classic" },
+      { "version": "1.60.1", "name": "Forever" }
+    ],
+    "UIDir": ["ForeverQuesting"],
+    "UIIMG_Thumbs": null,
+    "UIIMGs": null,
+    "UISiblings": null
+  },
+  {
+    "UID": "90002",
+    "UICATID": "19",
+    "UIVersion": "1.0",
+    "UIDate": 1791000000000,
+    "UIName": "Classic Only Thing",
+    "UIAuthorName": "other",
+    "UIFileInfoURL": "https://www.wowinterface.com/downloads/info90002.html",
+    "UIDownloadTotal": "99999",
+    "UIDownloadMonthly": "1",
+    "UIFavoriteTotal": "0",
+    "UICompatibility": [{ "version": "1.15.7", "name": "Classic" }],
+    "UIDir": ["ClassicOnlyThing"],
+    "UIIMG_Thumbs": [],
+    "UIIMGs": [],
+    "UISiblings": null
+  }
+]
