@@ -36,10 +36,50 @@ enum class ForeverArt(val path: String, val zoom: Float = 1f) {
     val url get() = "https://blz-contentstack-images.akamaized.net/v3/assets/blt9c12f249ac15c7ec/$path?format=jpg&width=1280"
 }
 
+/**
+ * Blizzard's own round game icons (the ones its site navigation uses), loaded at runtime like the art.
+ * [viewBox] crops the icon to just its round crest (Classic's icon has a wordmark underneath).
+ */
+enum class GameIcon(val url: String, val viewBox: String? = null) {
+    FOREVER("https://forge.akamaized.net/icons/world-of-warcraft-forever.svg"),
+    CLASSIC("https://forge.akamaized.net/icons/world-of-warcraft-classic.svg", viewBox = "6 2 36 36"),
+}
+
 object ArtCache {
     /** Decoded images, capped at about 48 MB; anything evicted is re-read from the disk cache. */
     private val memory = object : android.util.LruCache<String, ImageBitmap>(48 * 1024 * 1024) {
         override fun sizeOf(key: String, value: ImageBitmap) = value.width * value.height * 4
+    }
+
+    /** Renders an SVG icon to a square bitmap of [sizePx], cached like other art. */
+    suspend fun loadSvg(context: Context, icon: GameIcon, sizePx: Int): ImageBitmap? {
+        val key = "${icon.url}@$sizePx"
+        memory.get(key)?.let { return it }
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val file = fetch(context, icon.url) ?: return@runCatching null
+                val svg = com.caverock.androidsvg.SVG.getFromString(file.readText())
+                icon.viewBox?.split(" ")?.map { it.toFloat() }?.let { (x, y, w, h) -> svg.setDocumentViewBox(x, y, w, h) }
+                svg.documentWidth = sizePx.toFloat()
+                svg.documentHeight = sizePx.toFloat()
+                val bitmap = android.graphics.Bitmap.createBitmap(sizePx, sizePx, android.graphics.Bitmap.Config.ARGB_8888)
+                svg.renderToCanvas(android.graphics.Canvas(bitmap))
+                bitmap.asImageBitmap().also { memory.put(key, it) }
+            }.onFailure { Timber.w(it, "Icon load failed: ${icon.url}") }.getOrNull()
+        }
+    }
+
+    /** Downloads [url] into the disk cache once and returns the cached file. */
+    private fun fetch(context: Context, url: String): File? {
+        val dir = File(context.cacheDir, "art").apply { mkdirs() }
+        val file = File(dir, sha1(url) + ".img")
+        if (file.isFile && file.length() > 0L) return file
+        val temp = File(dir, file.name + ".part")
+        Net.http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            if (!response.isSuccessful) return null
+            temp.outputStream().use { response.body!!.byteStream().copyTo(it) }
+        }
+        return file.takeIf { temp.renameTo(it) }
     }
 
     suspend fun load(context: Context, url: String): ImageBitmap? {

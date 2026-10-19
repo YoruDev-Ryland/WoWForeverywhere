@@ -466,3 +466,8 @@ Bundled in `app/src/main/res/font/fw_*.ttf`, unmodified apart from file names:
 - Manrope, (c) 2018 The Manrope Project Authors
 
 License text: https://openfontlicense.org/open-font-license-official-text/
+
+## AndroidSVG (Apache License 2.0)
+
+`com.caverock:androidsvg-aar` 1.4, (c) Paul LeBeau, Cave Rock Software Ltd. Used to draw the game-version icons.
+License text: https://www.apache.org/licenses/LICENSE-2.0

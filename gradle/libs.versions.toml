@@ -1,4 +1,5 @@
 [versions]
+androidsvg = "1.4" # https://github.com/BigBadaboom/androidsvg (Apache-2.0)
 activityCompose = "1.10.0" # https://mvnrepository.com/artifact/androidx.activity/activity-compose
 agp = "8.8.0" # https://mvnrepository.com/artifact/com.android.application/com.android.application.gradle.plugin
 apache-compress = "1.28.0" # https://mvnrepository.com/artifact/org.apache.commons/commons-compress
@@ -33,6 +34,7 @@ timber = "5.0.1" # https://mvnrepository.com/artifact/com.jakewharton.timber/tim
 zstd-jni = "1.5.7-5" # https://mvnrepository.com/artifact/com.github.luben/zstd-jni
 
 [libraries]
+androidsvg = { module = "com.caverock:androidsvg-aar", version.ref = "androidsvg" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

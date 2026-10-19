@@ -49,7 +49,13 @@ import app.gamenative.wow.ui.LauncherController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.LocalDensity
+import app.gamenative.wow.ui.components.ArtCache
 import app.gamenative.wow.ui.components.ArtImage
+import app.gamenative.wow.ui.components.GameIcon
 import app.gamenative.wow.ui.components.Links
 import app.gamenative.wow.ui.components.ForeverArt
 import app.gamenative.wow.ui.components.FwButton
@@ -323,22 +329,27 @@ private fun SearchField(value: String, onChange: (String) -> Unit, modifier: Mod
 }
 
 /**
- * Forever vs Classic marker. The shape carries the meaning (solid square vs open circle), not only the
- * colour. Classic uses "CL" in the body face: a serif "C" in a circle reads as a copyright sign.
+ * Forever vs Classic marker: Blizzard's round icon for that game version. Until it loads (or offline) a
+ * simple stand-in shows: a teal square for Forever, an outlined circle for Classic.
  */
 @Composable
 fun FlavorMark(flavor: AddonFlavor, size: Int = 28) {
+    val icon = when (flavor) {
+        AddonFlavor.FOREVER -> GameIcon.FOREVER
+        AddonFlavor.CLASSIC -> GameIcon.CLASSIC
+        AddonFlavor.OTHER -> null
+    }
+    val context = LocalContext.current
+    val px = with(LocalDensity.current) { size.dp.roundToPx() }
+    val image by produceState<ImageBitmap?>(null, icon, px) { value = icon?.let { ArtCache.loadSvg(context, it, px) } }
     val base = Modifier.size(size.dp)
+    image?.let {
+        Image(it, contentDescription = flavorLabel(flavor), modifier = base)
+        return
+    }
     when (flavor) {
-        AddonFlavor.FOREVER -> Box(base.background(Fw.Gem, Fw.Shape), contentAlignment = Alignment.Center) {
-            Text("F", style = Fw.Title.copy(fontSize = (size * 0.5f).sp, lineHeight = (size * 0.5f).sp, color = Fw.GemInk))
-        }
-        else -> Box(base.border(2.dp, Fw.Ash, CircleShape), contentAlignment = Alignment.Center) {
-            Text(
-                if (flavor == AddonFlavor.CLASSIC) "CL" else "?",
-                style = Fw.Label.copy(fontSize = (size * 0.3f).sp, lineHeight = (size * 0.3f).sp, letterSpacing = 0.sp, color = Fw.Ash),
-            )
-        }
+        AddonFlavor.FOREVER -> Box(base.background(Fw.Gem, Fw.Shape))
+        else -> Box(base.border(2.dp, Fw.Ash, CircleShape))
     }
 }
 
