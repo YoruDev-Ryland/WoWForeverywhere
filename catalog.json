@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-19T15:30:10+00:00",
+ "generated": "2026-10-19T16:08:56+00:00",
  "addons": [
   {
    "repo": "Questie/Questie",
@@ -10,7 +10,7 @@
    "icon": "https://avatars.githubusercontent.com/u/75445548?v=4",
    "website": "https://github.com/Questie/Questie",
    "stars": 1109,
-   "downloads": 11812,
+   "downloads": 11857,
    "updated": "2026-10-12T20:34:29Z",
    "requires": [],
    "files": {
@@ -37,7 +37,7 @@
    "icon": "https://avatars.githubusercontent.com/u/84252897?v=4",
    "website": "https://github.com/RestedXP/RXPGuides",
    "stars": 168,
-   "downloads": 2116,
+   "downloads": 2154,
    "updated": "2026-10-17T22:08:56Z",
    "requires": [],
    "files": {
@@ -64,7 +64,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DeadlyBossMods",
    "stars": 280,
-   "downloads": 997,
+   "downloads": 1010,
    "updated": "2026-10-16T19:56:53Z",
    "requires": [],
    "files": {
@@ -91,7 +91,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DBM-Dungeons",
    "stars": 32,
-   "downloads": 713,
+   "downloads": 724,
    "updated": "2026-10-16T19:57:22Z",
    "requires": [
     "DeadlyBossMods/DeadlyBossMods"
@@ -120,7 +120,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/BigWigs",
    "stars": 275,
-   "downloads": 1549,
+   "downloads": 1565,
    "updated": "2026-10-14T20:29:30Z",
    "requires": [],
    "files": {
@@ -147,7 +147,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/LittleWigs",
    "stars": 114,
-   "downloads": 1381,
+   "downloads": 1389,
    "updated": "2026-10-13T15:39:18Z",
    "requires": [
     "BigWigsMods/BigWigs"
@@ -170,7 +170,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9000280?v=4",
    "website": "https://github.com/Tercioo/Plater-Nameplates",
    "stars": 107,
-   "downloads": 831,
+   "downloads": 840,
    "updated": "2026-10-15T11:38:52Z",
    "requires": [],
    "files": {
@@ -197,7 +197,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/ShadowedUnitFrames",
    "stars": 59,
-   "downloads": 21600,
+   "downloads": 21604,
    "updated": "2026-01-18T18:37:26Z",
    "requires": [],
    "files": {
@@ -218,7 +218,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/Dominos",
    "stars": 83,
-   "downloads": 548,
+   "downloads": 551,
    "updated": "2026-10-06T12:19:06Z",
    "requires": [],
    "files": {
@@ -245,7 +245,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Bartender4",
    "stars": 76,
-   "downloads": 1354,
+   "downloads": 1358,
    "updated": "2026-10-02T18:55:43Z",
    "requires": [],
    "files": {
@@ -272,7 +272,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/OmniCC",
    "stars": 107,
-   "downloads": 19420,
+   "downloads": 19423,
    "updated": "2025-12-14T21:07:04Z",
    "requires": [],
    "files": {
@@ -293,7 +293,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9121773?v=4",
    "website": "https://github.com/WeakAuras/WeakAuras2",
    "stars": 1444,
-   "downloads": 4726,
+   "downloads": 4736,
    "updated": "2026-10-10T17:21:31Z",
    "requires": [],
    "files": {
@@ -314,7 +314,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Mapster",
    "stars": 21,
-   "downloads": 502,
+   "downloads": 505,
    "updated": "2026-10-03T14:08:46Z",
    "requires": [],
    "files": {
@@ -335,7 +335,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/HandyNotes",
    "stars": 20,
-   "downloads": 6747,
+   "downloads": 6755,
    "updated": "2026-08-12T05:56:20Z",
    "requires": [],
    "files": {
@@ -356,7 +356,7 @@
    "icon": "https://avatars.githubusercontent.com/u/2187?v=4",
    "website": "https://github.com/kemayo/wow-silverdragon",
    "stars": 27,
-   "downloads": 35,
+   "downloads": 38,
    "updated": "2026-10-19T01:26:14Z",
    "requires": [],
    "files": {
@@ -383,7 +383,7 @@
    "icon": "https://avatars.githubusercontent.com/u/45636893?v=4",
    "website": "https://github.com/Hoizame/AtlasLootClassic",
    "stars": 90,
-   "downloads": 127580,
+   "downloads": 127583,
    "updated": "2023-10-22T14:37:24Z",
    "requires": [],
    "files": {
@@ -404,7 +404,7 @@
    "icon": "https://avatars.githubusercontent.com/u/19425199?v=4",
    "website": "https://github.com/AdiAddons/AdiBags",
    "stars": 153,
-   "downloads": 97311,
+   "downloads": 97314,
    "updated": "2024-09-08T02:20:23Z",
    "requires": [],
    "files": {
@@ -425,7 +425,7 @@
    "icon": "https://avatars.githubusercontent.com/u/69928556?v=4",
    "website": "https://github.com/SFX-WoW/Masque",
    "stars": 54,
-   "downloads": 5969,
+   "downloads": 5973,
    "updated": "2026-08-24T15:48:33Z",
    "requires": [],
    "files": {
