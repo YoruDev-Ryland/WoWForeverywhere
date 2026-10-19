@@ -36,6 +36,15 @@ class AddonCategoryTest {
     }
 
     @Test
+    fun gameVersionCategoriesAreNotTopics() {
+        assertNull(AddonCategory.fromName("Classic - General"))
+        assertNull(AddonCategory.fromWowInterfaceId("160"))
+        assertEquals(AddonCategory.CLASS, AddonCategory.fromName("Class"))
+        assertEquals(AddonCategory.INTERFACE, AddonCategory.fromName("Graphic UI Mods"))
+        assertNull(AddonCategory.fromName("Surface Tension"))
+    }
+
+    @Test
     fun unknownNameIsNull() {
         assertNull(AddonCategory.fromName("Twitch Integration"))
     }

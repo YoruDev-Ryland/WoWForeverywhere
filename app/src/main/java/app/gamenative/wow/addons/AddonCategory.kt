@@ -5,7 +5,7 @@ package app.gamenative.wow.addons
  * categories differently ("Bags & Inventory", "Bags, Bank, Inventory"...), so their names are mapped
  * onto these by keyword. Order is the order shown in the browser.
  */
-enum class AddonCategory(val label: String, private val keywords: List<String>) {
+enum class AddonCategory(val label: String, keywords: List<String>) {
     QUESTS("Quests & leveling", listOf("quest", "leveling", "character advancement")),
     MAP("Map & navigation", listOf("map", "coords", "compass", "minimap")),
     RAIDS("Raids & bosses", listOf("raid", "boss", "encounter", "dungeon")),
@@ -19,17 +19,24 @@ enum class AddonCategory(val label: String, private val keywords: List<String>) 
     CHAT("Chat & social", listOf("chat", "communication", "guild", "group", "friends", "mail")),
     TOOLTIPS("Tooltips", listOf("tooltip")),
     INTERFACE("Interface & media", listOf("graphic ui", "ui media", "hud", "artwork", "suite", "skin", "titan panel", "data broker", "fubar", "info bar")),
-    CLASS("Class", listOf("class", "druid", "hunter", "mage", "paladin", "priest", "rogue", "shaman", "warlock", "warrior", "death knight", "monk")),
+    CLASS("Class", listOf("class\\b", "druid", "hunter", "mage", "paladin", "priest", "rogue", "shaman", "warlock", "warrior", "death knight", "monk")),
     PVP("PvP", listOf("pvp", "arena", "battleground")),
     PETS("Mounts & pets", listOf("mount", "pet", "companion")),
     LIBRARIES("Libraries", listOf("librar", "ace", "developer", "development")),
     OTHER("Other", listOf("miscellaneous", "other", "roleplay", "music", "mini game", "minigame", "data mods", "plug-ins")),
     ;
 
+    private val patterns = keywords.map { Regex("\\b$it") }
+
     companion object {
+        /**
+         * Keywords match at the start of a word ("librar" matches "Libraries", "ace" doesn't match
+         * "Interface"); a trailing `\b` makes one a whole word, so "Classic - General", a game-version
+         * folder rather than a topic, isn't "Class".
+         */
         fun fromName(name: String): AddonCategory? {
             val lower = name.lowercase()
-            return entries.firstOrNull { category -> category.keywords.any { it in lower } }
+            return entries.firstOrNull { category -> category.patterns.any { it.containsMatchIn(lower) } }
         }
 
         fun fromWowInterfaceId(id: String): AddonCategory? = WOWINTERFACE_CATEGORIES[id]?.let(::fromName)
