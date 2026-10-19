@@ -4,16 +4,22 @@ import app.gamenative.utils.Net
 import app.gamenative.wow.product.BuildInfo
 import app.gamenative.wow.product.WowProduct
 import app.gamenative.wow.product.detectProduct
+import app.gamenative.wow.tact.ArchiveIndex
+import app.gamenative.wow.tact.Blte
+import app.gamenative.wow.tact.Cdn
+import app.gamenative.wow.tact.EncodingLookup
+import app.gamenative.wow.tact.InstallEntry
+import app.gamenative.wow.tact.InstallManifest
+import app.gamenative.wow.tact.Psv
+import app.gamenative.wow.tact.TactConfig
+import app.gamenative.wow.tact.hex
+import app.gamenative.wow.tact.md5Hex
 import okhttp3.Request
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.io.OutputStream
-import java.nio.ByteBuffer
 import java.security.DigestOutputStream
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
-import java.util.zip.Inflater
 import timber.log.Timber
 
 object WowClientDownloader {
@@ -74,7 +80,7 @@ object WowClientDownloader {
             Timber.w("checkVersion: response body is null or unsuccessful")
             return null
         }
-        val remoteRow = parsePsv(versions).firstOrNull()
+        val remoteRow = Psv.parse(versions).firstOrNull()
             ?: run {
                 Timber.w("checkVersion: no remote row in $versions")
                 return null
@@ -86,7 +92,7 @@ object WowClientDownloader {
             }
         val remoteBuildKey = remoteRow["BuildConfig"].orEmpty()
 
-        val cdns = runCatching { fetchText("${patchUrl(product)}/cdns") }.getOrNull()?.let(::parsePsv).orEmpty()
+        val cdns = runCatching { fetchText("${patchUrl(product)}/cdns") }.getOrNull()?.let(Psv::parse).orEmpty()
         val cdnsRow = cdns.firstOrNull { it["Name"] == "us" } ?: cdns.firstOrNull()
 
         val isOutdated = localVersion != remoteVersion || (remoteBuildKey.isNotBlank() && localBuildKey != remoteBuildKey)
@@ -114,12 +120,12 @@ object WowClientDownloader {
         saveConfig(gameRoot, target.remoteBuildConfig, buildConfigRaw)
         cdnConfigRaw?.let { saveConfig(gameRoot, target.remoteCdnConfig, it) }
 
-        val cdnConfig = cdnConfigRaw?.let { parseConfig(String(it)) }
+        val cdnConfig = cdnConfigRaw?.let { TactConfig.parse(String(it)) }
         syncClient(
             gameRoot = gameRoot,
             product = product,
             cdn = cdn,
-            buildConfig = parseConfig(String(buildConfigRaw)),
+            buildConfig = TactConfig.parse(String(buildConfigRaw)),
             archives = lazy { cdnConfig?.let { ArchiveLocator(cdn, gameRoot, it.getValue("archives")) } },
             onStatus = onStatus,
         )
@@ -141,9 +147,9 @@ object WowClientDownloader {
             gameRoot = gameRoot,
             product = product,
             cdn = cdn,
-            buildConfig = parseConfig(String(cdn.require("config", row.getValue("Build Key")))),
+            buildConfig = TactConfig.parse(String(cdn.require("config", row.getValue("Build Key")))),
             archives = lazy {
-                ArchiveLocator(cdn, gameRoot, parseConfig(String(cdn.require("config", row.getValue("CDN Key")))).getValue("archives"))
+                ArchiveLocator(cdn, gameRoot, TactConfig.parse(String(cdn.require("config", row.getValue("CDN Key")))).getValue("archives"))
             },
             onStatus = onStatus,
         )
@@ -157,7 +163,7 @@ object WowClientDownloader {
         archives: Lazy<ArchiveLocator?>,
         onStatus: (String) -> Unit,
     ) {
-        val files = parseInstall(blteDecode(cdn.require("data", buildConfig.getValue("install")[1]))).filter { it.isClientBinary() }
+        val files = InstallManifest.parse(Blte.decode(cdn.require("data", buildConfig.getValue("install")[1]))).filter { it.isClientBinary() }
         check(files.isNotEmpty()) { "No Windows ARM64 client files in this build" }
 
         val clientDir = File(gameRoot, product.flavorDir)
@@ -178,7 +184,7 @@ object WowClientDownloader {
         dest.parentFile?.mkdirs()
         val temp = File(dest.parentFile, "${dest.name}.download")
         val digest = MessageDigest.getInstance("MD5")
-        DigestOutputStream(temp.outputStream().buffered(), digest).use { blteDecode(encoded, it) }
+        DigestOutputStream(temp.outputStream().buffered(), digest).use { Blte.decode(encoded, it) }
         if (hex(digest.digest(), 0, 16) != entry.ckey) {
             temp.delete()
             throw IOException("Checksum mismatch for ${entry.name}")
@@ -220,126 +226,10 @@ object WowClientDownloader {
         check(temp.renameTo(buildInfo)) { "Could not update $BUILD_INFO" }
     }
 
-    private data class InstallEntry(val name: String, val ckey: String, val tags: Set<String>) {
-        val relativePath get() = name.replace('\\', '/')
-
-        fun isClientBinary(): Boolean {
-            if ("Windows" !in tags || PLATFORM_ARCH !in tags || EXCLUDED_ARCH in tags) return false
-            val lower = name.lowercase()
-            return !lower.startsWith("utils\\") || "exceptionhandler" in lower
-        }
-    }
-
-    private class Cdn(val hosts: List<String>, val path: String) {
-        fun require(kind: String, key: String) = fetch(kind, key) ?: throw IOException("CDN is missing $kind/$key")
-
-        fun fetch(kind: String, key: String, range: LongRange? = null): ByteArray? {
-            var failure: IOException? = null
-            var missing = false
-            for (host in hosts) {
-                val request = Request.Builder()
-                    .url("http://$host/$path/$kind/${key.substring(0, 2)}/${key.substring(2, 4)}/$key")
-                    .apply { if (range != null) header("Range", "bytes=${range.first}-${range.last}") }
-                    .build()
-                try {
-                    Net.http.newCall(request).execute().use { response ->
-                        when {
-                            response.isSuccessful -> return response.body!!.bytes()
-                            response.code == 403 || response.code == 404 -> missing = true
-                            else -> failure = IOException("HTTP ${response.code} from $host")
-                        }
-                    }
-                } catch (e: IOException) {
-                    failure = e
-                }
-            }
-            if (missing) return null
-            throw failure ?: IOException("No CDN hosts in $BUILD_INFO")
-        }
-    }
-
-    private class EncodingLookup(private val cdn: Cdn, private val ekey: String) {
-        private data class Chunk(val encodedOffset: Long, val encodedSize: Int, val decodedOffset: Long, val decodedSize: Int)
-
-        private val chunks: List<Chunk> = parseChunkTable(ByteBuffer.wrap(fetchEncoded(0, 8)).getInt(4))
-
-        private fun parseChunkTable(headerSize: Int): List<Chunk> {
-            val header = ByteBuffer.wrap(fetchEncoded(0, headerSize))
-            val count = header.getInt(8) and 0xFFFFFF
-            var encoded = headerSize.toLong()
-            var decoded = 0L
-            return (0 until count).map { i ->
-                val compressedSize = header.getInt(12 + i * 24)
-                val decompressedSize = header.getInt(16 + i * 24)
-                Chunk(encoded, compressedSize, decoded, decompressedSize).also {
-                    encoded += compressedSize
-                    decoded += decompressedSize
-                }
-            }
-        }
-
-        private var cachedChunk: Chunk? = null
-        private var cachedData: ByteArray = ByteArray(0)
-
-        private fun read(start: Long, length: Int): ByteArray {
-            val out = ByteArray(length)
-            var written = 0
-            for (chunk in chunks) {
-                val chunkEnd = chunk.decodedOffset + chunk.decodedSize
-                if (chunkEnd <= start || chunk.decodedOffset >= start + length) continue
-                val from = maxOf(start, chunk.decodedOffset) - chunk.decodedOffset
-                val count = (minOf(start + length, chunkEnd) - chunk.decodedOffset - from).toInt()
-                val mode = fetchEncoded(chunk.encodedOffset, 1)[0].toInt().toChar()
-                val bytes = if (mode == 'N') {
-                    fetchEncoded(chunk.encodedOffset + 1 + from, count)
-                } else {
-                    decodedChunk(chunk).copyOfRange(from.toInt(), from.toInt() + count)
-                }
-                bytes.copyInto(out, written)
-                written += count
-            }
-            return out
-        }
-
-        private fun decodedChunk(chunk: Chunk): ByteArray {
-            if (cachedChunk != chunk) {
-                cachedData = decodeChunk(fetchEncoded(chunk.encodedOffset, chunk.encodedSize))
-                cachedChunk = chunk
-            }
-            return cachedData
-        }
-
-        private fun fetchEncoded(offset: Long, size: Int) =
-            cdn.fetch("data", ekey, offset until offset + size) ?: throw IOException("Encoding file missing")
-
-        fun find(wanted: Set<String>): Map<String, String> {
-            val header = ByteBuffer.wrap(read(0, 22))
-            val ckeySize = header.get(3).toInt()
-            val ekeySize = header.get(4).toInt()
-            val pageSize = (header.getShort(5).toInt() and 0xFFFF) * 1024
-            val pageCount = header.getInt(9)
-            val especSize = header.getInt(18)
-            val indexStart = 22L + especSize
-            val indexEntrySize = ckeySize + 16
-            val index = read(indexStart, pageCount * indexEntrySize)
-            val firstKeys = (0 until pageCount).map { hex(index, it * indexEntrySize, ckeySize) }
-            val pagesStart = indexStart + pageCount.toLong() * indexEntrySize
-
-            val found = mutableMapOf<String, String>()
-            wanted.groupBy { ckey -> firstKeys.binarySearch(ckey).let { if (it >= 0) it else -it - 2 } }
-                .filterKeys { it >= 0 }
-                .forEach { (page, ckeys) ->
-                    val data = read(pagesStart + page.toLong() * pageSize, pageSize)
-                    var pos = 0
-                    while (pos + 6 + ckeySize <= data.size && data[pos].toInt() != 0) {
-                        val keyCount = data[pos].toInt() and 0xFF
-                        val ckey = hex(data, pos + 6, ckeySize)
-                        if (ckey in ckeys) found[ckey] = hex(data, pos + 6 + ckeySize, ekeySize)
-                        pos += 6 + ckeySize + keyCount * ekeySize
-                    }
-                }
-            return found
-        }
+    private fun InstallEntry.isClientBinary(): Boolean {
+        if ("Windows" !in tags || PLATFORM_ARCH !in tags || EXCLUDED_ARCH in tags) return false
+        val lower = name.lowercase()
+        return !lower.startsWith("utils\\") || "exceptionhandler" in lower
     }
 
     private class ArchiveLocator(private val cdn: Cdn, private val gameRoot: File, private val archives: List<String>) {
@@ -354,22 +244,14 @@ object WowClientDownloader {
                     local.writeBytes(fetched)
                     fetched
                 }
-                val buffer = ByteBuffer.wrap(index)
-                for (block in 0 until index.size / 4096 * 4096 step 4096) {
-                    var pos = block
-                    while (pos <= block + 4096 - 24) {
-                        if (hex(index, pos, 16) == ekey) {
-                            val size = buffer.getInt(pos + 16).toLong() and 0xFFFFFFFFL
-                            val offset = buffer.getInt(pos + 20).toLong() and 0xFFFFFFFFL
-                            return cdn.fetch("data", archive, offset until offset + size)
-                        }
-                        pos += 24
-                    }
-                }
+                val (offset, size) = ArchiveIndex(index).locate(ekey) ?: continue
+                return cdn.fetch("data", archive, offset until offset + size)
             }
             return null
         }
     }
+
+    private fun splitHosts(hosts: String) = hosts.split(" ").filter { it.isNotBlank() }
 
     private fun fetchText(url: String): String? =
         patchHttp.newCall(Request.Builder().url(url).build()).execute().use { response ->
@@ -383,119 +265,4 @@ object WowClientDownloader {
             ?: info.active()
             ?: throw IllegalStateException("No build in $BUILD_INFO")
     }
-
-    private fun parsePsv(text: String): List<Map<String, String>> {
-        val lines = text.lines().filter { it.isNotBlank() && !it.startsWith("#") }
-        val header = psvHeader(lines.firstOrNull() ?: return emptyList())
-        return lines.drop(1).map { header.zip(it.split("|")).toMap() }
-    }
-
-    private fun psvHeader(line: String) = line.split("|").map { it.substringBefore("!") }
-
-    private fun splitHosts(hosts: String) = hosts.split(" ").filter { it.isNotBlank() }
-
-    private fun parseConfig(text: String): Map<String, List<String>> =
-        text.lines().filter { "=" in it && !it.startsWith("#") }.associate { line ->
-            line.substringBefore("=").trim() to line.substringAfter("=").trim().split(" ").filter { it.isNotEmpty() }
-        }
-
-    private fun parseInstall(data: ByteArray): List<InstallEntry> {
-        check(data[0] == 'I'.code.toByte() && data[1] == 'N'.code.toByte()) { "Bad install manifest" }
-        val buffer = ByteBuffer.wrap(data)
-        val hashSize = data[3].toInt()
-        val tagCount = buffer.getShort(4).toInt() and 0xFFFF
-        val entryCount = buffer.getInt(6)
-        val maskSize = (entryCount + 7) / 8
-        var pos = 10
-
-        fun readString(): String {
-            val end = (pos until data.size).first { data[it].toInt() == 0 }
-            return String(data, pos, end - pos).also { pos = end + 1 }
-        }
-
-        val tags = (0 until tagCount).map {
-            val name = readString()
-            pos += 2
-            (name to data.copyOfRange(pos, pos + maskSize)).also { pos += maskSize }
-        }
-        return (0 until entryCount).map { i ->
-            val name = readString()
-            val ckey = hex(data, pos, hashSize)
-            pos += hashSize + 4
-            val entryTags = tags.filter { (_, mask) -> mask[i / 8].toInt() and (0x80 ushr (i % 8)) != 0 }.map { it.first }.toSet()
-            InstallEntry(name, ckey, entryTags)
-        }
-    }
-
-    private fun blteDecode(data: ByteArray) = ByteArrayOutputStream(data.size).also { blteDecode(data, it) }.toByteArray()
-
-    private fun blteDecode(data: ByteArray, out: OutputStream) {
-        check(String(data, 0, 4) == "BLTE") { "Not BLTE data" }
-        val buffer = ByteBuffer.wrap(data)
-        val headerSize = buffer.getInt(4)
-        if (headerSize == 0) {
-            out.write(decodeChunk(data.copyOfRange(8, data.size)))
-            return
-        }
-        val count = buffer.getInt(8) and 0xFFFFFF
-        var offset = headerSize
-        for (i in 0 until count) {
-            val compressedSize = buffer.getInt(12 + i * 24)
-            out.write(decodeChunk(data.copyOfRange(offset, offset + compressedSize)))
-            offset += compressedSize
-        }
-    }
-
-    private fun decodeChunk(chunk: ByteArray): ByteArray {
-        val body = chunk.copyOfRange(1, chunk.size)
-        return when (chunk[0].toInt().toChar()) {
-            'N' -> body
-            'Z' -> inflate(body)
-            'F' -> blteDecode(body)
-            else -> throw IOException("Unsupported BLTE chunk mode ${chunk[0].toInt().toChar()}")
-        }
-    }
-
-    private fun inflate(body: ByteArray): ByteArray {
-        val inflater = Inflater()
-        inflater.setInput(body)
-        val out = ByteArrayOutputStream(body.size * 2)
-        val buffer = ByteArray(64 * 1024)
-        try {
-            while (!inflater.finished()) {
-                val n = inflater.inflate(buffer)
-                if (n == 0 && (inflater.needsInput() || inflater.needsDictionary())) throw IOException("Truncated zlib chunk")
-                out.write(buffer, 0, n)
-            }
-        } finally {
-            inflater.end()
-        }
-        return out.toByteArray()
-    }
-
-    private fun md5Hex(file: File): String? {
-        if (!file.isFile) return null
-        val digest = MessageDigest.getInstance("MD5")
-        file.inputStream().use { input ->
-            val buffer = ByteArray(1024 * 1024)
-            while (true) {
-                val n = input.read(buffer)
-                if (n < 0) break
-                digest.update(buffer, 0, n)
-            }
-        }
-        return hex(digest.digest(), 0, 16)
-    }
-
-    private fun hex(data: ByteArray, offset: Int, size: Int): String {
-        val chars = CharArray(size * 2)
-        for (i in 0 until size) {
-            val v = data[offset + i].toInt() and 0xFF
-            chars[i * 2] = HEX[v ushr 4]
-            chars[i * 2 + 1] = HEX[v and 0xF]
-        }
-        return String(chars)
-    }
-
-    private val HEX = "0123456789abcdef".toCharArray()
 }
