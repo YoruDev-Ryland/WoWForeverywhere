@@ -67,6 +67,7 @@ import app.gamenative.ui.screen.PluviaScreen
 import app.gamenative.ui.screen.wow.BattleNetSignIn
 import app.gamenative.ui.screen.wow.GamePath
 import app.gamenative.ui.screen.wow.WoWForeverScreen
+import app.gamenative.wow.ui.ForeverywhereApp
 import app.gamenative.ui.screen.wow.WoWLauncherState
 import app.gamenative.ui.screen.xserver.XServerScreen
 import app.gamenative.ui.theme.PluviaTheme
@@ -314,7 +315,7 @@ fun PluviaMain(
                 startDestination = startDestination,
             ) {
                 composable(route = PluviaScreen.WoWLauncher.route) {
-                    WoWForeverScreen(
+                    ForeverywhereApp(
                         onLaunch = { appId ->
                             viewModel.setLaunchedAppId(appId)
                             viewModel.setOffline(true)

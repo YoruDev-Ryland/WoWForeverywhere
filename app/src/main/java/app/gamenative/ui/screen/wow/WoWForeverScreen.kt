@@ -868,9 +868,9 @@ private fun CheckItem(label: String, ready: Boolean) {
     }
 }
 
-private class StorageAccessDeniedException(cause: Throwable) : Exception(cause)
+internal class StorageAccessDeniedException(cause: Throwable) : Exception(cause)
 
-private fun Throwable.isPermissionDenied() =
+internal fun Throwable.isPermissionDenied() =
     message?.let { "EPERM" in it || "Operation not permitted" in it } == true
 
 private const val DEFAULT_DRIVER = "Turnip-WoW-scheduler-test"
@@ -878,7 +878,7 @@ private const val ADRENO_8XX_DRIVER = "Turnip-V32-RP6sched"
 private const val PROTON_VERSION = "proton-11.0-90624-arm64ec"
 private const val DXVK_VERSION = "2.4.1-wow-aarch64-test"
 
-private data class GpuProfile(val driver: String, val tuDebug: String, val screenSize: String, val label: String, val edition: String) {
+internal data class GpuProfile(val driver: String, val tuDebug: String, val screenSize: String, val label: String, val edition: String) {
     companion object {
         fun detect(context: Context) = if (isAdreno8xxDevice(context)) {
             GpuProfile(ADRENO_8XX_DRIVER, "noconform,sysmem", "1280x720", "Adreno 8xx", "Snapdragon 8 Elite / Adreno 8xx")
@@ -902,7 +902,7 @@ private data class GpuProfile(val driver: String, val tuDebug: String, val scree
  * non-16:9 screens (e.g. a foldable's near-square inner display) instead of being letterboxed.
  * The pixel count stays the same as [baseSize], so GPU cost matches the 16:9 default.
  */
-private fun fitScreenSizeToWindow(context: Context, baseSize: String): String {
+internal fun fitScreenSizeToWindow(context: Context, baseSize: String): String {
     val (windowWidth, windowHeight) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         context.getSystemService(WindowManager::class.java).currentWindowMetrics.bounds.let { it.width() to it.height() }
     } else {
@@ -920,7 +920,7 @@ internal fun fitScreenSize(baseSize: String, windowWidth: Int, windowHeight: Int
     return "${(width / 2).roundToInt() * 2}x${(height / 2).roundToInt() * 2}"
 }
 
-private fun prepareLaunch(
+internal fun prepareLaunch(
     context: Context,
     gameRoot: File,
     product: WowProduct,

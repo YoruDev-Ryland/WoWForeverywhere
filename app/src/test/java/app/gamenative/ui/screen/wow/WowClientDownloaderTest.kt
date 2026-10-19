@@ -1,5 +1,7 @@
 package app.gamenative.ui.screen.wow
 
+import app.gamenative.wow.product.WowProduct
+import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -82,6 +84,11 @@ class WowClientDownloaderTest {
         assertNotNull(result)
         assertEquals("wow_classic_beta", result?.get("Product"))
         assertEquals("1.60.1.70205", result?.get("Version"))
+    }
+
+    @Test
+    fun isProductLive_falseBeforeReleaseDateWithoutNetwork() {
+        assertEquals(false, WowClientDownloader.isProductLive(WowProduct.FOREVER, LocalDate.of(2026, 10, 18)))
     }
 
     @Test

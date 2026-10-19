@@ -1,0 +1,354 @@
+package app.gamenative.wow.ui
+
+import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import app.gamenative.PluviaApp
+import app.gamenative.events.AndroidEvent
+import app.gamenative.ui.screen.wow.BattleNetSignIn
+import app.gamenative.ui.screen.wow.GamePath
+import app.gamenative.ui.screen.wow.GpuProfile
+import app.gamenative.ui.screen.wow.StorageAccessDeniedException
+import app.gamenative.ui.screen.wow.WoWLauncherState
+import app.gamenative.ui.screen.wow.WowClientDownloader
+import app.gamenative.ui.screen.wow.fitScreenSizeToWindow
+import app.gamenative.ui.screen.wow.isPermissionDenied
+import app.gamenative.ui.screen.wow.prepareLaunch
+import app.gamenative.utils.AppUpdater
+import app.gamenative.utils.StorageUtils
+import app.gamenative.wow.product.GameInstall
+import app.gamenative.wow.product.InstallRegistry
+import app.gamenative.wow.product.ProductConverter
+import app.gamenative.wow.product.WowProduct
+import java.io.File
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import timber.log.Timber
+
+/**
+ * Launch, game-update and app-update state for the active install. The logic is moved from upstream's
+ * `WoWForeverScreen` with its behavior kept: auto-launch on start when everything is ready, an outdated
+ * game blocks Play with "Update" / "Launch anyway", and login.txt is wiped on resume and force-close.
+ */
+class LauncherController(
+    private val context: Context,
+    private val scope: CoroutineScope,
+    private val onLaunch: (appId: String) -> Unit,
+) {
+    val registry = InstallRegistry(context)
+    internal val gpu = GpuProfile.detect(context)
+
+    var gamePath by mutableStateOf(registry.active()?.root ?: GamePath.load(context))
+        private set
+    var files by mutableStateOf(GamePath.Status())
+        private set
+    var hasSavedLogin by mutableStateOf(BattleNetSignIn.load(context) != null)
+        private set
+
+    var isLaunching by mutableStateOf(false)
+        private set
+    var statusText by mutableStateOf(READY)
+        private set
+    var errorMessage by mutableStateOf<String?>(null)
+    var needsStoragePermission by mutableStateOf(false)
+
+    var versionStatus by mutableStateOf<WowClientDownloader.VersionCheckResult?>(null)
+        private set
+    var isCheckingVersion by mutableStateOf(false)
+        private set
+    var isUpdating by mutableStateOf(false)
+        private set
+    var updateStatusText by mutableStateOf("")
+        private set
+
+    var appUpdate by mutableStateOf<AppUpdater.Release?>(null)
+        private set
+    var isDownloadingAppUpdate by mutableStateOf(false)
+        private set
+    var appUpdateProgress by mutableFloatStateOf(0f)
+        private set
+    var downloadedApk by mutableStateOf<File?>(null)
+        private set
+    var needsInstallPermission by mutableStateOf(false)
+
+    /** Launch-version product is live and this install only has the beta. */
+    var canConvertToLaunch by mutableStateOf(false)
+        private set
+
+    private var launchJob: Job? = null
+    private var pendingInstallPermission = false
+
+    val filesMissing get() = !(files.dataExists && files.buildInfoExists)
+    val canPlay get() = !isLaunching && !isUpdating && !filesMissing && !files.isWrongGame
+    val busy get() = isLaunching || isUpdating
+
+    fun checkFiles(): Boolean {
+        files = GamePath.status(context, gamePath)
+        if (files.isWrongGame) errorMessage = "This folder holds ${files.productCode}, not WoW Forever."
+        return files.isReady
+    }
+
+    fun refresh() {
+        checkFiles()
+        checkVersionStatus()
+        checkAppUpdate()
+    }
+
+    fun selectInstall(install: GameInstall) {
+        registry.add(install)
+        registry.setActive(install.root)
+        useGameRoot(install.root)
+    }
+
+    /** Points the launcher at a game root picked by the user (folder picker or scan). */
+    fun useGameRoot(root: String) {
+        errorMessage = null
+        gamePath = root
+        GamePath.save(context, root)
+        versionStatus = null
+        val ok = checkFiles()
+        files.product?.let { registry.add(GameInstall(root, it, versionStatus?.localVersion.orEmpty())) }
+        registry.setActive(root)
+        if (!files.hasStorageAccess) needsStoragePermission = true else if (ok) checkVersionStatus()
+    }
+
+    fun onLoginSaved(login: BattleNetSignIn.Login) {
+        BattleNetSignIn.save(context, login)
+        hasSavedLogin = true
+    }
+
+    fun forgetLogin() {
+        BattleNetSignIn.forget(context)
+        BattleNetSignIn.removeLoginFile(File(gamePath))
+        hasSavedLogin = false
+    }
+
+    private suspend fun fetchVersionStatus() {
+        isCheckingVersion = true
+        val product = files.product
+        versionStatus = withContext(Dispatchers.IO) { WowClientDownloader.checkVersion(File(gamePath), product) }
+        canConvertToLaunch = product == WowProduct.BETA &&
+            withContext(Dispatchers.IO) { runCatching { WowClientDownloader.isProductLive(WowProduct.FOREVER) }.getOrDefault(false) }
+        isCheckingVersion = false
+    }
+
+    fun checkVersionStatus() {
+        if (!File(gamePath, WowClientDownloader.BUILD_INFO).exists()) return
+        scope.launch { fetchVersionStatus() }
+    }
+
+    private suspend fun fetchAppUpdate(): AppUpdater.Release? = AppUpdater.check().also { appUpdate = it }
+
+    fun checkAppUpdate() {
+        scope.launch { fetchAppUpdate() }
+    }
+
+    fun launchGame() {
+        val product = files.product
+        if (isLaunching || product == null) return
+        if (!files.hasStorageAccess) {
+            needsStoragePermission = true
+            return
+        }
+        isLaunching = true
+        errorMessage = null
+        statusText = "Preparing components..."
+        launchJob = scope.launch {
+            try {
+                val screenSize = fitScreenSizeToWindow(context, gpu.screenSize)
+                val containerId = withContext(Dispatchers.IO) {
+                    prepareLaunch(context, File(gamePath), product, gpu, screenSize) { msg ->
+                        scope.launch(Dispatchers.Main) { statusText = msg }
+                    }
+                }
+                statusText = "Booting into World of Warcraft..."
+                onLaunch(containerId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: StorageAccessDeniedException) {
+                resetLaunch()
+                needsStoragePermission = true
+            } catch (e: Exception) {
+                Timber.e(e, "Error launching WoW Forever")
+                errorMessage = e.message ?: "Launch failed"
+                statusText = "Launch failed"
+                isLaunching = false
+            }
+        }
+    }
+
+    fun resetLaunch() {
+        launchJob?.cancel()
+        launchJob = null
+        isLaunching = false
+        statusText = READY
+    }
+
+    fun performUpdate() {
+        val target = versionStatus ?: return
+        val product = files.product ?: return
+        if (busy) return
+        if (!files.hasStorageAccess) {
+            needsStoragePermission = true
+            return
+        }
+        isUpdating = true
+        updateStatusText = "Connecting to Blizzard CDN..."
+        errorMessage = null
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    WowClientDownloader.updateGame(File(gamePath), product, target) { msg ->
+                        scope.launch(Dispatchers.Main) { updateStatusText = msg }
+                    }
+                }
+                checkFiles()
+                versionStatus = versionStatus?.copy(isOutdated = false, localVersion = target.remoteVersion)
+                isUpdating = false
+                launchGame()
+            } catch (e: Exception) {
+                Timber.e(e, "Error updating game")
+                if (e.isPermissionDenied()) needsStoragePermission = true
+                errorMessage = "Update failed: ${e.message}"
+                isUpdating = false
+            }
+        }
+    }
+
+    /** Adds the launch product to a beta install, reusing its Data/, then downloads the launch client. */
+    fun convertToLaunch() {
+        if (busy || files.product != WowProduct.BETA) return
+        isUpdating = true
+        updateStatusText = "Switching to the launch version..."
+        errorMessage = null
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val root = File(gamePath)
+                    ProductConverter.applyLocal(root, WowProduct.BETA, WowProduct.FOREVER)
+                    WowClientDownloader.download(root, WowProduct.FOREVER) { msg ->
+                        scope.launch(Dispatchers.Main) { updateStatusText = msg }
+                    }
+                }
+                canConvertToLaunch = false
+                isUpdating = false
+                useGameRoot(gamePath)
+            } catch (e: Exception) {
+                Timber.e(e, "Error converting to launch product")
+                if (e.isPermissionDenied()) needsStoragePermission = true
+                errorMessage = "Couldn't switch to the launch version: ${e.message}"
+                isUpdating = false
+            }
+        }
+    }
+
+    fun performAppUpdate() {
+        val target = appUpdate ?: return
+        if (isDownloadingAppUpdate) return
+        downloadedApk?.takeIf { it.exists() && it.length() == target.sizeBytes }?.let {
+            installOrRequestPermission(it)
+            return
+        }
+        isDownloadingAppUpdate = true
+        appUpdateProgress = 0f
+        errorMessage = null
+        scope.launch {
+            try {
+                val apk = AppUpdater.download(context, target) { appUpdateProgress = it }
+                downloadedApk = apk
+                isDownloadingAppUpdate = false
+                installOrRequestPermission(apk)
+            } catch (e: Exception) {
+                Timber.e(e, "Error downloading app update")
+                errorMessage = "App update download failed: ${e.message}"
+                isDownloadingAppUpdate = false
+            }
+        }
+    }
+
+    private fun installOrRequestPermission(apk: File) {
+        if (AppUpdater.canInstall(context)) {
+            AppUpdater.install(context, apk)
+        } else {
+            pendingInstallPermission = true
+            needsInstallPermission = true
+        }
+    }
+
+    fun openInstallPermissionSettings() {
+        needsInstallPermission = false
+        pendingInstallPermission = true
+        AppUpdater.openInstallPermissionSettings(context)
+    }
+
+    fun openStorageSettings() {
+        needsStoragePermission = false
+        StorageUtils.requestManageExternalStoragePermission(context)
+    }
+
+    fun onResume() {
+        checkFiles()
+        isLaunching = false
+        statusText = READY
+        BattleNetSignIn.removeLoginFile(File(gamePath))
+        if (versionStatus == null && !WoWLauncherState.shouldAutoLaunch) checkVersionStatus()
+        if (appUpdate == null && !WoWLauncherState.shouldAutoLaunch) checkAppUpdate()
+        if (pendingInstallPermission && AppUpdater.canInstall(context)) {
+            pendingInstallPermission = false
+            downloadedApk?.takeIf { it.exists() }?.let { AppUpdater.install(context, it) }
+        }
+    }
+
+    fun onPause() {
+        launchJob?.cancel()
+        launchJob = null
+    }
+
+    fun onGameEnded() {
+        resetLaunch()
+        BattleNetSignIn.removeLoginFile(File(gamePath))
+    }
+
+    /** Upstream's start-up sequence: auto-launch only when files, login, game and app are all current. */
+    suspend fun start() = coroutineScope {
+        val ready = checkFiles()
+        if (!files.hasStorageAccess && (files.dataExists || files.buildInfoExists)) needsStoragePermission = true
+        when {
+            !ready || !hasSavedLogin -> {
+                WoWLauncherState.shouldAutoLaunch = false
+                PluviaApp.events.emit(AndroidEvent.ClearBootingSplash)
+                if (ready) {
+                    checkVersionStatus()
+                    checkAppUpdate()
+                }
+            }
+            !WoWLauncherState.shouldAutoLaunch -> {
+                checkVersionStatus()
+                checkAppUpdate()
+            }
+            else -> {
+                val updateJob = async { fetchAppUpdate() }
+                fetchVersionStatus()
+                val update = updateJob.await()
+                WoWLauncherState.shouldAutoLaunch = false
+                if (versionStatus?.isOutdated == true || update != null) {
+                    PluviaApp.events.emit(AndroidEvent.ClearBootingSplash)
+                } else {
+                    launchGame()
+                }
+            }
+        }
+    }
+
+    private companion object {
+        const val READY = "Ready to launch"
+    }
+}

@@ -18,6 +18,7 @@ import okhttp3.Request
 import java.io.File
 import java.io.IOException
 import java.security.DigestOutputStream
+import java.time.LocalDate
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import timber.log.Timber
@@ -47,6 +48,16 @@ object WowClientDownloader {
         val remoteCdnHosts: List<String> = emptyList(),
         val remoteCdnPath: String = DEFAULT_CDN_PATH,
     )
+
+    /**
+     * True once [product] has opened: its release date has passed and the patch service lists a build.
+     * The launch product appears on the patch service weeks before its servers open, so the date gates it.
+     */
+    fun isProductLive(product: WowProduct, today: LocalDate = LocalDate.now()): Boolean {
+        if (product.releaseDate?.let { today < it } == true) return false
+        val versions = runCatching { fetchText("${patchUrl(product)}/versions") }.getOrNull() ?: return false
+        return Psv.parse(versions).any { !it["BuildConfig"].isNullOrBlank() }
+    }
 
     fun readBuildInfo(buildInfo: File): Map<String, String>? =
         runCatching { activeBuild(buildInfo) }.getOrNull()
