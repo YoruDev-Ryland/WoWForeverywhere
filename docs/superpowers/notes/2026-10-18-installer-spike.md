@@ -2,7 +2,7 @@
 
 **Outcome (a): a CDN-only minimal install boots, and the client builds its own local storage.**
 
-Tested with `wowf` 1.60.1.70245 (x64 `Wow.exe` under Wine 11.20 + DXVK on a desktop PC). The client reached the WoW Forever login screen in about 30 s with no CASC error. Scripts are in `tools/spike/` (throwaway).
+Tested with `wowf` 1.60.1.70245 (x64 `Wow.exe` under Wine 11.20 + DXVK on a desktop PC). The client reached the WoW Forever login screen in about 30 s with no CASC error.
 
 ## What the client needs
 

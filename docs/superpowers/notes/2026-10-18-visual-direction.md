@@ -1,10 +1,14 @@
-# Visual direction: "Brass on stone" (pending user approval)
+# Visual direction
 
-Look book (mockups of home, addons, install step): https://claude.ai/artifact/6KP3r7VRsswMKYhaTq37rD
+Art-led launcher in WoW Forever's own colours.
 
-- Palette: Ground #14150F, Stone #1F2118, Stone-2 #292C20, Rule #3A3D2E, Bone #E6E0CF, Ash #A39E8C, Brass #D39B3F (only accent), status Ok #8FB26A / Warn #D9774A.
-- Type: IM Fell English SC (titles and tile names only), Atkinson Hyperlegible (body; legibility on 6" screens), IBM Plex Mono (versions, sizes, progress). All OFL, bundled in res/font/fw_*.ttf.
-- Surfaces flat, 1dp hairlines, corners 2dp max, no shadows or gradients.
-- Focus and selection: a 3dp brass outline (`Modifier.focusRing()`).
-- Flavor marks: Forever = solid brass square with "F"; Classic = open ash circle with "C". The shape carries the meaning, not only the colour.
-- Tokens: `app/src/main/java/app/gamenative/wow/ui/theme/ForeverywhereTheme.kt`.
+- **Art:** home tiles, the boot splash and addon details use WoW Forever promo art from Blizzard's official page. It is loaded at runtime from Blizzard's image CDN and cached (`wow/ui/components/Art.kt`), not bundled. Text sits on a flat translucent band, with no gradient fades.
+- **Palette (from the Forever logo):** slate ink `#10171A`, slate stone `#19232A` / `#24323A`, parchment `#EFE6D6`, weathered `#A8A08F`, bronze `#C9A06A` (focus and primary actions), gem teal `#3FA7C2` (Forever-specific accents). Status colours: `#8CC08E`, `#E8925A`.
+- **Type:** Sora for titles, Manrope for everything else (OFL, `res/font/fw_*.ttf`).
+- **Shapes:** rounded corners (10 dp controls, 16 dp tiles, pill chips).
+- **Focus:** a 3 dp bronze ring with a slight lift on tiles. Bronze buttons use a parchment ring instead.
+- **Game-version marks:** Blizzard's round WoW Forever and WoW Classic icons, rendered from its icon host with AndroidSVG.
+- **Upstream screens:** upstream colour tokens, Material scheme and typography are remapped to this palette, and upstream gradients are flattened.
+- **Rule:** no gradients, no blue/purple accents, no accent-bar cards, no emoji icons.
+
+Tokens: `app/src/main/java/app/gamenative/wow/ui/theme/ForeverywhereTheme.kt`.
