@@ -81,4 +81,6 @@ WowB-ARM64/
 *.exe
 
 # Agent guidance (private)
-docs/
+docs/*
+!docs/superpowers/
+.superpowers/
