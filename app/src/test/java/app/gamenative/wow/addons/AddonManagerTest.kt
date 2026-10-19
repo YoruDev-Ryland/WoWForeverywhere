@@ -152,6 +152,23 @@ class AddonManagerTest {
     }
 
     @Test
+    fun searchMergesSameAddonDespiteAuthorAndSuffixDifferences() = runBlocking {
+        cf.addons = listOf(
+            remote("curseforge", "1", "BigWigs (Boss Timers & Tools)", "Funkydude", 900, mapOf(AddonFlavor.CLASSIC to file("c1"))),
+            remote("curseforge", "2", "Deadly Boss Mods", "MysticalOS", 800, mapOf(AddonFlavor.CLASSIC to file("c2"))),
+        )
+        wago.addons = listOf(
+            remote("wago", "bw", "BigWigs", "BigWigsMods", 10, mapOf(AddonFlavor.FOREVER to file("w1"))),
+            remote("wago", "dbm", "Deadly Boss Mods", "DeadlyBossMods", 10, mapOf(AddonFlavor.FOREVER to file("w2"))),
+            remote("wago", "dbmd", "Deadly Boss Mods - Dungeons", "DeadlyBossMods", 5, mapOf(AddonFlavor.FOREVER to file("w3"))),
+        )
+        val results = manager().search("")
+        assertEquals(3, results.size)
+        assertEquals(listOf("wago", "curseforge"), results.single { it.remote.projectId == "bw" }.sources)
+        assertEquals(listOf("wago", "curseforge"), results.single { it.remote.projectId == "dbm" }.sources)
+    }
+
+    @Test
     fun classicOnlyAddonIsMarkedClassic() = runBlocking {
         cf.addons = listOf(remote("curseforge", "1", "OldThing", latest = mapOf(AddonFlavor.CLASSIC to file("c1"))))
         val listing = manager().search("old").single()

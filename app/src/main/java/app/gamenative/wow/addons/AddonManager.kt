@@ -180,8 +180,12 @@ class AddonManager(
         }.sortedWith(compareBy<AddonListing>({ it.bestFlavor != AddonFlavor.FOREVER }, { -it.remote.downloads }))
     }
 
-    private fun mergeKey(remote: RemoteAddon): String =
-        normalize(remote.name) + "|" + normalize(remote.author.split(',').first())
+    /**
+     * Listings of one addon on different sites carry different author names (an org on GitHub, a
+     * person on WoWInterface) and decorated titles ("BigWigs (Boss Timers & Tools)"), so they merge
+     * on the name alone, without any bracketed suffix.
+     */
+    private fun mergeKey(remote: RemoteAddon): String = normalize(remote.name.replace(Regex("""\s*[(\[].*?[)\]]"""), ""))
 
     private fun normalize(text: String): String = text.lowercase().filter { it.isLetterOrDigit() }
 
