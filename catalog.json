@@ -1,0 +1,441 @@
+{
+ "generated": "2026-10-19T15:30:10+00:00",
+ "addons": [
+  {
+   "repo": "Questie/Questie",
+   "name": "Questie",
+   "summary": "Shows quest givers, objectives and turn-ins on your map and minimap.",
+   "category": "QUESTS",
+   "author": "Questie",
+   "icon": "https://avatars.githubusercontent.com/u/75445548?v=4",
+   "website": "https://github.com/Questie/Questie",
+   "stars": 1109,
+   "downloads": 11812,
+   "updated": "2026-10-12T20:34:29Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "634918920",
+     "version": "bundle/v12.1.0+v1.0.6",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.1.0%2Bv1.0.6/Questie-v12.1.0%2Bv1.0.6.zip",
+     "interface": 11508
+    },
+    "forever": {
+     "fileId": "634918920",
+     "version": "bundle/v12.1.0+v1.0.6",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.1.0%2Bv1.0.6/Questie-v12.1.0%2Bv1.0.6.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "RestedXP/RXPGuides",
+   "name": "RestedXP Guides",
+   "summary": "Step-by-step leveling guides with waypoints.",
+   "category": "QUESTS",
+   "author": "RestedXP",
+   "icon": "https://avatars.githubusercontent.com/u/84252897?v=4",
+   "website": "https://github.com/RestedXP/RXPGuides",
+   "stars": 168,
+   "downloads": 2116,
+   "updated": "2026-10-17T22:08:56Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "651739094",
+     "version": "v4.11.26",
+     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.26/RXPGuides-v4.11.26.zip",
+     "interface": 11509
+    },
+    "forever": {
+     "fileId": "651739094",
+     "version": "v4.11.26",
+     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.26/RXPGuides-v4.11.26.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "DeadlyBossMods/DeadlyBossMods",
+   "name": "Deadly Boss Mods",
+   "summary": "Raid and dungeon boss warnings and timers.",
+   "category": "RAIDS",
+   "author": "DeadlyBossMods",
+   "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
+   "website": "https://github.com/DeadlyBossMods/DeadlyBossMods",
+   "stars": 280,
+   "downloads": 997,
+   "updated": "2026-10-16T19:56:53Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "648455143",
+     "version": "12.1.15",
+     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.15/DBM-Core-12.1.15.zip",
+     "interface": 11509
+    },
+    "forever": {
+     "fileId": "648455143",
+     "version": "12.1.15",
+     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.15/DBM-Core-12.1.15.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "DeadlyBossMods/DBM-Dungeons",
+   "name": "DBM Dungeons",
+   "summary": "Dungeon modules for Deadly Boss Mods.",
+   "category": "RAIDS",
+   "author": "DeadlyBossMods",
+   "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
+   "website": "https://github.com/DeadlyBossMods/DBM-Dungeons",
+   "stars": 32,
+   "downloads": 713,
+   "updated": "2026-10-16T19:57:22Z",
+   "requires": [
+    "DeadlyBossMods/DeadlyBossMods"
+   ],
+   "files": {
+    "classic": {
+     "fileId": "648467652",
+     "version": "r267",
+     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r267/DBM-Dungeons-r267.zip",
+     "interface": 11509
+    },
+    "forever": {
+     "fileId": "648467652",
+     "version": "r267",
+     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r267/DBM-Dungeons-r267.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "BigWigsMods/BigWigs",
+   "name": "BigWigs",
+   "summary": "Lightweight boss timers and warnings.",
+   "category": "RAIDS",
+   "author": "BigWigsMods",
+   "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
+   "website": "https://github.com/BigWigsMods/BigWigs",
+   "stars": 275,
+   "downloads": 1549,
+   "updated": "2026-10-14T20:29:30Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "641574857",
+     "version": "v427.6",
+     "url": "https://github.com/BigWigsMods/BigWigs/releases/download/v427.6/BigWigs-v427.6.zip",
+     "interface": 11508
+    },
+    "forever": {
+     "fileId": "641574857",
+     "version": "v427.6",
+     "url": "https://github.com/BigWigsMods/BigWigs/releases/download/v427.6/BigWigs-v427.6.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "BigWigsMods/LittleWigs",
+   "name": "LittleWigs",
+   "summary": "Dungeon modules for BigWigs.",
+   "category": "RAIDS",
+   "author": "BigWigsMods",
+   "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
+   "website": "https://github.com/BigWigsMods/LittleWigs",
+   "stars": 114,
+   "downloads": 1381,
+   "updated": "2026-10-13T15:39:18Z",
+   "requires": [
+    "BigWigsMods/BigWigs"
+   ],
+   "files": {
+    "classic": {
+     "fileId": "637468479",
+     "version": "v12.1.21",
+     "url": "https://github.com/BigWigsMods/LittleWigs/releases/download/v12.1.21/LittleWigs-v12.1.21.zip",
+     "interface": 11508
+    }
+   }
+  },
+  {
+   "repo": "Tercioo/Plater-Nameplates",
+   "name": "Plater Nameplates",
+   "summary": "Highly customizable nameplates.",
+   "category": "UNIT_FRAMES",
+   "author": "Tercioo",
+   "icon": "https://avatars.githubusercontent.com/u/9000280?v=4",
+   "website": "https://github.com/Tercioo/Plater-Nameplates",
+   "stars": 107,
+   "downloads": 831,
+   "updated": "2026-10-15T11:38:52Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "643673602",
+     "version": "Plater-v661",
+     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v661/Plater-v661.zip",
+     "interface": 11509
+    },
+    "forever": {
+     "fileId": "643673602",
+     "version": "Plater-v661",
+     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v661/Plater-v661.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "Nevcairiel/ShadowedUnitFrames",
+   "name": "Shadowed Unit Frames",
+   "summary": "Clean, configurable unit frames.",
+   "category": "UNIT_FRAMES",
+   "author": "Nevcairiel",
+   "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
+   "website": "https://github.com/Nevcairiel/ShadowedUnitFrames",
+   "stars": 59,
+   "downloads": 21600,
+   "updated": "2026-01-18T18:37:26Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "342377330",
+     "version": "v4.3.9-classic",
+     "url": "https://github.com/Nevcairiel/ShadowedUnitFrames/releases/download/v4.3.9-classic/ShadowedUnitFrames-v4.3.9-classic.zip",
+     "interface": 11508
+    }
+   }
+  },
+  {
+   "repo": "tullamods/Dominos",
+   "name": "Dominos",
+   "summary": "Movable, configurable action bars.",
+   "category": "ACTION_BARS",
+   "author": "tullamods",
+   "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
+   "website": "https://github.com/tullamods/Dominos",
+   "stars": 83,
+   "downloads": 548,
+   "updated": "2026-10-06T12:19:06Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "615435222",
+     "version": "11.4.5",
+     "url": "https://github.com/tullamods/Dominos/releases/download/11.4.5/Dominos-11.4.5.zip",
+     "interface": 11509
+    },
+    "forever": {
+     "fileId": "615435222",
+     "version": "11.4.5",
+     "url": "https://github.com/tullamods/Dominos/releases/download/11.4.5/Dominos-11.4.5.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "Nevcairiel/Bartender4",
+   "name": "Bartender4",
+   "summary": "Full action bar replacement.",
+   "category": "ACTION_BARS",
+   "author": "Nevcairiel",
+   "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
+   "website": "https://github.com/Nevcairiel/Bartender4",
+   "stars": 76,
+   "downloads": 1354,
+   "updated": "2026-10-02T18:55:43Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "606269228",
+     "version": "4.18.3.1",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.18.3.1/Bartender4-4.18.3.1.zip",
+     "interface": 11509
+    },
+    "forever": {
+     "fileId": "606269228",
+     "version": "4.18.3.1",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.18.3.1/Bartender4-4.18.3.1.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "tullamods/OmniCC",
+   "name": "OmniCC",
+   "summary": "Cooldown counts on everything.",
+   "category": "BUFFS",
+   "author": "tullamods",
+   "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
+   "website": "https://github.com/tullamods/OmniCC",
+   "stars": 107,
+   "downloads": 19420,
+   "updated": "2025-12-14T21:07:04Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "328626081",
+     "version": "11.2.8",
+     "url": "https://github.com/tullamods/OmniCC/releases/download/11.2.8/OmniCC-11.2.8.zip",
+     "interface": 11508
+    }
+   }
+  },
+  {
+   "repo": "WeakAuras/WeakAuras2",
+   "name": "WeakAuras",
+   "summary": "Custom displays for buffs, cooldowns and almost anything else.",
+   "category": "BUFFS",
+   "author": "WeakAuras",
+   "icon": "https://avatars.githubusercontent.com/u/9121773?v=4",
+   "website": "https://github.com/WeakAuras/WeakAuras2",
+   "stars": 1444,
+   "downloads": 4726,
+   "updated": "2026-10-10T17:21:31Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "628544340",
+     "version": "5.22.1",
+     "url": "https://github.com/WeakAuras/WeakAuras2/releases/download/5.22.1/WeakAuras-5.22.1.zip",
+     "interface": 11509
+    }
+   }
+  },
+  {
+   "repo": "Nevcairiel/Mapster",
+   "name": "Mapster",
+   "summary": "World map improvements.",
+   "category": "MAP",
+   "author": "Nevcairiel",
+   "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
+   "website": "https://github.com/Nevcairiel/Mapster",
+   "stars": 21,
+   "downloads": 502,
+   "updated": "2026-10-03T14:08:46Z",
+   "requires": [],
+   "files": {
+    "forever": {
+     "fileId": "607919618",
+     "version": "1.14.0",
+     "url": "https://github.com/Nevcairiel/Mapster/releases/download/1.14.0/Mapster-1.14.0.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "Nevcairiel/HandyNotes",
+   "name": "HandyNotes",
+   "summary": "Notes and pins on the world map.",
+   "category": "MAP",
+   "author": "Nevcairiel",
+   "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
+   "website": "https://github.com/Nevcairiel/HandyNotes",
+   "stars": 20,
+   "downloads": 6747,
+   "updated": "2026-08-12T05:56:20Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "511144459",
+     "version": "v1.6.31",
+     "url": "https://github.com/Nevcairiel/HandyNotes/releases/download/v1.6.31/HandyNotes-v1.6.31.zip",
+     "interface": 11509
+    }
+   }
+  },
+  {
+   "repo": "kemayo/wow-silverdragon",
+   "name": "SilverDragon",
+   "summary": "Rare mob alerts and locations.",
+   "category": "MAP",
+   "author": "kemayo",
+   "icon": "https://avatars.githubusercontent.com/u/2187?v=4",
+   "website": "https://github.com/kemayo/wow-silverdragon",
+   "stars": 27,
+   "downloads": 35,
+   "updated": "2026-10-19T01:26:14Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "654925119",
+     "version": "v2026.40",
+     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.40/SilverDragon-v2026.40.zip",
+     "interface": 11509
+    },
+    "forever": {
+     "fileId": "654925119",
+     "version": "v2026.40",
+     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.40/SilverDragon-v2026.40.zip",
+     "interface": 16001
+    }
+   }
+  },
+  {
+   "repo": "Hoizame/AtlasLootClassic",
+   "name": "AtlasLoot Classic",
+   "summary": "Loot tables for dungeons, raids and more.",
+   "category": "RAIDS",
+   "author": "Hoizame",
+   "icon": "https://avatars.githubusercontent.com/u/45636893?v=4",
+   "website": "https://github.com/Hoizame/AtlasLootClassic",
+   "stars": 90,
+   "downloads": 127580,
+   "updated": "2023-10-22T14:37:24Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "131814691",
+     "version": "v3.2.0",
+     "url": "https://github.com/Hoizame/AtlasLootClassic/releases/download/v3.2.0/AtlasLootClassic-v3.2.0.zip",
+     "interface": 11404
+    }
+   }
+  },
+  {
+   "repo": "AdiAddons/AdiBags",
+   "name": "AdiBags",
+   "summary": "Sorted, filtered single-window bags.",
+   "category": "BAGS",
+   "author": "AdiAddons",
+   "icon": "https://avatars.githubusercontent.com/u/19425199?v=4",
+   "website": "https://github.com/AdiAddons/AdiBags",
+   "stars": 153,
+   "downloads": 97311,
+   "updated": "2024-09-08T02:20:23Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "191174591",
+     "version": "v1.10.29",
+     "url": "https://github.com/AdiAddons/AdiBags/releases/download/v1.10.29/AdiBags-v1.10.29.zip",
+     "interface": 11503
+    }
+   }
+  },
+  {
+   "repo": "SFX-WoW/Masque",
+   "name": "Masque",
+   "summary": "Skins for buttons and action bars.",
+   "category": "INTERFACE",
+   "author": "SFX-WoW",
+   "icon": "https://avatars.githubusercontent.com/u/69928556?v=4",
+   "website": "https://github.com/SFX-WoW/Masque",
+   "stars": 54,
+   "downloads": 5969,
+   "updated": "2026-08-24T15:48:33Z",
+   "requires": [],
+   "files": {
+    "classic": {
+     "fileId": "527819371",
+     "version": "12.1.0",
+     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.0/Masque-12.1.0.zip",
+     "interface": 11509
+    }
+   }
+  }
+ ]
+}
