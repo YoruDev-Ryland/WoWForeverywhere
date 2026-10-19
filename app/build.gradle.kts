@@ -19,6 +19,10 @@ val keystoreProperties: Properties? = if (keystorePropertiesFile.exists()) {
     }
 } else null
 
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
 android {
     namespace = "app.gamenative"
     compileSdk = 36
@@ -38,17 +42,19 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.wowforever"
+        applicationId = "app.wowforeverywhere"
 
         minSdk = 26
 
         manifestPlaceholders["screenOrientation"] = "unspecified"
         buildConfigField("boolean", "XR_BUILD", "false")
 
-        versionCode = 226
-        versionName = "2.2.6"
+        versionCode = 1
+        versionName = "0.1.0"
 
         buildConfigField("boolean", "GOLD", "false")
+        buildConfigField("String", "CURSEFORGE_API_KEY", "\"${localProperties.getProperty("CURSEFORGE_API_KEY", "")}\"")
+        buildConfigField("String", "WAGO_API_KEY", "\"${localProperties.getProperty("WAGO_API_KEY", "")}\"")
         val iconValue = "@mipmap/ic_launcher"
         val iconRoundValue = "@mipmap/ic_launcher_round"
         manifestPlaceholders.putAll(

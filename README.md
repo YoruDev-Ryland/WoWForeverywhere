@@ -1,3 +1,13 @@
+# WoW Foreverywhere
+
+> **Work in progress.** A fork of [jaredgei/wow-forever-android](https://github.com/jaredgei/wow-forever-android) that aims to make WoW Forever on Android a no-PC experience: install the APK, install the game from inside the app, browse and manage addons (CurseForge, Wago, GitHub, WoWInterface), and play. The game-running side (Wine/Proton, DXVK, Turnip, controller setup) comes from upstream unchanged. See `docs/superpowers/specs/` for the design.
+>
+> Installs alongside the upstream app (package `app.wowforeverywhere`). Unofficial; not affiliated with Blizzard Entertainment.
+
+The original upstream README follows.
+
+---
+
 # WoW Forever for Android
 
 Play the **World of Warcraft: Forever beta** on Snapdragon Android handhelds as a normal Android app. You tap the icon, press Play, and the game runs.

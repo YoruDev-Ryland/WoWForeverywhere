@@ -14,7 +14,7 @@ import org.json.JSONObject
 import timber.log.Timber
 
 object AppUpdater {
-    private const val RELEASES_URL = "https://api.github.com/repos/jaredgei/wow-forever-android/releases/latest"
+    private const val RELEASES_URL = "https://api.github.com/repos/YoruDev-Ryland/WoWForeverywhere/releases/latest"
 
     data class Release(
         val version: String,
@@ -69,7 +69,7 @@ object AppUpdater {
         runCatching {
             val request = Request.Builder()
                 .url(RELEASES_URL)
-                .header("User-Agent", "WoW-Forever-Android")
+                .header("User-Agent", "WoW-Foreverywhere")
                 .header("Accept", "application/vnd.github+json")
                 .build()
             Net.http.newCall(request).execute().use { response ->
@@ -89,7 +89,7 @@ object AppUpdater {
         onProgress: (Float) -> Unit,
     ): File = withContext(Dispatchers.IO) {
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
-        val dest = File(dir, "WoW-Forever-${release.version}.apk")
+        val dest = File(dir, "WoW-Foreverywhere-${release.version}.apk")
         if (dest.exists() && dest.length() == release.sizeBytes && release.sizeBytes > 0) {
             onProgress(1f)
             return@withContext dest
