@@ -17,6 +17,8 @@ import androidx.navigation.compose.rememberNavController
 import app.gamenative.PluviaApp
 import app.gamenative.events.AndroidEvent
 import app.gamenative.ui.screen.wow.BattleNetCredentialDialog
+import app.gamenative.wow.ui.addons.AddonsRoute
+import app.gamenative.wow.ui.addons.addonsControllerFor
 import app.gamenative.wow.ui.components.FwDialog
 import app.gamenative.wow.ui.theme.Fw
 import app.gamenative.wow.ui.theme.ForeverywhereTheme
@@ -41,6 +43,8 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
     val launcher = remember { LauncherController(context, scope, onLaunch) }
     val nav = rememberNavController()
     var showLoginDialog by remember { mutableStateOf(false) }
+    val addons = remember(launcher.gamePath, launcher.files.product) { addonsControllerFor(launcher.gamePath, launcher.files.product, scope) }
+    LaunchedEffect(addons) { addons?.refreshInstalled() }
 
     LaunchedEffect(Unit) { launcher.start() }
     LifecycleResumeEffect(launcher.gamePath) {
@@ -63,8 +67,8 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 composable(Routes.HOME) {
                     HomeScreen(
                         launcher = launcher,
-                        addonUpdates = null,
-                        addonCount = null,
+                        addonUpdates = addons?.updates,
+                        addonCount = addons?.installed?.size,
                         onOpenAddons = { nav.navigate(Routes.ADDONS) },
                         onOpenGame = { nav.navigate(Routes.GAME) },
                         onOpenAccount = { nav.navigate(Routes.ACCOUNT) },
@@ -76,7 +80,7 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                     AccountScreen(launcher, onBack = { nav.popBackStack() }, onEditLogin = { showLoginDialog = true })
                 }
                 composable(Routes.SETTINGS) { SettingsScreen(launcher, onBack = { nav.popBackStack() }) }
-                composable(Routes.ADDONS) { AddonsRoute(launcher, onBack = { nav.popBackStack() }) }
+                composable(Routes.ADDONS) { AddonsRoute(launcher, addons, onBack = { nav.popBackStack() }) }
                 composable(Routes.FIRST_RUN) {
                     FirstRunScreen(
                         launcher = launcher,

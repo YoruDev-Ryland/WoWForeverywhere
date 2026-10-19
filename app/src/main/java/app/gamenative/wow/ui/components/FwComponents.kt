@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -37,12 +38,14 @@ private fun Modifier.fwFrame(interaction: MutableInteractionSource, base: Color 
     return border(if (focused) 3.dp else 1.dp, if (focused) Fw.Brass else base, Fw.Shape)
 }
 
-/** A large stone tile: the home screen's building block. */
+/** A large stone tile: the home screen's building block. [footer] sits at the bottom edge. */
 @Composable
 fun FwTile(
     title: String,
     modifier: Modifier = Modifier,
     badge: String? = null,
+    titleStyle: androidx.compose.ui.text.TextStyle = Fw.Title,
+    footer: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
@@ -54,9 +57,12 @@ fun FwTile(
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(18.dp),
     ) {
-        Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(title, style = Fw.Title)
-            Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), content = content)
+        Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxSize()) {
+            Column {
+                Text(title, style = titleStyle)
+                Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), content = content)
+            }
+            footer?.invoke()
         }
         badge?.let {
             Text(
@@ -65,6 +71,16 @@ fun FwTile(
                 modifier = Modifier.align(Alignment.TopEnd).background(Fw.Warn).padding(horizontal = 7.dp, vertical = 2.dp),
             )
         }
+    }
+}
+
+/** The brass "press here" bar used inside the Play tile. Not focusable itself: the tile is. */
+@Composable
+fun FwActionBar(text: String, enabled: Boolean = true) {
+    Box(
+        Modifier.background(if (enabled) Fw.Brass else Fw.Stone2, Fw.Shape).padding(horizontal = 36.dp, vertical = 14.dp),
+    ) {
+        Text(text.uppercase(), style = Fw.Label.copy(color = if (enabled) Fw.BrassInk else Fw.Ash, fontSize = 18.sp, letterSpacing = 3.sp))
     }
 }
 

@@ -23,11 +23,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.gamenative.BuildConfig
+import app.gamenative.wow.ui.components.FwActionBar
 import app.gamenative.wow.ui.components.FwButton
 import app.gamenative.wow.ui.components.FwButtonKind
 import app.gamenative.wow.ui.components.FwTile
 import app.gamenative.wow.ui.theme.Fw
-import app.gamenative.wow.ui.theme.focusRing
 import java.io.File
 
 @Composable
@@ -91,6 +91,15 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
     FwTile(
         title = if (launcher.filesMissing) "Install" else "Play",
         modifier = modifier,
+        titleStyle = Fw.Hero,
+        footer = {
+            when {
+                launcher.busy -> FwActionBar("Working…", enabled = false)
+                launcher.filesMissing -> FwActionBar("Set up")
+                version?.isOutdated == true -> FwActionBar("Update")
+                else -> FwActionBar("Play", enabled = launcher.canPlay)
+            }
+        },
         onClick = {
             when {
                 launcher.filesMissing -> onOpenGame()
@@ -109,7 +118,7 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
             launcher.filesMissing -> Text("Download the game, or find the copy already on this device.", style = Fw.Secondary)
             version?.isOutdated == true -> {
                 Text("Live servers need ${version.remoteVersion}. Press A to update.", style = Fw.Secondary.copy(color = Fw.Warn))
-                FwButton("Launch anyway", launcher::launchGame, kind = FwButtonKind.Ghost, modifier = Modifier.focusRing())
+                FwButton("Launch anyway", launcher::launchGame, kind = FwButtonKind.Ghost)
             }
             !launcher.hasSavedLogin -> Text("No saved login: you'll sign in inside the game.", style = Fw.Secondary)
         }
