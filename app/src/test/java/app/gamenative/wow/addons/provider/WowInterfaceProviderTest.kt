@@ -1,5 +1,6 @@
 package app.gamenative.wow.addons.provider
 
+import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.provider.Fixtures.base
 import kotlinx.coroutines.runBlocking
@@ -90,5 +91,31 @@ class WowInterfaceProviderTest {
         assertEquals("https://cdn.wowinterface.com/downloads/getfile.php?id=3896&d=1792311003&minion", file.downloadUrl)
         assertEquals("v1.54.03", file.version)
         assertNull(provider.get("424242"))
+    }
+
+    @Test
+    fun listsCategoriesAndScreenshots() = runBlocking {
+        val provider = start("wowi-filelist.json")
+        val atlas = provider.search("Atlas", 0).first { it.projectId == "3896" }
+        assertEquals(setOf(AddonCategory.MAP), atlas.categories)
+        assertTrue(atlas.screenshots.isNotEmpty())
+    }
+
+    @Test
+    fun popularFiltersByCategory() = runBlocking {
+        val provider = start("wowi-filelist.json")
+        val maps = provider.popular(0, AddonCategory.MAP)
+        assertTrue(maps.isNotEmpty())
+        assertTrue(maps.all { AddonCategory.MAP in it.categories })
+        assertTrue(provider.popular(0, AddonCategory.RAIDS).none { it.projectId == "3896" })
+    }
+
+    @Test
+    fun descriptionIsPlainText() = runBlocking {
+        val provider = start("wowi-filelist.json")
+        val text = provider.description("3896")!!
+        assertTrue(text.startsWith("Make a Donation via Paypal"))
+        assertTrue("[COLOR" !in text && "[URL" !in text && "\r" !in text)
+        assertTrue("About Atlas" in text)
     }
 }

@@ -1,6 +1,7 @@
 package app.gamenative.wow.addons.provider
 
 import app.gamenative.utils.Net
+import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.ProviderIds
 import kotlinx.coroutines.async
@@ -61,7 +62,17 @@ class WagoProvider(
             downloads = first.downloadCount,
             latest = latest,
             websiteUrl = first.websiteUrl,
+            categories = first.categories.mapNotNull { AddonCategory.fromName(it) }.toSet(),
+            screenshots = first.screenshots.mapNotNull { it.image ?: it.url },
         )
+    }
+
+    override suspend fun description(projectId: String): String? =
+        details(projectId)?.description?.let(RichText::toPlain)?.takeIf { it.isNotBlank() }
+
+    private suspend fun details(projectId: String): WagoAddon? {
+        if (!enabled || projectId.isBlank() || '/' in projectId) return null
+        return http.fetchText("$base/addons/$projectId", headers)?.let { ProviderJson.decodeFromString<WagoAddon>(it) }
     }
 
     override suspend fun getMany(ids: List<String>): List<RemoteAddon> {
@@ -172,7 +183,14 @@ class WagoProvider(
         @SerialName("website_url") val websiteUrl: String? = null,
         @SerialName("recent_releases") val recentReleases: Map<String, WagoRelease>? = null,
         @SerialName("recent_release") val recentRelease: Map<String, WagoRelease>? = null,
+        // Not confirmed against the live API (needs a key); optional so their absence is harmless.
+        val description: String? = null,
+        val categories: List<String> = emptyList(),
+        val screenshots: List<WagoScreenshot> = emptyList(),
     )
+
+    @Serializable
+    private data class WagoScreenshot(val image: String? = null, val url: String? = null)
 
     @Serializable
     private data class WagoRecents(val addons: Map<String, WagoScanAddon> = emptyMap())

@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import app.gamenative.wow.addons.AddonCategory
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -79,19 +82,23 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit) {
             FwButton("Back", onBack, kind = FwButtonKind.Ghost)
             FwChip("Installed ${c.installed?.size ?: "…"}", c.mode == AddonsController.Mode.INSTALLED, { c.switchMode(AddonsController.Mode.INSTALLED) })
             FwChip("Browse", c.mode == AddonsController.Mode.BROWSE, { c.switchMode(AddonsController.Mode.BROWSE) })
-            if (wideBar) SearchField(c.query, c::search, Modifier.weight(1f))
+            if (wideBar) SearchField(c.query, c::search, Modifier.weight(1f)) else Box(Modifier.weight(1f))
+            c.updates?.takeIf { it > 0 }?.let { FwButton("Update all ($it)", c::updateAll, enabled = c.working == null) }
+            if (wideBar) FwButton("From link", { showUrlDialog = true }, kind = FwButtonKind.Ghost)
         }
         if (!wideBar) SearchField(c.query, c::search, Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp))
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        // One scrolling row of filters: game version, source, then categories.
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 10.dp),
         ) {
-            FwChip(if (c.includeClassic) "Forever + Classic" else "Forever only", false, c::toggleClassic)
-            FwChip(c.source?.let(::sourceName) ?: "All sources", false, c::cycleSource)
-            Box(Modifier.weight(1f))
-            FwButton("From link", { showUrlDialog = true }, kind = FwButtonKind.Ghost)
-            c.updates?.takeIf { it > 0 }?.let { FwButton("Update all ($it)", c::updateAll, enabled = c.working == null) }
+            item { FwChip(if (c.includeClassic) "Forever + Classic" else "Forever only", false, c::toggleClassic) }
+            item { FwChip(c.source?.let(::sourceName) ?: "All sources", false, c::cycleSource) }
+            item { Box(Modifier.width(1.dp).height(42.dp).background(Fw.Rule)) }
+            item { FwChip("All categories", c.category == null, { c.selectCategory(null) }) }
+            items(AddonCategory.entries) { cat -> FwChip(cat.label, c.category == cat, { c.selectCategory(cat) }) }
+            if (!wideBar) item { FwButton("From link", { showUrlDialog = true }, kind = FwButtonKind.Ghost) }
         }
         (c.working ?: c.message)?.let {
             Text(it, style = Fw.Secondary.copy(color = if (c.working != null) Fw.Brass else Fw.Ash), modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
@@ -158,11 +165,15 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
                         },
                         onFocus = { if (c.selected != listing) c.selected = listing },
                     ) {
-                        FlavorMark(listing.bestFlavor)
+                        AddonIcon(listing, 44)
                         Column(Modifier.weight(1f)) {
-                            Text(listing.remote.name, style = Fw.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(listing.remote.name, style = Fw.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                                FlavorMark(listing.bestFlavor, size = 20)
+                            }
                             Text(
                                 listOfNotNull(
+                                    listing.remote.categories.firstOrNull()?.label,
                                     listing.sources.joinToString(" · ", transform = ::sourceName).takeIf { it.isNotBlank() },
                                     listing.remote.downloads.takeIf { it > 0 }?.let { "${compact(it)} downloads" },
                                 ).joinToString(" · "),
@@ -187,45 +198,91 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
 private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifier) {
     val remote = listing.remote
     val file = remote.latest[listing.bestFlavor] ?: remote.latest.values.firstOrNull()
+    LaunchedEffect(c.keyOf(listing)) { c.loadDescription(listing) }
+    val description = c.descriptions[c.keyOf(listing)]
     Column(modifier.clip(Fw.TileShape).background(Fw.Stone).verticalScroll(rememberScrollState())) {
-        Box(Modifier.fillMaxWidth().height(120.dp).background(Fw.Stone2)) {
-            ArtImage(remote.iconUrl ?: ForeverArt.INTERFACE.url, Modifier.fillMaxSize(), zoom = if (remote.iconUrl == null) ForeverArt.INTERFACE.zoom else 1f)
+        Box(Modifier.fillMaxWidth().height(150.dp).background(Fw.Stone2)) {
+            val banner = remote.screenshots.firstOrNull()
+            if (banner != null) {
+                ArtImage(banner, Modifier.fillMaxSize(), fitIfNarrowerThan = 640)
+            } else {
+                ArtImage(ForeverArt.INTERFACE, Modifier.fillMaxSize())
+            }
         }
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FlavorMark(listing.bestFlavor, size = 36)
-            Text(remote.name, style = Fw.Title)
-        }
-        Text(flavorLabel(listing.bestFlavor), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.FOREVER) Fw.Gem else Fw.Ash))
-        if (remote.summary.isNotBlank()) Text(remote.summary, style = Fw.Text)
-        Facts(
-            listOfNotNull(
-                remote.author.takeIf { it.isNotBlank() }?.let { "By" to it },
-                file?.let { "Latest" to it.version },
-                listing.installed?.version?.let { "Installed" to it },
-                "Source" to listing.sources.joinToString(", ", transform = ::sourceName).ifBlank { "This device" },
-                file?.dependencies?.takeIf { it.isNotEmpty() }?.let { "Also installs" to "${it.size} required libraries" },
-                listing.installed?.folders?.let { "Folders" to it.joinToString(", ") },
-            ),
-        )
-        remote.websiteUrl?.let { Text(it, style = Fw.Data) }
-        if (file != null && !file.installable) {
-            Text("The author doesn't allow downloads through other apps. Get it from the website above.", style = Fw.Secondary.copy(color = Fw.Warn))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            val idle = c.working == null
-            when {
-                listing.installed == null -> FwButton("Install", { c.install(listing) }, enabled = idle && file?.installable == true)
-                listing.updateAvailable -> FwButton(
-                    if (listing.installed.flavor == AddonFlavor.CLASSIC && listing.bestFlavor == AddonFlavor.FOREVER) "Switch to Forever version" else "Update",
-                    { c.update(listing) },
-                    enabled = idle,
-                )
-                else -> FwButton("Installed", {}, enabled = false)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                AddonIcon(listing, 56)
+                Column(Modifier.weight(1f)) {
+                    Text(remote.name, style = Fw.Title)
+                    if (remote.author.isNotBlank()) Text("by ${remote.author}", style = Fw.Secondary)
+                }
             }
-            if (listing.installed != null) FwButton("Remove", { c.remove(listing) }, kind = FwButtonKind.Danger, enabled = idle)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlavorMark(listing.bestFlavor, size = 22)
+                Text(flavorLabel(listing.bestFlavor), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.FOREVER) Fw.Gem else Fw.Ash))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val idle = c.working == null
+                when {
+                    listing.installed == null -> FwButton("Install", { c.install(listing) }, enabled = idle && file?.installable == true)
+                    listing.updateAvailable -> FwButton(
+                        if (listing.installed.flavor == AddonFlavor.CLASSIC && listing.bestFlavor == AddonFlavor.FOREVER) "Switch to Forever version" else "Update",
+                        { c.update(listing) },
+                        enabled = idle,
+                    )
+                    else -> FwButton("Installed", {}, enabled = false)
+                }
+                if (listing.installed != null) FwButton("Remove", { c.remove(listing) }, kind = FwButtonKind.Danger, enabled = idle)
+            }
+            if (file != null && !file.installable) {
+                Text("The author doesn't allow downloads through other apps. Get it from the website below.", style = Fw.Secondary.copy(color = Fw.Warn))
+            }
+            if (remote.categories.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    remote.categories.take(3).forEach { cat ->
+                        Text(cat.label, style = Fw.Label.copy(fontSize = 12.sp, color = Fw.Ash), modifier = Modifier.background(Fw.Stone2, Fw.Pill).padding(horizontal = 12.dp, vertical = 5.dp))
+                    }
+                }
+            }
+            Text(
+                when {
+                    description != null -> description
+                    c.keyOf(listing) in c.descriptions -> remote.summary.ifBlank { "No description." }
+                    else -> remote.summary.ifBlank { "Loading description…" }
+                },
+                style = Fw.Text.copy(color = Fw.Bone),
+                maxLines = 40,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (remote.screenshots.size > 1) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(remote.screenshots.drop(1).take(8)) { shot ->
+                        Box(Modifier.size(width = 168.dp, height = 96.dp).clip(Fw.Shape).background(Fw.Stone2)) {
+                            ArtImage(shot, Modifier.fillMaxSize(), fitIfNarrowerThan = 320)
+                        }
+                    }
+                }
+            }
+            Facts(
+                listOfNotNull(
+                    file?.let { "Latest" to it.version },
+                    listing.installed?.version?.let { "Installed" to it },
+                    "Source" to listing.sources.joinToString(", ", transform = ::sourceName).ifBlank { "This device" },
+                    file?.dependencies?.takeIf { it.isNotEmpty() }?.let { "Also installs" to "${it.size} required libraries" },
+                    listing.installed?.folders?.let { "Folders" to it.joinToString(", ") },
+                ),
+            )
+            remote.websiteUrl?.let { Text(it, style = Fw.Data) }
         }
-        }
+    }
+}
+
+/** The addon's own icon from its source; falls back to the Forever/Classic mark. */
+@Composable
+private fun AddonIcon(listing: AddonListing, size: Int) {
+    val url = listing.remote.iconUrl
+    Box(Modifier.size(size.dp).clip(Fw.Shape).background(Fw.Stone2), contentAlignment = Alignment.Center) {
+        if (url == null) FlavorMark(listing.bestFlavor, size = (size * 0.6f).toInt()) else ArtImage(url, Modifier.fillMaxSize())
     }
 }
 

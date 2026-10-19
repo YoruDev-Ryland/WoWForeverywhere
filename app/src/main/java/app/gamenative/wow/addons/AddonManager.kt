@@ -27,6 +27,8 @@ data class AddonListing(
     val installed: InstalledAddon?,
     val updateAvailable: Boolean,
     val sources: List<String>,
+    /** Project id on each source, for follow-up calls such as [AddonManager.description]. */
+    val sourceIds: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -44,10 +46,22 @@ class AddonManager(
 ) {
     private val lock = Mutex()
 
-    suspend fun search(query: String, includeClassic: Boolean = true): List<AddonListing> =
-        browse(includeClassic) { it.search(query, 0) }
+    suspend fun search(query: String, includeClassic: Boolean = true, category: AddonCategory? = null): List<AddonListing> =
+        browse(includeClassic, category) { it.search(query, 0) }
 
-    suspend fun popular(includeClassic: Boolean = true): List<AddonListing> = browse(includeClassic) { it.popular(0) }
+    suspend fun popular(includeClassic: Boolean = true, category: AddonCategory? = null): List<AddonListing> =
+        browse(includeClassic, category) { it.popular(0, category) }
+
+    /** The long description from the first of [listing]'s sources that has one. */
+    suspend fun description(listing: AddonListing): String? {
+        val order = listOf(listing.remote.provider) + listing.sources
+        for (providerId in order.distinct()) {
+            val provider = providers.firstOrNull { it.id == providerId && it.enabled } ?: continue
+            val projectId = if (providerId == listing.remote.provider) listing.remote.projectId else listing.sourceIds[providerId] ?: continue
+            safely { provider.description(projectId) }?.let { return it }
+        }
+        return listing.remote.summary.takeIf { it.isNotBlank() }
+    }
 
     /** Every installed addon (database plus anything found on disk), with update state. */
     suspend fun installed(): List<AddonListing> {
@@ -124,12 +138,18 @@ class AddonManager(
 
     // --- browsing -------------------------------------------------------------------------------
 
-    private suspend fun browse(includeClassic: Boolean, call: suspend (AddonProvider) -> List<RemoteAddon>): List<AddonListing> {
+    private suspend fun browse(
+        includeClassic: Boolean,
+        category: AddonCategory?,
+        call: suspend (AddonProvider) -> List<RemoteAddon>,
+    ): List<AddonListing> {
         val results = coroutineScope {
             providers.filter { it.enabled }.map { p -> async { safely { call(p) }.orEmpty() } }.awaitAll().flatten()
         }
         val records = db.load()
-        return merge(results, records).filter { includeClassic || it.bestFlavor != AddonFlavor.CLASSIC }
+        return merge(results, records)
+            .filter { includeClassic || it.bestFlavor != AddonFlavor.CLASSIC }
+            .filter { category == null || category in it.remote.categories }
     }
 
     private fun merge(results: List<RemoteAddon>, records: List<InstalledAddon>): List<AddonListing> {
@@ -139,11 +159,18 @@ class AddonManager(
             val primary = group.maxWith(compareBy<RemoteAddon>({ AddonFlavor.FOREVER in it.latest }, { it.downloads }))
             val installed = records.firstOrNull { record -> group.any { record.source.matches(it) } }
             AddonListing(
-                remote = primary,
+                // Sources fill in for each other: one may list categories or screenshots another lacks.
+                remote = primary.copy(
+                    summary = primary.summary.ifBlank { group.firstOrNull { it.summary.isNotBlank() }?.summary.orEmpty() },
+                    iconUrl = primary.iconUrl ?: group.firstNotNullOfOrNull { it.iconUrl },
+                    categories = group.flatMap { it.categories }.toSet(),
+                    screenshots = primary.screenshots.ifEmpty { group.firstOrNull { it.screenshots.isNotEmpty() }?.screenshots.orEmpty() },
+                ),
                 bestFlavor = bestFlavor(group),
                 installed = installed,
                 updateAvailable = installed != null && needsUpdate(installed, group),
                 sources = (listOf(primary) + group).map { it.provider }.distinct(),
+                sourceIds = group.associate { it.provider to it.projectId },
             )
         }.sortedWith(compareBy<AddonListing>({ it.bestFlavor != AddonFlavor.FOREVER }, { -it.remote.downloads }))
     }

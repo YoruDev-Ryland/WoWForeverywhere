@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.gamenative.BuildConfig
 import app.gamenative.utils.Net
+import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonDb
 import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.AddonListing
@@ -49,6 +50,13 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
         private set
     var source by mutableStateOf<String?>(null)
         private set
+    var category by mutableStateOf<AddonCategory?>(null)
+        private set
+
+    /** Long descriptions by addon key, loaded when an addon is selected. */
+    var descriptions by mutableStateOf<Map<String, String?>>(emptyMap())
+        private set
+    private var descriptionJob: Job? = null
     var listings by mutableStateOf<List<AddonListing>>(emptyList())
         private set
     var installed by mutableStateOf<List<AddonListing>?>(null)
@@ -90,6 +98,25 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
         if (mode == Mode.INSTALLED) show(installed.orEmpty()) else load()
     }
 
+    fun selectCategory(value: AddonCategory?) {
+        category = value
+        if (mode == Mode.INSTALLED) show(installed.orEmpty()) else load()
+    }
+
+    fun keyOf(listing: AddonListing) = "${listing.remote.provider}:${listing.remote.projectId}"
+
+    /** Fetches the long description for [listing] once; shows the summary until it arrives. */
+    fun loadDescription(listing: AddonListing) {
+        val key = keyOf(listing)
+        if (key in descriptions) return
+        descriptionJob?.cancel()
+        descriptionJob = scope.launch {
+            delay(250)
+            val text = runCatching { withContext(Dispatchers.IO) { manager.description(listing) } }.getOrNull()
+            descriptions = descriptions + (key to text)
+        }
+    }
+
     fun cycleSource() {
         source = (listOf<String?>(null) + sources).let { all -> all[(all.indexOf(source) + 1) % all.size] }
         if (mode == Mode.INSTALLED) show(installed.orEmpty()) else load()
@@ -102,7 +129,7 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
             loading = true
             try {
                 val found = withContext(Dispatchers.IO) {
-                    if (query.isBlank()) manager.popular(includeClassic) else manager.search(query, includeClassic)
+                    if (query.isBlank()) manager.popular(includeClassic, category) else manager.search(query, includeClassic, category)
                 }
                 show(found)
             } catch (e: CancellationException) {
@@ -121,6 +148,7 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
         listings = items.filter { listing ->
             (includeClassic || listing.bestFlavor != AddonFlavor.CLASSIC) &&
                 (source == null || source in listing.sources) &&
+                (mode == Mode.BROWSE || category == null || category in listing.remote.categories) &&
                 (mode == Mode.BROWSE || q.isEmpty() || q in listing.remote.name.lowercase())
         }
         selected = selected?.let { sel -> listings.firstOrNull { it.remote.projectId == sel.remote.projectId } } ?: listings.firstOrNull()

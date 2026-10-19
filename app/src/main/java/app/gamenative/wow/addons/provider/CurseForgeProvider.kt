@@ -1,6 +1,7 @@
 package app.gamenative.wow.addons.provider
 
 import app.gamenative.utils.Net
+import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.ProviderIds
 import app.gamenative.wow.addons.SourceRef
@@ -26,9 +27,37 @@ class CurseForgeProvider(
 
     private val headers by lazy { Headers.headersOf("x-api-key", apiKey, "Accept", "application/json") }
 
-    override suspend fun search(query: String, page: Int): List<RemoteAddon> {
+    override suspend fun search(query: String, page: Int): List<RemoteAddon> = searchIn(query, page, null)
+
+    override suspend fun popular(page: Int, category: AddonCategory?): List<RemoteAddon> = searchIn("", page, category)
+
+    override suspend fun description(projectId: String): String? {
+        if (!enabled || projectId.toLongOrNull() == null) return null
+        val body = http.fetchText("${apiBase.trimEnd('/')}/v1/mods/$projectId/description", headers) ?: return null
+        return RichText.toPlain(ProviderJson.decodeFromString<CfText>(body).data).takeIf { it.isNotBlank() }
+    }
+
+    /** CurseForge's own category ids that map onto [category], looked up once per session. */
+    private var categoryIds: Map<AddonCategory, List<Long>>? = null
+
+    private suspend fun idsFor(category: AddonCategory): List<Long> {
+        val all = categoryIds ?: run {
+            val body = http.fetchText("${apiBase.trimEnd('/')}/v1/categories?gameId=$GAME_ID", headers)
+            val list = body?.let { ProviderJson.decodeFromString<CfCategories>(it).data }.orEmpty()
+            list.filter { it.isClass != true }
+                .mapNotNull { c -> AddonCategory.fromName(c.name)?.let { it to c.id } }
+                .groupBy({ it.first }, { it.second })
+                .also { if (body != null) categoryIds = it }
+        }
+        return all[category].orEmpty()
+    }
+
+    private suspend fun searchIn(query: String, page: Int, category: AddonCategory?): List<RemoteAddon> {
         if (!enabled) return emptyList()
+        val ids = category?.let { idsFor(it) }
+        if (category != null && ids.isNullOrEmpty()) return emptyList()
         val url = "${apiBase.trimEnd('/')}/v1/mods/search".toHttpUrl().newBuilder()
+            .apply { if (!ids.isNullOrEmpty()) addQueryParameter("categoryIds", ids.take(10).joinToString(",", "[", "]")) }
             .addQueryParameter("gameId", GAME_ID.toString())
             .addQueryParameter("searchFilter", query)
             .addQueryParameter("sortField", SORT_POPULARITY.toString())
@@ -73,6 +102,8 @@ class CurseForgeProvider(
             downloads = mod.downloadCount.toLong(),
             latest = latest,
             websiteUrl = mod.links?.websiteUrl,
+            categories = mod.categories.mapNotNull { AddonCategory.fromName(it.name) }.toSet(),
+            screenshots = mod.screenshots.mapNotNull { it.url ?: it.thumbnailUrl },
         )
     }
 
@@ -130,7 +161,21 @@ class CurseForgeProvider(
         val allowModDistribution: Boolean? = null,
         val latestFiles: List<CfFile> = emptyList(),
         val latestFilesIndexes: List<CfFileIndex> = emptyList(),
+        val categories: List<CfCategory> = emptyList(),
+        val screenshots: List<CfScreenshot> = emptyList(),
     )
+
+    @Serializable
+    private data class CfCategory(val id: Long = 0, val name: String = "", val isClass: Boolean? = null)
+
+    @Serializable
+    private data class CfCategories(val data: List<CfCategory> = emptyList())
+
+    @Serializable
+    private data class CfScreenshot(val url: String? = null, val thumbnailUrl: String? = null)
+
+    @Serializable
+    private data class CfText(val data: String = "")
 
     @Serializable
     private data class CfLinks(val websiteUrl: String? = null)

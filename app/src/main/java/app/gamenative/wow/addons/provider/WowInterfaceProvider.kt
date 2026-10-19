@@ -1,6 +1,7 @@
 package app.gamenative.wow.addons.provider
 
 import app.gamenative.utils.Net
+import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.ProviderIds
 import kotlinx.coroutines.sync.Mutex
@@ -35,6 +36,15 @@ class WowInterfaceProvider(
     }
 
     override suspend fun popular(page: Int): List<RemoteAddon> = page(page) { true }
+
+    override suspend fun popular(page: Int, category: AddonCategory?): List<RemoteAddon> =
+        page(page) { category == null || AddonCategory.fromWowInterfaceId(it.categoryId) == category }
+
+    override suspend fun description(projectId: String): String? =
+        http.fetchText("${apiBase.trimEnd('/')}/filedetails/$projectId.json")
+            ?.let { ProviderJson.decodeFromString<List<WowiDetails>>(it).firstOrNull()?.description }
+            ?.let(RichText::toPlain)
+            ?.takeIf { it.isNotBlank() }
 
     override suspend fun get(projectId: String): RemoteAddon? {
         val entry = fileList().firstOrNull { it.uid == projectId } ?: return null
@@ -92,6 +102,8 @@ class WowInterfaceProvider(
             downloads = entry.downloads.toLongOrNull() ?: 0,
             latest = listOf(AddonFlavor.FOREVER, AddonFlavor.CLASSIC).filter { it in flavors }.associateWith { file },
             websiteUrl = entry.infoUrl,
+            categories = setOfNotNull(AddonCategory.fromWowInterfaceId(entry.categoryId)),
+            screenshots = entry.images.orEmpty(),
         )
     }
 
@@ -111,6 +123,7 @@ class WowInterfaceProvider(
     @Serializable
     private data class WowiFile(
         @SerialName("UID") val uid: String,
+        @SerialName("UICATID") val categoryId: String = "",
         @SerialName("UIVersion") val version: String = "",
         @SerialName("UIDate") val date: Long = 0,
         @SerialName("UIName") val name: String,
@@ -120,6 +133,7 @@ class WowInterfaceProvider(
         @SerialName("UICompatibility") val compatibility: List<WowiCompat> = emptyList(),
         @SerialName("UIDir") val dirs: List<String> = emptyList(),
         @SerialName("UIIMG_Thumbs") val thumbs: List<String>? = null,
+        @SerialName("UIIMGs") val images: List<String>? = null,
     )
 
     @Serializable
@@ -132,6 +146,7 @@ class WowInterfaceProvider(
         @SerialName("UIDate") val date: Long? = null,
         @SerialName("UIDownload") val download: String? = null,
         @SerialName("UIMD5") val md5: String? = null,
+        @SerialName("UIDescription") val description: String? = null,
     )
 
     companion object {

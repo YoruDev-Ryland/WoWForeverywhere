@@ -1,5 +1,6 @@
 package app.gamenative.wow.addons.provider
 
+import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.SourceRef
 
@@ -14,6 +15,9 @@ data class RemoteAddon(
     val downloads: Long,
     val latest: Map<AddonFlavor, RemoteFile>,
     val websiteUrl: String?,
+    val categories: Set<AddonCategory> = emptySet(),
+    /** Preview image URLs, largest available. */
+    val screenshots: List<String> = emptyList(),
 )
 
 /**
@@ -41,4 +45,25 @@ interface AddonProvider {
     suspend fun popular(page: Int): List<RemoteAddon>
     suspend fun get(projectId: String): RemoteAddon?
     suspend fun getMany(ids: List<String>): List<RemoteAddon>
+
+    /** Popular addons in [category]. Sources that can't filter by category return [popular]. */
+    suspend fun popular(page: Int, category: AddonCategory?): List<RemoteAddon> = popular(page)
+
+    /** The long description as plain text, or null if the source has none. */
+    suspend fun description(projectId: String): String? = null
+}
+
+/** Turns HTML or BBCode descriptions into readable plain text (paragraphs and list bullets kept). */
+object RichText {
+    fun toPlain(text: String): String = text
+        .replace(Regex("(?i)<br\\s*/?>|</p>|</h[1-6]>|</div>|</li>|</ul>|</ol>"), "\n")
+        .replace(Regex("(?i)<li[^>]*>"), "• ")
+        .replace(Regex("\\[\\*]"), "\n• ")
+        .replace(Regex("<[^>]+>"), "")
+        .replace(Regex("(?i)\\[/?(url|color|size|b|i|u|s|center|left|right|font|quote|code|list|img|indent|highlight|spoiler)(?:[=\\s][^\\]]*)?]"), "")
+        .replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'")
+        .replace("\r", "")
+        .lines().joinToString("\n") { it.trim() }
+        .replace(Regex("\n{3,}"), "\n\n")
+        .trim()
 }

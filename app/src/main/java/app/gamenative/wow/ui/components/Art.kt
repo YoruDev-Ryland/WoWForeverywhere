@@ -37,10 +37,13 @@ enum class ForeverArt(val path: String, val zoom: Float = 1f) {
 }
 
 object ArtCache {
-    private val memory = HashMap<String, ImageBitmap>()
+    /** Decoded images, capped at about 48 MB; anything evicted is re-read from the disk cache. */
+    private val memory = object : android.util.LruCache<String, ImageBitmap>(48 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: ImageBitmap) = value.width * value.height * 4
+    }
 
     suspend fun load(context: Context, url: String): ImageBitmap? {
-        synchronized(memory) { memory[url] }?.let { return it }
+        memory.get(url)?.let { return it }
         return withContext(Dispatchers.IO) {
             runCatching {
                 val dir = File(context.cacheDir, "art").apply { mkdirs() }
@@ -53,24 +56,36 @@ object ArtCache {
                     }
                     temp.renameTo(file)
                 }
-                BitmapFactory.decodeFile(file.path)?.asImageBitmap()?.also { synchronized(memory) { memory[url] = it } }
+                decode(file)?.asImageBitmap()?.also { memory.put(url, it) }
             }.onFailure { Timber.w(it, "Art load failed: $url") }.getOrNull()
         }
     }
+
+    /** Decodes at most ~1600 px wide: screenshots can be far larger than any tile. */
+    private fun decode(file: File): android.graphics.Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.path, bounds)
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= MAX_WIDTH) sample *= 2
+        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
+    }
+
+    private const val MAX_WIDTH = 1600
 
     private fun sha1(s: String) = MessageDigest.getInstance("SHA-1").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }
 }
 
 /** Full-bleed art that fills its parent; shows nothing (the parent's surface) until loaded or when offline. */
 @Composable
-fun ArtImage(url: String?, modifier: Modifier = Modifier, zoom: Float = 1f) {
+fun ArtImage(url: String?, modifier: Modifier = Modifier, zoom: Float = 1f, fitIfNarrowerThan: Int = 0) {
     val context = LocalContext.current
     val image by produceState<ImageBitmap?>(null, url) { value = url?.let { ArtCache.load(context, it) } }
     image?.let {
         Image(
             bitmap = it,
             contentDescription = null,
-            contentScale = ContentScale.Crop,
+            // Small previews stay sharp at their own size instead of being blown up to fill the box.
+            contentScale = if (it.width < fitIfNarrowerThan) ContentScale.Fit else ContentScale.Crop,
             modifier = modifier.graphicsLayer {
                 scaleX = zoom
                 scaleY = zoom
