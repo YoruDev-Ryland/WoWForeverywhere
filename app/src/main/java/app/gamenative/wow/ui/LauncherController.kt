@@ -136,8 +136,11 @@ class LauncherController(
     }
 
     fun onLoginSaved(login: BattleNetSignIn.Login) {
-        BattleNetSignIn.save(context, login)
-        hasSavedLogin = true
+        if (BattleNetSignIn.save(context, login)) {
+            hasSavedLogin = true
+        } else {
+            errorMessage = "Couldn't save your login on this device. You can still sign in inside the game."
+        }
     }
 
     fun forgetLogin() {

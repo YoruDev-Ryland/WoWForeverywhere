@@ -48,9 +48,14 @@ object BattleNetSignIn {
         }
     }
 
-    fun save(context: Context, login: Login) {
+    /** Returns false (and logs why) when the device's keystore refuses; the app keeps running. */
+    fun save(context: Context, login: Login): Boolean = try {
         LoginVault(context).save(login.email, login.password)
         prefs(context).edit().clear().commit()
+        true
+    } catch (e: Exception) {
+        Timber.e(e, "Couldn't save the Battle.net login")
+        false
     }
 
     fun forget(context: Context) {

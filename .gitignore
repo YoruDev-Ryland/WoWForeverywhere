@@ -85,3 +85,4 @@ docs/*
 !docs/superpowers/
 .superpowers/
 .claude/
+pluvia_crash_*.txt

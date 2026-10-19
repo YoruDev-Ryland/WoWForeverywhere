@@ -1,7 +1,6 @@
 package app.gamenative.wow
 
 import android.content.Context
-import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -14,9 +13,13 @@ import org.json.JSONObject
 
 /**
  * Stores the Battle.net login for auto-login. Email and password are sealed together with
- * AES-256-GCM under a non-exportable Android Keystore key (hardware-backed where the device has it,
- * usable only while the device is unlocked). GCM authenticates the data, so a tampered value fails
- * to open instead of decrypting to garbage. Nothing is stored in the clear.
+ * AES-256-GCM under a non-exportable Android Keystore key (hardware-backed where the device has it).
+ * GCM authenticates the data, so a tampered value fails to open instead of decrypting to garbage.
+ * Nothing is stored in the clear.
+ *
+ * The key deliberately doesn't use `setUnlockedDeviceRequired`: on Android 15 such a key can't be
+ * used at all on a device without a screen lock (common on handhelds), and fails with
+ * UserNotAuthenticatedException.
  *
  * The game itself still needs the password in plain text at launch (see `BattleNetSignIn`), so this
  * protects the saved copy, not that hand-off.
@@ -55,13 +58,14 @@ class LoginVault(context: Context) {
 
     private fun key(): SecretKey {
         val store = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+        // A key from an earlier build was created with setUnlockedDeviceRequired; it can't be fixed in place.
+        if (store.containsAlias(OLD_KEY_ALIAS)) store.deleteEntry(OLD_KEY_ALIAS)
         (store.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry)?.let { return it.secretKey }
         val spec = KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setKeySize(256)
             .setRandomizedEncryptionRequired(true)
-            .apply { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) setUnlockedDeviceRequired(true) }
             .build()
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE).apply { init(spec) }.generateKey()
     }
@@ -70,7 +74,8 @@ class LoginVault(context: Context) {
         const val PREFS = "battle_net_vault"
         const val KEY_SEALED = "sealed"
         const val KEYSTORE = "AndroidKeyStore"
-        const val KEY_ALIAS = "foreverywhere_battle_net"
+        const val KEY_ALIAS = "foreverywhere_battle_net_v2"
+        const val OLD_KEY_ALIAS = "foreverywhere_battle_net"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val IV_BYTES = 12
         const val TAG_BITS = 128
