@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.gamenative.Crypto
+import app.gamenative.wow.LoginVault
 import app.gamenative.wow.product.WowProduct
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,11 +38,9 @@ object BattleNetSignIn {
     data class Login(val email: String, val password: String)
 
     fun load(context: Context): Login? {
-        val prefs = prefs(context)
-        val email = prefs.getString(KEY_EMAIL, null) ?: return null
-        val sealed = prefs.getString(KEY_PASSWORD, null) ?: return null
+        migrateLegacy(context)
         return try {
-            Login(email, String(Crypto.decrypt(Base64.decode(sealed, Base64.NO_WRAP))))
+            LoginVault(context).load()?.let { (email, password) -> Login(email, password) }
         } catch (e: Exception) {
             Timber.w(e, "Saved Battle.net login unreadable, clearing it")
             forget(context)
@@ -50,18 +49,39 @@ object BattleNetSignIn {
     }
 
     fun save(context: Context, login: Login) {
-        val sealed = Base64.encodeToString(Crypto.encrypt(login.password.toByteArray()), Base64.NO_WRAP)
-        prefs(context).edit().putString(KEY_EMAIL, login.email).putString(KEY_PASSWORD, sealed).apply()
+        LoginVault(context).save(login.email, login.password)
+        prefs(context).edit().clear().commit()
     }
 
     fun forget(context: Context) {
-        prefs(context).edit().clear().apply()
+        LoginVault(context).clear()
+        prefs(context).edit().clear().commit()
+    }
+
+    /** Moves a login saved by the original app (plain-text email, AES-CBC password) into the vault. */
+    private fun migrateLegacy(context: Context) {
+        val prefs = prefs(context)
+        val email = prefs.getString(KEY_EMAIL, null) ?: return
+        val sealed = prefs.getString(KEY_PASSWORD, null)
+        runCatching { sealed?.let { String(Crypto.decrypt(Base64.decode(it, Base64.NO_WRAP))) } }
+            .getOrNull()
+            ?.let { LoginVault(context).save(email, it) }
+        prefs.edit().clear().commit()
     }
 
     fun writeLoginFile(gameRoot: File, product: WowProduct, login: Login) {
         try {
             val file = File(File(gameRoot, product.flavorDir), "login.txt")
             file.parentFile?.mkdirs()
+            // Keeps the media scanner out of this folder, so only the game reads login.txt.
+            File(file.parentFile, ".nomedia").takeUnless { it.exists() }?.createNewFile()
+            file.delete()
+            file.createNewFile()
+            // Owner-only where the filesystem honours it (shared storage usually doesn't).
+            file.setReadable(false, false)
+            file.setReadable(true, true)
+            file.setWritable(false, false)
+            file.setWritable(true, true)
             file.writeText("${login.email}\n${login.password}\n")
         } catch (e: Exception) {
             Timber.e(e, "Failed to write login.txt")
@@ -83,11 +103,28 @@ object BattleNetSignIn {
         }
     }
 
+    /**
+     * Wipes login.txt as soon as it has done its job. The game reads it once at start-up, so the file
+     * is wiped [AFTER_READ_MS] after its contents are first read. The original triggers stay as a backstop: a
+     * large Hotfix.log (the client is past login) or [MAX_LIFETIME_MS] at most.
+     */
     fun startLoginWatcher(gameRoot: File, product: WowProduct) {
+        val dir = File(gameRoot, product.flavorDir)
+        val readObserver = object : android.os.FileObserver(dir, ACCESS) {
+            override fun onEvent(event: Int, path: String?) {
+                if (path != "login.txt") return
+                stopWatching()
+                CoroutineScope(Dispatchers.IO).launch {
+                    delay(AFTER_READ_MS)
+                    removeLoginFile(gameRoot)
+                }
+            }
+        }
+        runCatching { readObserver.startWatching() }.onFailure { Timber.w(it, "Can't watch login.txt; using timers only") }
         CoroutineScope(Dispatchers.IO).launch {
             val hotfixLog = File(File(gameRoot, product.flavorDir), "Logs/Hotfix.log")
             hotfixLog.delete()
-            val deadline = System.currentTimeMillis() + 180_000L
+            val deadline = System.currentTimeMillis() + MAX_LIFETIME_MS
             while (isActive && System.currentTimeMillis() < deadline) {
                 delay(1000L)
                 if (hotfixLog.exists() && hotfixLog.length() > 50_000L) {
@@ -96,6 +133,7 @@ object BattleNetSignIn {
                 }
             }
             removeLoginFile(gameRoot)
+            readObserver.stopWatching()
         }
     }
 
@@ -104,6 +142,8 @@ object BattleNetSignIn {
     private const val PREFS = "battle_net_login"
     private const val KEY_EMAIL = "email"
     private const val KEY_PASSWORD = "password"
+    private const val AFTER_READ_MS = 20_000L
+    private const val MAX_LIFETIME_MS = 180_000L
 }
 
 @Composable
@@ -122,6 +162,8 @@ fun BattleNetCredentialDialog(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
+        // No screenshots, recordings or recent-apps previews of the login form.
+        properties = androidx.compose.ui.window.DialogProperties(securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn),
         title = { Text("Battle.net login") },
         text = {
             Column {
