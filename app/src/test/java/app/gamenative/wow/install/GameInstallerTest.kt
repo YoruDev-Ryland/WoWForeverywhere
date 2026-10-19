@@ -166,6 +166,21 @@ class GameInstallerTest {
     }
 
     @Test
+    fun repairKeepsRegionAndLanguage() = runBlocking {
+        val tags = "Windows arm64 EU? acct-EUA? geoip-EU? deDE speech?:Windows arm64 EU? deDE text?"
+        File(root, ".build.info").writeText(
+            BuildInfo(GameInstaller.BUILD_INFO_HEADER, listOf(mapOf("Branch" to "eu", "Active" to "1", "Tags" to tags, "Version" to "old", "Product" to "wowf"))).serialize(),
+        )
+        installer().run(req) {}
+        val row = BuildInfo.read(root)!!.active(WowProduct.FOREVER)!!
+        assertEquals("eu", row["Branch"])
+        assertEquals(tags, row["Tags"])
+        assertEquals("1.60.1.70245", row["Version"])
+        assertTrue(File(root, "_forever_/Wow-arm64.exe").isFile)
+        assertFalse("enUS-only file skipped for a deDE install", File(root, "_forever_/Utils/loader.dll").exists())
+    }
+
+    @Test
     fun repairReplacesDamagedFile() = runBlocking {
         installer().run(req) {}
         File(root, "_forever_/Wow-arm64.exe").writeText("damaged")
@@ -218,7 +233,7 @@ class GameInstallerTest {
         )
         installer().run(req) {}
         val info = BuildInfo.read(root)!!
-        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), info.products())
+        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), info.products(java.time.LocalDate.of(2026, 12, 1)))
         assertEquals("1.60.1.70450", info.active(WowProduct.BETA)!!["Version"])
     }
 

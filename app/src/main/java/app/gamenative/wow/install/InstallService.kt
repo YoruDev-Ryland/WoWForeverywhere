@@ -81,20 +81,31 @@ class InstallService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var lastNotified = 0L
 
-    /** Set before cancelling, so a file that finishes mid-pause can't report "running" again. */
-    @Volatile private var stopping = false
+    /**
+     * One install attempt. Pausing marks it stopped before cancelling: cancellation can't interrupt a
+     * blocking download, so the old attempt may still finish its current file, and must not report
+     * progress, failure or stop the service under a newer attempt.
+     */
+    private class Attempt {
+        @Volatile var stopped = false
+    }
+
+    private var attempt: Attempt? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
-                val req = InstallRequest(
-                    root = File(intent.getStringExtra(EXTRA_ROOT) ?: return START_NOT_STICKY),
-                    product = WowProduct.fromCode(intent.getStringExtra(EXTRA_PRODUCT)) ?: return START_NOT_STICKY,
-                    locale = intent.getStringExtra(EXTRA_LOCALE) ?: "enUS",
-                )
-                startInstall(req)
+                val root = intent.getStringExtra(EXTRA_ROOT)
+                val product = WowProduct.fromCode(intent.getStringExtra(EXTRA_PRODUCT))
+                if (root == null || product == null) {
+                    // startForegroundService() requires startForeground() even when there's nothing to do.
+                    startForegroundCompat(placeholderNotification())
+                    finish()
+                    return START_NOT_STICKY
+                }
+                startInstall(InstallRequest(File(root), product, intent.getStringExtra(EXTRA_LOCALE) ?: "enUS"))
             }
             ACTION_PAUSE -> pause(null)
             ACTION_CANCEL -> {
@@ -106,17 +117,23 @@ class InstallService : Service() {
     }
 
     private fun startInstall(req: InstallRequest) {
-        if (job?.isActive == true) return
-        stopping = false
+        if (attempt?.stopped == false && job?.isActive == true) return
+        val previous = job
+        val current = Attempt()
+        attempt = current
         request = req
         startForegroundCompat(notification(req, null))
-        wakeLock = getSystemService(PowerManager::class.java)
-            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "foreverywhere:install")
-            .apply { acquire(WAKE_LOCK_MS) }
+        if (wakeLock?.isHeld != true) {
+            wakeLock = getSystemService(PowerManager::class.java)
+                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "foreverywhere:install")
+                .apply { acquire(WAKE_LOCK_MS) }
+        }
         job = scope.launch {
+            // Let a paused attempt finish its last file before this one touches the same temp files.
+            previous?.join()
             try {
                 GameInstaller().run(req) { progress ->
-                    if (stopping) return@run
+                    if (current.stopped) return@run
                     lastProgress = progress
                     InstallController.update(InstallUiState.Running(req, progress))
                     val now = System.currentTimeMillis()
@@ -125,6 +142,7 @@ class InstallService : Service() {
                         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(req, progress))
                     }
                 }
+                if (current.stopped) return@launch
                 val product = req.product
                 val version = app.gamenative.wow.product.BuildInfo.read(req.root)?.active(product)?.get("Version").orEmpty()
                 val install = GameInstall(req.root.absolutePath, product, version)
@@ -137,7 +155,7 @@ class InstallService : Service() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (stopping) return@launch
+                if (current.stopped) return@launch
                 Timber.e(e, "Install failed")
                 InstallController.update(InstallUiState.Failed(req, e.message ?: "Install failed"))
                 finish()
@@ -147,9 +165,8 @@ class InstallService : Service() {
 
     private fun pause(reason: String?) {
         val req = request ?: return
-        stopping = true
+        attempt?.stopped = true
         job?.cancel()
-        job = null
         InstallController.update(InstallUiState.Paused(req, lastProgress, reason))
         finish()
     }
@@ -180,11 +197,20 @@ class InstallService : Service() {
         }
     }
 
-    private fun notification(req: InstallRequest, progress: InstallProgress?): Notification {
+    private fun ensureChannel() {
         val manager = getSystemService(NotificationManager::class.java)
         if (manager.getNotificationChannel(CHANNEL) == null) {
             manager.createNotificationChannel(NotificationChannel(CHANNEL, "Game downloads", NotificationManager.IMPORTANCE_LOW))
         }
+    }
+
+    private fun placeholderNotification(): Notification {
+        ensureChannel()
+        return NotificationCompat.Builder(this, CHANNEL).setSmallIcon(R.drawable.fw_ic_download).setContentTitle("Game download").build()
+    }
+
+    private fun notification(req: InstallRequest, progress: InstallProgress?): Notification {
+        ensureChannel()
         val open = packageManager.getLaunchIntentForPackage(packageName)?.let {
             PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE)
         }

@@ -59,11 +59,18 @@ object AddonScanner {
             }
             info.toc.dependencies.forEach { dep ->
                 val j = index[dep.lowercase()] ?: return@forEach
-                if (prefix(info.name).equals(prefix(infos[j].name), ignoreCase = true)) union(i, j)
+                // A plugin with its own project id (ElvUI_WindTools, Details_TinyThreat) is a separate addon.
+                val mine = ids(info)
+                val theirs = ids(infos[j])
+                val separate = mine.isNotEmpty() && theirs.isNotEmpty() && (mine intersect theirs).isEmpty()
+                if (!separate && prefix(info.name).equals(prefix(infos[j].name), ignoreCase = true)) union(i, j)
             }
         }
         return infos.indices.groupBy { find(it) }.values.map { members -> members.map { infos[it] } }
     }
+
+    private fun ids(info: FolderInfo): Set<String> =
+        listOfNotNull(info.toc.curseId?.let { "c:$it" }, info.toc.wagoId?.let { "w:$it" }, info.toc.wowiId?.let { "i:$it" }).toSet()
 
     private fun prefix(folder: String): String = folder.split('-', '_').first()
 

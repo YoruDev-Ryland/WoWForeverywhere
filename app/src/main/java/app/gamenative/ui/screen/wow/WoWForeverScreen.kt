@@ -996,8 +996,8 @@ private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile
 
 private const val GX_API_LINE = "SET gxApi \"D3D11\""
 
-private fun configDefaults(product: WowProduct, locale: String) = linkedMapOf(
-    "portal" to "\"${product.portal}\"",
+private fun configDefaults(product: WowProduct, locale: String, portal: String) = linkedMapOf(
+    "portal" to "\"$portal\"",
     "agentUID" to "\"${product.code}\"",
     "gxApi" to "\"D3D11\"",
     "textLocale" to "\"$locale\"",
@@ -1036,7 +1036,13 @@ private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String
         flavorInfo.writeText(flavorInfoText(product))
     }
     val configWtf = File(flavorDir, "WTF/Config.wtf")
-    val updated = buildConfigWtf(configWtf.takeIf { it.exists() }?.readLines(), product, screenSize, installLocale(root, product)) ?: return
+    val updated = buildConfigWtf(
+        configWtf.takeIf { it.exists() }?.readLines(),
+        product,
+        screenSize,
+        installLocale(root, product),
+        installPortal(root, product),
+    ) ?: return
     configWtf.parentFile?.mkdirs()
     configWtf.writeText(updated.joinToString("\n") + "\n")
 }
@@ -1048,9 +1054,15 @@ private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String
  * select Metal. Resolutions are reset when missing or no longer fitting the screen (e.g. after a fold
  * or unfold): WoW's "auto" otherwise picks a 720p size because it sees a low-end Intel GPU via Wine.
  */
-internal fun buildConfigWtf(existing: List<String>?, product: WowProduct, screenSize: String, locale: String = "enUS"): List<String>? {
+internal fun buildConfigWtf(
+    existing: List<String>?,
+    product: WowProduct,
+    screenSize: String,
+    locale: String = "enUS",
+    portal: String = product.portal,
+): List<String>? {
     if (existing == null) {
-        val defaults = configDefaults(product, locale) + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
+        val defaults = configDefaults(product, locale, portal) + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
         return defaults.entries.map { "SET ${it.key} ${it.value}" }
     }
     val staleResolutionKeys = RESOLUTION_KEYS.filter { key ->
@@ -1068,7 +1080,7 @@ internal fun buildConfigWtf(existing: List<String>?, product: WowProduct, screen
             staleResolutionKeys.any { line.startsWith("SET $it ", ignoreCase = true) }
     } + listOfNotNull(
         GX_API_LINE,
-        "SET portal \"${product.portal}\"".takeIf { missingPortal },
+        "SET portal \"$portal\"".takeIf { missingPortal },
         agentLine.takeIf { wrongAgent },
     ) + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
 }
@@ -1077,6 +1089,13 @@ internal fun buildConfigWtf(existing: List<String>?, product: WowProduct, screen
 internal fun installLocale(root: File, product: WowProduct): String =
     app.gamenative.wow.product.BuildInfo.read(root)?.active(product)?.get("Tags")
         ?.split(" ", ":")?.firstOrNull { Regex("[a-z]{2}[A-Z]{2}").matches(it) } ?: "enUS"
+
+/** Live products use the install's region (its `.build.info` Branch: us, eu, kr, tw) as the portal. */
+internal fun installPortal(root: File, product: WowProduct): String {
+    if (product == WowProduct.BETA) return product.portal
+    val branch = app.gamenative.wow.product.BuildInfo.read(root)?.active(product)?.get("Branch").orEmpty()
+    return branch.takeIf { it.length == 2 }?.uppercase() ?: product.portal
+}
 
 private val RESOLUTION_KEYS = listOf("gxFullscreenResolution", "gxWindowedResolution")
 

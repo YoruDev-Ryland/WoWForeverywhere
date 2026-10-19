@@ -47,6 +47,13 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
     val addons = remember(launcher.gamePath, launcher.files.product) { addonsControllerFor(launcher.gamePath, launcher.files.product, scope) }
     LaunchedEffect(addons) { addons?.refreshInstalled() }
 
+    // Decided once: recomputing it would rebuild the graph and drop first-run mid-way when an install appears.
+    val startRoute = remember {
+        launcher.checkFiles()
+        if (launcher.registry.active() == null && launcher.filesMissing) Routes.FIRST_RUN else Routes.HOME
+    }
+    var appUpdateDismissed by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) { launcher.start() }
     LifecycleResumeEffect(launcher.gamePath) {
         launcher.onResume()
@@ -64,7 +71,7 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
 
     ForeverywhereTheme {
         Box(Modifier.fillMaxSize().background(Fw.Ground)) {
-            NavHost(nav, startDestination = if (launcher.registry.active() == null && launcher.filesMissing) Routes.FIRST_RUN else Routes.HOME) {
+            NavHost(nav, startDestination = startRoute) {
                 composable(Routes.HOME) {
                     HomeScreen(
                         launcher = launcher,
@@ -117,6 +124,19 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 confirm = "Open settings",
                 onConfirm = launcher::openStorageSettings,
                 onDismiss = { launcher.needsStoragePermission = false },
+            )
+        }
+        launcher.appUpdate?.takeIf { !appUpdateDismissed && !launcher.isDownloadingAppUpdate }?.let { update ->
+            FwDialog(
+                title = "App update ${update.version}",
+                message = "A new version of WoW Foreverywhere is available.",
+                confirm = "Update now",
+                onConfirm = {
+                    appUpdateDismissed = true
+                    launcher.performAppUpdate()
+                },
+                onDismiss = { appUpdateDismissed = true },
+                dismiss = "Later",
             )
         }
         if (launcher.needsInstallPermission) {

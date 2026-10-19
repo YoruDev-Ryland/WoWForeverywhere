@@ -35,6 +35,15 @@ class GameConfigTest {
     }
 
     @Test
+    fun portalFollowsInstallRegion() {
+        val root = java.nio.file.Files.createTempDirectory("wow").toFile()
+        assertEquals("US", installPortal(root, WowProduct.FOREVER))
+        java.io.File(root, ".build.info").writeText("Branch!STRING:0|Active!DEC:1|Product!STRING:0\neu|1|wowf\neu|1|wow_classic_beta\n")
+        assertEquals("EU", installPortal(root, WowProduct.FOREVER))
+        assertEquals("test", installPortal(root, WowProduct.BETA))
+    }
+
+    @Test
     fun newBetaConfigUsesTestPortal() {
         val lines = buildConfigWtf(null, WowProduct.BETA, "1280x720")!!
         assertTrue("SET portal \"test\"" in lines)

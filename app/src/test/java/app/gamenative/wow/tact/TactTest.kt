@@ -84,6 +84,9 @@ class TactTest {
         val index = ArchiveIndex(TactFixtures.archiveIndex(mapOf(key to (4096 to 77), "f".repeat(32) to (0 to 1))))
         assertEquals(4096L to 77L, index.locate(key))
         assertNull(index.locate("a".repeat(32)))
+        val zeroKey = "0000" + "ab".repeat(14)
+        val both = ArchiveIndex(TactFixtures.archiveIndex(mapOf(key to (4096 to 77), zeroKey to (8 to 9))))
+        assertEquals(mapOf(key to (4096L to 77L), zeroKey to (8L to 9L)), both.locateAll(setOf(key, zeroKey, "e".repeat(32))))
     }
 
     private fun server(dispatch: (RecordedRequest) -> MockResponse) = MockWebServer().apply {

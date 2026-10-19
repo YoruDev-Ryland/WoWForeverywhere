@@ -67,6 +67,38 @@ class AddonScannerTest {
     }
 
     @Test
+    fun pluginWithItsOwnProjectIsSeparate() {
+        addon(
+            "ElvUI",
+            """
+            ## Interface: 16001
+            ## Title: ElvUI
+            ## X-Curse-Project-ID: 100
+            """,
+        )
+        addon(
+            "ElvUI_WindTools",
+            """
+            ## Interface: 16001
+            ## Title: WindTools
+            ## Dependencies: ElvUI
+            ## X-Curse-Project-ID: 200
+            """,
+        )
+        addon(
+            "ElvUI_Options",
+            """
+            ## Interface: 16001
+            ## Title: ElvUI Options
+            ## Dependencies: ElvUI
+            """,
+        )
+        val found = AddonScanner.scan(addons, emptyList()).associate { it.name to it.folders.sorted() }
+        assertEquals(listOf("ElvUI", "ElvUI_Options"), found.values.first { "ElvUI" in it })
+        assertEquals(listOf("ElvUI_WindTools"), found.values.first { "ElvUI_WindTools" in it })
+    }
+
+    @Test
     fun groupsFoldersIntoLogicalAddons() {
         standardTree()
         val result = AddonScanner.scan(addons, emptyList()).associateBy { it.name }

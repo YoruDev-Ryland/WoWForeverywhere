@@ -161,6 +161,24 @@ class ArchiveIndex(private val bytes: ByteArray) {
         return null
     }
 
+    /** Every entry of [wanted] found in this index, in one pass. */
+    fun locateAll(wanted: Set<String>): Map<String, Pair<Long, Long>> {
+        if (wanted.isEmpty()) return emptyMap()
+        val buffer = ByteBuffer.wrap(bytes)
+        val found = HashMap<String, Pair<Long, Long>>()
+        for (block in 0 until bytes.size / BLOCK * BLOCK step BLOCK) {
+            var pos = block
+            while (pos <= block + BLOCK - ENTRY) {
+                val key = hex(bytes, pos, 16)
+                if (key in wanted) {
+                    found[key] = (buffer.getInt(pos + 20).toLong() and 0xFFFFFFFFL) to (buffer.getInt(pos + 16).toLong() and 0xFFFFFFFFL)
+                }
+                pos += ENTRY
+            }
+        }
+        return found
+    }
+
     private companion object {
         const val BLOCK = 4096
         const val ENTRY = 24

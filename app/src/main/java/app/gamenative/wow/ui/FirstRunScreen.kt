@@ -45,6 +45,7 @@ import com.winlator.core.GPUInformation
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private enum class Step(val label: String) { WELCOME("Welcome"), FIND("Find game"), INSTALL("Install"), SIGN_IN("Sign in") }
@@ -117,8 +118,11 @@ object DeviceCheck {
 private fun FindGame(launcher: LauncherController, onUse: () -> Unit, onInstall: () -> Unit) {
     val context = LocalContext.current
     var found by remember { mutableStateOf<List<GameInstall>?>(null) }
-    LaunchedEffect(Unit) {
-        found = withContext(Dispatchers.IO) { InstallScanner.scan(InstallScanner.storageRoots(context)) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // Rescans whenever the screen comes back, e.g. after granting "All files access" in Settings.
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        val job = scope.launch { found = withContext(Dispatchers.IO) { InstallScanner.scan(InstallScanner.storageRoots(context)) } }
+        onPauseOrDispose { job.cancel() }
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         val path = StorageUtils.getPathFromTreeUri(context, uri) ?: return@rememberLauncherForActivityResult
@@ -175,6 +179,13 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
     var rootIndex by remember { mutableStateOf(if (roots.size > 1) 1 else 0) }
     var product by remember { mutableStateOf<WowProduct?>(null) }
     val locale = remember { deviceLocale() }
+    // Android 13+ hides the progress notification unless the app may post notifications. The download
+    // starts either way; this only asks once per screen visit.
+    val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    fun start(req: InstallRequest) {
+        if (Build.VERSION.SDK_INT >= 33) notifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        InstallController.start(context, req)
+    }
 
     LaunchedEffect(Unit) {
         product = withContext(Dispatchers.IO) {
@@ -216,7 +227,7 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
         else -> if (repair != null) {
             Text("Repair checks every game file in ${repair.root} and downloads only what's missing or damaged.", style = Fw.Text)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FwButton("Check and repair", { InstallController.start(context, InstallRequest(File(repair.root), repair.product, locale)) })
+                FwButton("Check and repair", { start(InstallRequest(File(repair.root), repair.product, locale)) })
                 FwButton("Back", onBack, kind = FwButtonKind.Ghost)
             }
         } else {
@@ -240,7 +251,7 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
                     "Download and install",
                     {
                         val p = product ?: return@FwButton
-                        InstallController.start(context, InstallRequest(File(roots[rootIndex], "WoW Forever"), p, locale))
+                        start(InstallRequest(File(roots[rootIndex], "WoW Forever"), p, locale))
                     },
                     enabled = product != null && roots.isNotEmpty(),
                 )

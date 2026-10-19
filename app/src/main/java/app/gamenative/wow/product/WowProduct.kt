@@ -26,5 +26,5 @@ enum class WowProduct(
     }
 }
 
-/** The preferred supported product installed in [root] (launch product before beta), or null if none. */
-fun detectProduct(root: File): WowProduct? = BuildInfo.read(root)?.products()?.firstOrNull()
+/** The preferred supported product installed in [root] (see [BuildInfo.products]), or null if none. */
+fun detectProduct(root: File, today: LocalDate = LocalDate.now()): WowProduct? = BuildInfo.read(root)?.products(today)?.firstOrNull()

@@ -1,6 +1,7 @@
 package app.gamenative.wow.product
 
 import java.io.File
+import java.time.LocalDate
 
 /**
  * The pipe-separated `.build.info` file at the root of a CASC install. [header] keeps the raw column
@@ -21,8 +22,14 @@ data class BuildInfo(val header: List<String>, val rows: List<Map<String, String
         return copy(rows = rows.map { if (it === target) it + known else it })
     }
 
-    /** Supported products present in this file, launch product first. A shared install can hold several. */
-    fun products(): List<WowProduct> = WowProduct.entries.filter { p -> rows.any { it["Product"] == p.code } }
+    /**
+     * Supported products present in this file, most preferred first. A shared install can hold several.
+     * Products that have opened ([WowProduct.releaseDate] passed) come first, launch product before beta;
+     * so before launch day a beta install that Battle.net pre-loaded the launch build into stays on the beta.
+     */
+    fun products(today: LocalDate = LocalDate.now()): List<WowProduct> =
+        WowProduct.entries.filter { p -> rows.any { it["Product"] == p.code } }
+            .sortedBy { p -> if (p.releaseDate?.let { today < it } == true) 1 else 0 }
 
     /**
      * Adds an active row for [to], cloned from [from]'s row, when [to] has none yet. [from] stays active:

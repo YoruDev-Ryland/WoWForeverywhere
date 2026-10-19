@@ -49,7 +49,7 @@ class BuildInfoTest {
         assertEquals("wowf", converted.active(WowProduct.FOREVER)!!["Product"])
         assertEquals("1", converted.active(WowProduct.FOREVER)!!["Active"])
         assertEquals("1", converted.active(WowProduct.BETA)!!["Active"])
-        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), converted.products())
+        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), converted.products(java.time.LocalDate.of(2026, 11, 4)))
     }
 
     @Test
@@ -58,6 +58,13 @@ class BuildInfoTest {
         val retail = row.replace("wow_classic_beta", "wow")
         File(dir, ".build.info").writeText("$header\n$retail\n$row\n")
         assertEquals(WowProduct.BETA, detectProduct(dir))
+    }
+
+    @Test
+    fun betaPreferredUntilLaunchDay() {
+        val both = BuildInfo.parse(text).withProduct(WowProduct.BETA, WowProduct.FOREVER)
+        assertEquals(listOf(WowProduct.BETA, WowProduct.FOREVER), both.products(java.time.LocalDate.of(2026, 11, 3)))
+        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), both.products(java.time.LocalDate.of(2026, 11, 4)))
     }
 
     @Test

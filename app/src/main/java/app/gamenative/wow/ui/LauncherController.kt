@@ -245,8 +245,12 @@ class LauncherController(
                 withContext(Dispatchers.IO) {
                     val root = File(gamePath)
                     ProductConverter.applyLocal(root, WowProduct.BETA, WowProduct.FOREVER)
-                    WowClientDownloader.download(root, WowProduct.FOREVER) { msg ->
-                        scope.launch(Dispatchers.Main) { updateStatusText = msg }
+                    // The installer always asks the patch service for the launch build (and its KeyRing), so
+                    // offline it fails cleanly instead of reusing the beta build keys cloned into the new row.
+                    GameInstaller().run(InstallRequest(root, WowProduct.FOREVER, installLocale(root, WowProduct.BETA))) { p ->
+                        scope.launch(Dispatchers.Main) {
+                            updateStatusText = p.fraction?.let { "Downloading the launch version ${(it * 100).toInt()}%" } ?: "Preparing the launch version..."
+                        }
                     }
                 }
                 canConvertToLaunch = false
@@ -306,6 +310,8 @@ class LauncherController(
     }
 
     fun onResume() {
+        // An install may have finished in the background service while another screen was showing.
+        registry.active()?.root?.takeIf { it != gamePath && !files.isReady }?.let { useGameRoot(it) }
         checkFiles()
         isLaunching = false
         statusText = READY

@@ -88,7 +88,8 @@ class GameInstaller(
     private val cdnScheme: String = "http",
     private val usableSpace: (File) -> Long = { generateSequence(it) { f -> f.parentFile }.first { f -> f.exists() }.usableSpace },
 ) {
-    suspend fun plan(req: InstallRequest): InstallPlan = withContext(Dispatchers.IO) {
+    suspend fun plan(request: InstallRequest): InstallPlan = withContext(Dispatchers.IO) {
+        val req = request.keepingInstallRegion()
         val versions = Psv.parse(fetchText("$patchBase/${req.product.code}/versions"))
         val row = versions.firstOrNull { it["Region"] == req.region } ?: versions.firstOrNull()
             ?: throw IOException("Blizzard's patch service has no build for ${req.product.code}")
@@ -142,7 +143,8 @@ class GameInstaller(
         plan
     }
 
-    suspend fun run(req: InstallRequest, plan: InstallPlan? = null, onProgress: (InstallProgress) -> Unit) = withContext(Dispatchers.IO) {
+    suspend fun run(request: InstallRequest, plan: InstallPlan? = null, onProgress: (InstallProgress) -> Unit) = withContext(Dispatchers.IO) {
+        val req = request.keepingInstallRegion()
         onProgress(InstallProgress(InstallProgress.Phase.RESOLVING, 0, 0, null))
         val p = plan ?: plan(req)
         req.root.mkdirs()
@@ -207,17 +209,28 @@ class GameInstaller(
         if (!temp.renameTo(dest)) throw IOException("Couldn't write ${dest.path}")
     }
 
-    /** Finds client files that are packed inside CDN archives, using the downloaded archive indexes. */
+    /**
+     * Finds client files that are packed inside CDN archives. On first use it reads every downloaded index
+     * once and remembers where the plan's files are, instead of rescanning ~1500 indexes per file.
+     */
     private class ArchiveSource(private val plan: InstallPlan, private val root: File) {
-        private val archives = plan.items.filter { it.id.startsWith("index:") }.map { it.key.removeSuffix(".index") }
+        private val locations by lazy {
+            val wanted = plan.items.mapNotNull { item -> item.key.takeIf { item.ckey != null } }.toSet()
+            val found = HashMap<String, Triple<String, Long, Long>>()
+            for (item in plan.items.filter { it.id.startsWith("index:") }) {
+                val archive = item.key.removeSuffix(".index")
+                val index = File(root, item.dest).takeIf { it.isFile } ?: continue
+                ArchiveIndex(index.readBytes()).locateAll(wanted - found.keys).forEach { (ekey, loc) ->
+                    found[ekey] = Triple(archive, loc.first, loc.second)
+                }
+                if (found.size == wanted.size) break
+            }
+            found
+        }
 
         fun read(ekey: String): ByteArray? {
-            for (archive in archives) {
-                val index = File(root, "Data/indices/$archive.index").takeIf { it.isFile } ?: continue
-                val (offset, size) = ArchiveIndex(index.readBytes()).locate(ekey) ?: continue
-                return plan.cdn.fetch("data", archive, offset until offset + size)
-            }
-            return null
+            val (archive, offset, size) = locations[ekey] ?: return null
+            return plan.cdn.fetch("data", archive, offset until offset + size)
         }
     }
 
@@ -242,7 +255,8 @@ class GameInstaller(
         )
         val info = when {
             existing == null -> BuildInfo(BUILD_INFO_HEADER, listOf(values))
-            existing.rows.any { it["Product"] == req.product.code } -> existing.withUpdatedActive(req.product, values)
+            // Repair or update: only the build columns change; Branch and Tags (region, language) stay.
+            existing.rows.any { it["Product"] == req.product.code } -> existing.withUpdatedActive(req.product, values - KEEP_ON_UPDATE)
             else -> existing.copy(rows = existing.rows + values)
         }
         val temp = File(req.root, "${BuildInfo.FILE_NAME}.tmp")
@@ -272,6 +286,7 @@ class GameInstaller(
 
     companion object {
         const val STATE_FILE = ".foreverywhere-install.json"
+        private val KEEP_ON_UPDATE = setOf("Branch", "Tags", "Armadillo")
         private const val SPACE_MARGIN = 1.15
         private val json = Json { ignoreUnknownKeys = true }
 
@@ -283,6 +298,15 @@ class GameInstaller(
 
         fun configPath(key: String) = "Data/config/${key.substring(0, 2)}/${key.substring(2, 4)}/$key"
     }
+}
+
+/** A repair or update keeps the region and language the install was made with. */
+internal fun InstallRequest.keepingInstallRegion(): InstallRequest {
+    val row = BuildInfo.read(root)?.active(product)?.takeIf { it["Product"] == product.code } ?: return this
+    val tags = row["Tags"].orEmpty().split(" ", ":")
+    val locale = tags.firstOrNull { Regex("[a-z]{2}[A-Z]{2}").matches(it) } ?: locale
+    val region = row["Branch"]?.takeIf { it.length == 2 } ?: region
+    return copy(locale = locale, region = region)
 }
 
 /**
