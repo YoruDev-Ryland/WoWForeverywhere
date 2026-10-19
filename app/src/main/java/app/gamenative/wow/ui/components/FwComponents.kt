@@ -28,9 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -41,33 +38,17 @@ import androidx.compose.ui.unit.sp
 import app.gamenative.wow.ui.theme.Fw
 
 /**
- * The app-wide focus treatment: a bronze ring drawn outside the element with a gap of background
- * colour, so it stays visible on bronze buttons and on top of art. Tiles also lift slightly.
+ * The app-wide focus treatment: a ring and a slight lift. The ring is bronze, except on elements that
+ * are bronze themselves (primary buttons), which pass [ringColor] so the ring stays visible.
  */
 @Composable
-fun Modifier.fwFocus(interaction: MutableInteractionSource, shape: Shape, lift: Boolean = true): Modifier {
+fun Modifier.fwFocus(interaction: MutableInteractionSource, shape: Shape, lift: Boolean = true, ringColor: Color = Fw.Brass): Modifier {
     val focused by interaction.collectIsFocusedAsState()
     val scale by animateFloatAsState(if (focused && lift) 1.02f else 1f, label = "focus")
     return graphicsLayer {
         scaleX = scale
         scaleY = scale
-    }.drawWithContent {
-        drawContent()
-        if (focused) {
-            val gap = 3.dp.toPx()
-            val ring = 3.dp.toPx()
-            for ((inset, color, width) in listOf(Triple(gap / 2, Fw.Ground, gap), Triple(gap + ring / 2, Fw.Brass, ring))) {
-                val outline = shape.createOutline(
-                    androidx.compose.ui.geometry.Size(size.width + inset * 2, size.height + inset * 2),
-                    layoutDirection,
-                    this,
-                )
-                translate(-inset, -inset) {
-                    drawOutline(outline, color, style = androidx.compose.ui.graphics.drawscope.Stroke(width))
-                }
-            }
-        }
-    }
+    }.border(if (focused) 3.dp else 0.dp, if (focused) ringColor else Color.Transparent, shape)
 }
 
 /**
@@ -140,7 +121,7 @@ fun FwButton(
     Box(
         modifier
             .heightIn(min = 46.dp)
-            .fwFocus(interaction, Fw.Shape, lift = false)
+            .fwFocus(interaction, Fw.Shape, lift = false, ringColor = if (kind == FwButtonKind.Primary && enabled) Fw.Bone else Fw.Brass)
             .background(if (enabled) bg else Fw.Stone, Fw.Shape)
             .clickable(enabled = enabled, interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 12.dp),
@@ -182,12 +163,12 @@ fun FwRow(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     if (focused && onFocus != null) onFocus()
+    val ring = focused || selected
     Row(
         modifier
             .fillMaxWidth()
-            .fwFocus(interaction, Fw.Shape, lift = false)
-            .border(if (selected && !focused) 2.dp else 0.dp, if (selected && !focused) Fw.Brass else Color.Transparent, Fw.Shape)
-            .background(if (selected || focused) Fw.Stone2 else Fw.Stone, Fw.Shape)
+            .border(if (ring) 2.dp else 0.dp, if (ring) Fw.Brass else Color.Transparent, Fw.Shape)
+            .background(if (ring) Fw.Stone2 else Fw.Stone, Fw.Shape)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

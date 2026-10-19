@@ -165,8 +165,7 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
                 style = Fw.Secondary,
                 modifier = Modifier.padding(20.dp),
             )
-            // Padding keeps the focus ring (drawn outside each row) clear of the list's clipped edges.
-            else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            else -> LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(c.listings, key = { "${it.remote.provider}:${it.remote.projectId}" }) { listing ->
                     FwRow(
                         selected = c.selected == listing,
