@@ -121,7 +121,10 @@ class AddonScannerTest {
     fun deletedFoldersDropOut() {
         standardTree()
         val known = listOf(
-            InstalledAddon("curseforge:3358", "DBM", listOf("DBM-Core", "DBM-StatusBarTimers", "DBM-Gone"), "1", AddonFlavor.FOREVER, SourceRef("curseforge", "3358"), 1),
+            InstalledAddon(
+                "curseforge:3358", "DBM", listOf("DBM-Core", "DBM-StatusBarTimers", "DBM-Gone"), "1",
+                AddonFlavor.FOREVER, SourceRef("curseforge", "3358"), 1,
+            ),
             InstalledAddon("curseforge:999", "Removed", listOf("Removed"), "1", AddonFlavor.CLASSIC, SourceRef("curseforge", "999"), 1),
         )
         File(addons, "MyAddon").deleteRecursively()
