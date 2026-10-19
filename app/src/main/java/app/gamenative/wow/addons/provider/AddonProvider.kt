@@ -20,6 +20,14 @@ data class RemoteAddon(
     val screenshots: List<String> = emptyList(),
 )
 
+/** The addon's own page on its source site, for "Open on ..." links. */
+fun RemoteAddon.pageUrl(): String? = when (provider) {
+    "wago" -> "https://addons.wago.io/addons/$projectId"
+    "github" -> "https://github.com/$projectId"
+    "wowinterface" -> websiteUrl ?: "https://www.wowinterface.com/downloads/info$projectId"
+    else -> websiteUrl
+}?.takeIf { it.startsWith("https://") }
+
 /**
  * A downloadable release. An empty [downloadUrl] means the author disabled third-party
  * distribution (CurseForge): show "Open on website" instead of Install.

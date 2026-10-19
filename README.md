@@ -12,6 +12,8 @@ This is a fork of [jaredgei/wow-forever-android](https://github.com/jaredgei/wow
 
 Installs alongside the upstream app (package `app.wowforeverywhere`).
 
+Foreverywhere is free and open source. If it saves you time, you can support development on [Ko-fi](https://ko-fi.com/rkremeier).
+
 > **Status: early and untested on real hardware.** Everything has been exercised on an Android emulator and in unit tests (installer, addon manager, product detection). The game itself has not been launched from this fork on a device yet.
 
 > Unofficial community project, not affiliated with or endorsed by Blizzard Entertainment. You need your own Battle.net account with WoW Forever access. This repo and its releases contain **no** Blizzard game files: the app downloads them from Blizzard's own CDN, like the Battle.net launcher does. Using a third-party launcher may be against Blizzard's terms; use at your own risk.

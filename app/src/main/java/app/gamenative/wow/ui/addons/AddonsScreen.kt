@@ -46,7 +46,11 @@ import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.AddonListing
 import app.gamenative.wow.ui.FwPage
 import app.gamenative.wow.ui.LauncherController
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.ui.platform.LocalContext
 import app.gamenative.wow.ui.components.ArtImage
+import app.gamenative.wow.ui.components.Links
 import app.gamenative.wow.ui.components.ForeverArt
 import app.gamenative.wow.ui.components.FwButton
 import app.gamenative.wow.ui.components.FwChip
@@ -235,7 +239,20 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
                 if (listing.installed != null) FwButton("Remove", { c.remove(listing) }, kind = FwButtonKind.Danger, enabled = idle)
             }
             if (file != null && !file.installable) {
-                Text("The author doesn't allow downloads through other apps. Get it from the website below.", style = Fw.Secondary.copy(color = Fw.Warn))
+                Text("The author doesn't allow downloads through other apps. Open its page to get it there.", style = Fw.Secondary.copy(color = Fw.Warn))
+            }
+            if (listing.pages.isNotEmpty()) {
+                val context = LocalContext.current
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listing.pages.entries.take(3).forEach { (provider, url) ->
+                        FwButton(
+                            "Open on ${sourceName(provider)}",
+                            { Links.open(context, url) },
+                            kind = FwButtonKind.Ghost,
+                            icon = Icons.AutoMirrored.Filled.OpenInNew,
+                        )
+                    }
+                }
             }
             if (remote.categories.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -272,7 +289,6 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
                     listing.installed?.folders?.let { "Folders" to it.joinToString(", ") },
                 ),
             )
-            remote.websiteUrl?.let { Text(it, style = Fw.Data) }
         }
     }
 }

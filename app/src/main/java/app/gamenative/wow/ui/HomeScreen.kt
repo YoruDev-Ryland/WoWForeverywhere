@@ -26,7 +26,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.gamenative.BuildConfig
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import app.gamenative.wow.ui.components.ForeverArt
+import app.gamenative.wow.ui.components.Links
 import app.gamenative.wow.ui.components.FwActionBar
 import app.gamenative.wow.ui.components.FwButton
 import app.gamenative.wow.ui.components.FwButtonKind
@@ -68,7 +79,29 @@ fun HomeScreen(
                 }
             }
         }
-        Text("A  Select      B  Back", style = Fw.Data)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("A  Select      B  Back", style = Fw.Data, modifier = Modifier.weight(1f))
+            SupportLink()
+        }
+    }
+}
+
+/** A quiet Ko-fi link in the hint row: muted, small, and only bronze when focused. */
+@Composable
+private fun SupportLink() {
+    val context = LocalContext.current
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    Row(
+        Modifier
+            .border(if (focused) 2.dp else 0.dp, if (focused) Fw.Brass else Color.Transparent, Fw.Pill)
+            .clickable(interactionSource = interaction, indication = null) { Links.open(context, Links.KOFI) }
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(Icons.Filled.LocalCafe, contentDescription = null, tint = if (focused) Fw.Brass else Fw.Ash, modifier = Modifier.size(14.dp))
+        Text("Support on Ko-fi", style = Fw.Data.copy(color = if (focused) Fw.Brass else Fw.Ash))
     }
 }
 
@@ -82,7 +115,7 @@ private fun Header(launcher: LauncherController) {
         val version = launcher.versionStatus
         val (text, color) = when {
             launcher.filesMissing -> "Game not installed" to Fw.Ash
-            launcher.isCheckingVersion -> "Checking for game updates…" to Fw.Ash
+            launcher.isCheckingVersion || !launcher.versionChecked -> "Checking for game updates…" to Fw.Ash
             version == null -> "Game version unknown (offline?)" to Fw.Ash
             version.isOutdated -> "Game update ${version.remoteVersion} available" to Fw.Warn
             else -> "Game up to date" to Fw.Ok
@@ -118,7 +151,7 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
         },
     ) {
         Text(
-            files.product?.let { "${it.displayName} · ${version?.localVersion ?: ""}" } ?: "Set up WoW Forever to start",
+            files.product?.let { listOfNotNull(it.displayName, version?.localVersion).joinToString(" · ") } ?: "Set up WoW Forever to start",
             style = Fw.Data,
         )
         when {

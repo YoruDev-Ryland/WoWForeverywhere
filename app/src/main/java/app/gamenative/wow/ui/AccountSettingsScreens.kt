@@ -18,7 +18,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.gamenative.BuildConfig
 import app.gamenative.utils.renderReleaseNotes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.ui.platform.LocalContext
 import app.gamenative.wow.ui.components.FwButton
+import app.gamenative.wow.ui.components.Links
 import app.gamenative.wow.ui.components.FwButtonKind
 import app.gamenative.wow.ui.components.FwProgress
 import app.gamenative.wow.ui.components.FwTopBar
@@ -90,6 +95,11 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit) {
                 }
             }
         }
+        FwSection("Support Foreverywhere") {
+            val context = LocalContext.current
+            Text("Foreverywhere is free and open source. If it saves you some time, you can support its development on Ko-fi.", style = Fw.Text)
+            FwButton("Support on Ko-fi", { Links.open(context, Links.KOFI) }, kind = FwButtonKind.Ghost, icon = Icons.Filled.LocalCafe)
+        }
         FwSection("Addon sources") {
             ProviderLine("CurseForge", BuildConfig.CURSEFORGE_API_KEY.isNotBlank())
             ProviderLine("Wago Addons", BuildConfig.WAGO_API_KEY.isNotBlank())
@@ -105,6 +115,8 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit) {
                 "Unofficial community project, not affiliated with Blizzard Entertainment. The game is downloaded from Blizzard's own servers and needs your own Battle.net account. Based on jaredgei/wow-forever-android (GPL-3.0).",
                 style = Fw.Secondary,
             )
+            val context = LocalContext.current
+            FwButton("Source code on GitHub", { Links.open(context, Links.REPO) }, kind = FwButtonKind.Ghost, icon = Icons.AutoMirrored.Filled.OpenInNew)
         }
     }
 }

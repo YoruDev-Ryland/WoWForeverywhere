@@ -68,6 +68,10 @@ class LauncherController(
         private set
     var isCheckingVersion by mutableStateOf(false)
         private set
+
+    /** False until the first version check has finished (successfully or not). */
+    var versionChecked by mutableStateOf(false)
+        private set
     var isUpdating by mutableStateOf(false)
         private set
     var updateStatusText by mutableStateOf("")
@@ -149,6 +153,7 @@ class LauncherController(
         canConvertToLaunch = product == WowProduct.BETA &&
             withContext(Dispatchers.IO) { runCatching { WowClientDownloader.isProductLive(WowProduct.FOREVER) }.getOrDefault(false) }
         isCheckingVersion = false
+        versionChecked = true
     }
 
     fun checkVersionStatus() {

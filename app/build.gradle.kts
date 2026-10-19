@@ -19,8 +19,18 @@ val keystoreProperties: Properties? = if (keystorePropertiesFile.exists()) {
     }
 } else null
 
+/** Escapes a value for use inside a Java string literal in BuildConfig. */
+fun javaString(value: String) = value.trim().replace("\\", "\\\\").replace("\"", "\\\"")
+
 val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
+// The secrets plugin turns every local.properties entry into an unquoted BuildConfig field, which breaks
+// string keys. Ours are added below as proper string fields instead.
+secrets {
+    ignoreList.add("CURSEFORGE_API_KEY")
+    ignoreList.add("WAGO_API_KEY")
 }
 
 android {
@@ -53,8 +63,8 @@ android {
         versionName = "0.1.0"
 
         buildConfigField("boolean", "GOLD", "false")
-        buildConfigField("String", "CURSEFORGE_API_KEY", "\"${localProperties.getProperty("CURSEFORGE_API_KEY", "")}\"")
-        buildConfigField("String", "WAGO_API_KEY", "\"${localProperties.getProperty("WAGO_API_KEY", "")}\"")
+        buildConfigField("String", "CURSEFORGE_API_KEY", "\"${javaString(localProperties.getProperty("CURSEFORGE_API_KEY", ""))}\"")
+        buildConfigField("String", "WAGO_API_KEY", "\"${javaString(localProperties.getProperty("WAGO_API_KEY", ""))}\"")
         val iconValue = "@mipmap/ic_launcher"
         val iconRoundValue = "@mipmap/ic_launcher_round"
         manifestPlaceholders.putAll(

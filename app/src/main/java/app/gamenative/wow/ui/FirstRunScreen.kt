@@ -290,6 +290,7 @@ private fun SignIn(launcher: LauncherController, onEditLogin: () -> Unit, onDone
     )
     if (launcher.hasSavedLogin) Text("Login saved.", style = Fw.Text.copy(color = Fw.Ok))
     Text(STREAMING_NOTE, style = Fw.Secondary)
+    Text("Foreverywhere is free. If you'd like to support it, there's a Ko-fi link in Settings.", style = Fw.Secondary)
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (launcher.hasSavedLogin) {
             FwButton("Continue", onDone)

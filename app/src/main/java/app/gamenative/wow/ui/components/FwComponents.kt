@@ -107,6 +107,7 @@ fun FwButton(
     modifier: Modifier = Modifier,
     kind: FwButtonKind = FwButtonKind.Primary,
     enabled: Boolean = true,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val (bg, fg) = when (kind) {
@@ -123,7 +124,10 @@ fun FwButton(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = Fw.Label.copy(color = if (enabled) fg else Fw.Ash), maxLines = 1)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text, style = Fw.Label.copy(color = if (enabled) fg else Fw.Ash), maxLines = 1)
+            icon?.let { androidx.compose.material3.Icon(it, contentDescription = null, tint = if (enabled) fg else Fw.Ash, modifier = Modifier.height(16.dp)) }
+        }
     }
 }
 

@@ -4,6 +4,7 @@ import app.gamenative.wow.addons.provider.AddonProvider
 import app.gamenative.wow.addons.provider.GitHubProvider
 import app.gamenative.wow.addons.provider.RemoteAddon
 import app.gamenative.wow.addons.provider.RemoteFile
+import app.gamenative.wow.addons.provider.pageUrl
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
@@ -29,6 +30,8 @@ data class AddonListing(
     val sources: List<String>,
     /** Project id on each source, for follow-up calls such as [AddonManager.description]. */
     val sourceIds: Map<String, String> = emptyMap(),
+    /** The addon's page on each source site, primary source first. */
+    val pages: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -76,6 +79,7 @@ class AddonManager(
                 installed = record,
                 updateAvailable = needsUpdate(record, group),
                 sources = listOfNotNull(record.source?.provider),
+                pages = listOfNotNull(remote?.let { r -> r.pageUrl()?.let { r.provider to it } }).toMap(),
             )
         }
     }
@@ -171,6 +175,7 @@ class AddonManager(
                 updateAvailable = installed != null && needsUpdate(installed, group),
                 sources = (listOf(primary) + group).map { it.provider }.distinct(),
                 sourceIds = group.associate { it.provider to it.projectId },
+                pages = (listOf(primary) + group).distinctBy { it.provider }.mapNotNull { r -> r.pageUrl()?.let { r.provider to it } }.toMap(),
             )
         }.sortedWith(compareBy<AddonListing>({ it.bestFlavor != AddonFlavor.FOREVER }, { -it.remote.downloads }))
     }
