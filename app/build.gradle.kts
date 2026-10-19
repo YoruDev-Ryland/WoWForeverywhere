@@ -26,6 +26,9 @@ val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
+/** An API key from `-P<name>=...` (wins, so a build can blank a key) or else local.properties. */
+fun apiKey(name: String): String = providers.gradleProperty(name).orNull ?: localProperties.getProperty(name, "")
+
 // The secrets plugin turns every local.properties entry into an unquoted BuildConfig field, which breaks
 // string keys. Ours are added below as proper string fields instead.
 secrets {
@@ -63,8 +66,8 @@ android {
         versionName = "0.1.0"
 
         buildConfigField("boolean", "GOLD", "false")
-        buildConfigField("String", "CURSEFORGE_API_KEY", "\"${javaString(localProperties.getProperty("CURSEFORGE_API_KEY", ""))}\"")
-        buildConfigField("String", "WAGO_API_KEY", "\"${javaString(localProperties.getProperty("WAGO_API_KEY", ""))}\"")
+        buildConfigField("String", "CURSEFORGE_API_KEY", "\"${javaString(apiKey("CURSEFORGE_API_KEY"))}\"")
+        buildConfigField("String", "WAGO_API_KEY", "\"${javaString(apiKey("WAGO_API_KEY"))}\"")
         val iconValue = "@mipmap/ic_launcher"
         val iconRoundValue = "@mipmap/ic_launcher_round"
         manifestPlaceholders.putAll(
