@@ -378,6 +378,11 @@ class LauncherController(
         }
     }
 
+    // Read the install before the first frame, so screens built from this state never start out empty.
+    init {
+        checkFiles()
+    }
+
     private companion object {
         const val READY = "Ready to launch"
     }

@@ -56,11 +56,11 @@ fun FirstRunScreen(launcher: LauncherController, onEditLogin: () -> Unit, onDone
     var step by remember { mutableStateOf(if (startAtInstall) Step.INSTALL else Step.WELCOME) }
 
     Column(Modifier.fillMaxSize().background(Fw.Ground)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Step.entries.forEach {
-                Text(it.label.uppercase(), style = Fw.Data.copy(color = if (it == step) Fw.Brass else Fw.Ash))
+                FwStepPill(it.label, it == step)
             }
-            Text("HOME", style = Fw.Data)
+            FwStepPill("Home", false)
         }
         HorizontalDivider(color = Fw.Rule)
         Column(
@@ -79,6 +79,15 @@ fun FirstRunScreen(launcher: LauncherController, onEditLogin: () -> Unit, onDone
             }
         }
     }
+}
+
+@Composable
+private fun FwStepPill(label: String, current: Boolean) {
+    Text(
+        label,
+        style = Fw.Label.copy(fontSize = 13.sp, color = if (current) Fw.Ground else Fw.Ash),
+        modifier = Modifier.background(if (current) Fw.Bone else Fw.Stone, Fw.Pill).padding(horizontal = 14.dp, vertical = 7.dp),
+    )
 }
 
 @Composable

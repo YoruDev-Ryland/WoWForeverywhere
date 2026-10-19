@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.gamenative.BuildConfig
 import app.gamenative.utils.renderReleaseNotes
 import app.gamenative.wow.ui.components.FwButton
@@ -38,7 +39,7 @@ internal fun FwPage(title: String, onBack: () -> Unit, content: @Composable () -
 @Composable
 internal fun FwSection(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title.uppercase(), style = Fw.Data.copy(color = Fw.Brass))
+        Text(title.uppercase(), style = Fw.Label.copy(color = Fw.Brass, fontSize = 12.sp, letterSpacing = 1.6.sp))
         content()
     }
 }

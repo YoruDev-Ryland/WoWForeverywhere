@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -50,19 +51,9 @@ fun AccentActionRow(
             .clip(shape)
             .background(
                 if (isFocused) {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            accentColor.copy(alpha = 0.16f),
-                            accentColor.copy(alpha = 0.08f),
-                        ),
-                    )
+                    SolidColor(accentColor.copy(alpha = 0.16f))
                 } else {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.10f),
-                        ),
-                    )
+                    SolidColor(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f))
                 },
             )
             .focusRing(interactionSource, shape, width = 2.dp)

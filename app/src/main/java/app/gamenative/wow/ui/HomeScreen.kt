@@ -2,7 +2,9 @@ package app.gamenative.wow.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,7 +24,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.gamenative.BuildConfig
+import app.gamenative.wow.ui.components.ForeverArt
 import app.gamenative.wow.ui.components.FwActionBar
 import app.gamenative.wow.ui.components.FwButton
 import app.gamenative.wow.ui.components.FwButtonKind
@@ -57,20 +61,24 @@ fun HomeScreen(
                     tiles(Modifier.weight(1f).fillMaxHeight())
                 }
             } else {
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    play(Modifier.fillMaxWidth().height(220.dp))
-                    tiles(Modifier.fillMaxWidth().height(320.dp))
+                // Portrait: the four small tiles keep a fixed height and Play takes all the rest.
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    play(Modifier.fillMaxWidth().weight(1f))
+                    tiles(Modifier.fillMaxWidth().height(340.dp))
                 }
             }
         }
-        Text("A  Select     B  Back", style = Fw.Data)
+        Text("A  Select      B  Back", style = Fw.Data)
     }
 }
 
 @Composable
 private fun Header(launcher: LauncherController) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("Foreverywhere", style = Fw.Title, modifier = Modifier.weight(1f))
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(26.dp).background(Fw.Brass, Fw.Shape))
+            Text("Foreverywhere", style = Fw.Title.copy(fontSize = 21.sp))
+        }
         val version = launcher.versionStatus
         val (text, color) = when {
             launcher.filesMissing -> "Game not installed" to Fw.Ash
@@ -79,7 +87,7 @@ private fun Header(launcher: LauncherController) {
             version.isOutdated -> "Game update ${version.remoteVersion} available" to Fw.Warn
             else -> "Game up to date" to Fw.Ok
         }
-        Text(text, style = Fw.Data.copy(color = color))
+        Text(text, style = Fw.Data.copy(color = color), modifier = Modifier.background(Fw.Stone, Fw.Pill).padding(horizontal = 14.dp, vertical = 6.dp))
     }
     launcher.errorMessage?.let { Text(it, style = Fw.Secondary.copy(color = Fw.Warn)) }
 }
@@ -91,6 +99,7 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
     FwTile(
         title = if (launcher.filesMissing) "Install" else "Play",
         modifier = modifier,
+        art = ForeverArt.KEY_ART,
         titleStyle = Fw.Hero,
         footer = {
             when {
@@ -112,7 +121,6 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
             files.product?.let { "${it.displayName} · ${version?.localVersion ?: ""}" } ?: "Set up WoW Forever to start",
             style = Fw.Data,
         )
-        Text(File(launcher.gamePath).path, style = Fw.Data, maxLines = 1, overflow = TextOverflow.Ellipsis)
         when {
             launcher.busy -> Text(if (launcher.isUpdating) launcher.updateStatusText else launcher.statusText, style = Fw.Text)
             launcher.filesMissing -> Text("Download the game, or find the copy already on this device.", style = Fw.Secondary)
@@ -138,7 +146,7 @@ private fun SmallTiles(
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            FwTile("Addons", Modifier.weight(1f).fillMaxHeight(), badge = addonUpdates?.takeIf { it > 0 }?.toString(), onClick = onOpenAddons) {
+            FwTile("Addons", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.INTERFACE, badge = addonUpdates?.takeIf { it > 0 }?.toString(), onClick = onOpenAddons) {
                 Text(
                     when {
                         addonCount == null -> "Browse and install addons"
@@ -148,18 +156,19 @@ private fun SmallTiles(
                     style = Fw.Secondary,
                 )
             }
-            FwTile("Game files", Modifier.weight(1f).fillMaxHeight(), onClick = onOpenGame) {
+            FwTile("Game files", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.ASHENVALE, onClick = onOpenGame) {
                 Text(if (launcher.filesMissing) "Not installed" else launcher.files.product?.displayName.orEmpty(), style = Fw.Secondary)
                 if (launcher.canConvertToLaunch) Text("Launch version available", style = Fw.Secondary.copy(color = Fw.Brass))
             }
         }
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            FwTile("Account", Modifier.weight(1f).fillMaxHeight(), onClick = onOpenAccount) {
+            FwTile("Account", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.SKYBORNE, onClick = onOpenAccount) {
                 Text(if (launcher.hasSavedLogin) "Login saved on this device" else "No login saved", style = Fw.Secondary)
             }
             FwTile(
                 "Settings",
                 Modifier.weight(1f).fillMaxHeight(),
+                art = ForeverArt.CAMP,
                 badge = launcher.appUpdate?.let { "NEW" },
                 onClick = onOpenSettings,
             ) {

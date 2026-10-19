@@ -102,7 +102,7 @@ private val DarkPluviaColors = PluviaColors(
     compatibilityBadBackground = CompatibilityBadBg,
 )
 
-val BrandGradient = listOf(PluviaCyan, PluviaPurple, PluviaPink)
+val BrandGradient = listOf(PluviaPrimary, PluviaPrimary) // flat bronze: Foreverywhere has no gradients
 
 // Light theme placeholder - customize when adding light theme support
 // private val LightPluviaColors = PluviaColors(...)
@@ -114,7 +114,7 @@ private val LocalPluviaColors = staticCompositionLocalOf { DarkPluviaColors }
  */
 private val DarkColorScheme = darkColorScheme(
     primary = PluviaPrimary,
-    onPrimary = PluviaForeground,
+    onPrimary = Color(0xFF1D150B),
     primaryContainer = PluviaPrimary.copy(alpha = 0.2f),
     onPrimaryContainer = PluviaForeground,
 
@@ -174,7 +174,7 @@ fun PluviaTheme(
     CompositionLocalProvider(LocalPluviaColors provides DarkPluviaColors) {
         MaterialTheme(
             colorScheme = DarkColorScheme,
-            typography = PluviaTypography,
+            typography = app.gamenative.wow.ui.theme.ForeverywhereTypography,
             content = content,
         )
     }

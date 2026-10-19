@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -44,12 +45,13 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
     val launcher = remember { LauncherController(context, scope, onLaunch) }
     val nav = rememberNavController()
     var showLoginDialog by remember { mutableStateOf(false) }
-    val addons = remember(launcher.gamePath, launcher.files.product) { addonsControllerFor(launcher.gamePath, launcher.files.product, scope) }
-    LaunchedEffect(addons) { addons?.refreshInstalled() }
+    val addonsNow = remember(launcher.gamePath, launcher.files.product) { addonsControllerFor(launcher.gamePath, launcher.files.product, scope) }
+    LaunchedEffect(addonsNow) { addonsNow?.refreshInstalled() }
+    // The nav graph is built once, so destinations read this state instead of capturing a stale value.
+    val addonsState = rememberUpdatedState(addonsNow)
 
     // Decided once: recomputing it would rebuild the graph and drop first-run mid-way when an install appears.
     val startRoute = remember {
-        launcher.checkFiles()
         if (launcher.registry.active() == null && launcher.filesMissing) Routes.FIRST_RUN else Routes.HOME
     }
     var appUpdateDismissed by remember { mutableStateOf(false) }
@@ -75,8 +77,8 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 composable(Routes.HOME) {
                     HomeScreen(
                         launcher = launcher,
-                        addonUpdates = addons?.updates,
-                        addonCount = addons?.installed?.size,
+                        addonUpdates = addonsState.value?.updates,
+                        addonCount = addonsState.value?.installed?.size,
                         onOpenAddons = { nav.navigate(Routes.ADDONS) },
                         onOpenGame = { nav.navigate(Routes.GAME) },
                         onOpenAccount = { nav.navigate(Routes.ACCOUNT) },
@@ -88,7 +90,7 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                     AccountScreen(launcher, onBack = { nav.popBackStack() }, onEditLogin = { showLoginDialog = true })
                 }
                 composable(Routes.SETTINGS) { SettingsScreen(launcher, onBack = { nav.popBackStack() }) }
-                composable(Routes.ADDONS) { AddonsRoute(launcher, addons, onBack = { nav.popBackStack() }) }
+                composable(Routes.ADDONS) { AddonsRoute(launcher, addonsState.value, onBack = { nav.popBackStack() }) }
                 composable(Routes.INSTALL) {
                     val back = { nav.popBackStack(); Unit }
                     FwPage("Install or repair", back) {

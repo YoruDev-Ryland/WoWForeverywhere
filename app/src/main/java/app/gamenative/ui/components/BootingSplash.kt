@@ -1,5 +1,12 @@
 package app.gamenative.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import app.gamenative.wow.ui.components.ArtImage
+import app.gamenative.wow.ui.components.ForeverArt
+import app.gamenative.wow.ui.components.FwProgress
+import app.gamenative.wow.ui.theme.Fw
+
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.compose.animation.AnimatedVisibility
@@ -109,185 +116,39 @@ fun BootingSplash(
         enter = fadeIn(animationSpec = tween(durationMillis = 400)),
         exit = fadeOut(animationSpec = tween(durationMillis = 300)),
     ) {
-        val infiniteTransition = rememberInfiniteTransition(label = "bootSplash")
-        val shimmerPosition by infiniteTransition.animateFloat(
-            initialValue = -0.3f,
-            targetValue = 1.3f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1500, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-            label = "shimmer",
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(WowBackgroundGradient)),
-            contentAlignment = Alignment.Center,
-        ) {
+        // Foreverywhere look: full-bleed WoW Forever key art, status on a flat slate band.
+        Box(modifier = Modifier.fillMaxSize().background(Fw.Ground)) {
+            ArtImage(ForeverArt.KEY_ART, Modifier.fillMaxSize())
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 32.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .background(Fw.Scrim)
+                    .padding(horizontal = 40.dp, vertical = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Spacer(modifier = Modifier.weight(0.4f))
-
-                Text(
-                    text = "World of Warcraft",
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 32.sp,
-                        letterSpacing = 2.sp,
-                        shadow = Shadow(
-                            color = Color(0xFFC7AF8E).copy(alpha = 0.6f),
-                            offset = Offset(0f, 0f),
-                            blurRadius = 20f,
-                        ),
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(Color(0xFFF5E296), Color(0xFFE5C158), Color(0xFFC7AF8E)),
-                        ),
-                    ),
-                )
-
-                Spacer(modifier = Modifier.height(28.dp))
-
-                ProgressBar(
-                    progress = progress,
-                    shimmerPosition = shimmerPosition,
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .height(4.dp),
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
-                        letterSpacing = 1.sp,
-                    ),
-                    color = Color.White.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center,
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Text(
-                    text = "Press Start + Select + L2 + R2 to return to setup screen",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 11.sp,
-                        letterSpacing = 1.sp,
-                    ),
-                    color = WowGold.copy(alpha = 0.8f),
-                    textAlign = TextAlign.Center,
-                )
-
-                Spacer(modifier = Modifier.weight(0.4f))
+                Text(text = "Starting World of Warcraft", style = Fw.Title.copy(fontSize = 28.sp, lineHeight = 32.sp))
+                FwProgress(fraction = progress.takeIf { it >= 0f })
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(text = text, style = Fw.Text.copy(color = Fw.Bone), modifier = Modifier.weight(1f))
+                    Text(text = "Start + Select + L2 + R2 returns to setup", style = Fw.Secondary)
+                }
             }
-
             if (onAbort != null) {
                 IconButton(
                     onClick = onAbort,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(12.dp)
-                        .background(Color.Black.copy(alpha = 0.45f), CircleShape),
+                        .padding(16.dp)
+                        .background(Fw.Scrim, CircleShape),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(R.string.back),
-                        tint = Color.White,
+                        tint = Fw.Bone,
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ProgressBar(
-    progress: Float,
-    shimmerPosition: Float,
-    modifier: Modifier = Modifier,
-) {
-    val isIndeterminate = progress < 0f
-    val actualProgress = if (isIndeterminate) 1f else progress.coerceIn(0f, 1f)
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(2.dp))
-            .background(PluviaTheme.colors.borderDefault.copy(alpha = 0.3f)),
-    ) {
-        // Progress fill with gradient
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(actualProgress)
-                .clip(RoundedCornerShape(2.dp))
-                .background(
-                    Brush.horizontalGradient(
-                        colors = BrandGradient,
-                    ),
-                ),
-        )
-
-        // Shimmer overlay
-        if (isIndeterminate || progress > 0f) {
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(2.dp)),
-            ) {
-                val shimmerWidth = size.width * 0.3f
-                val shimmerStart = (shimmerPosition * size.width) - shimmerWidth
-                val shimmerEnd = shimmerStart + shimmerWidth
-
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.4f),
-                            Color.Transparent,
-                        ),
-                        startX = shimmerStart,
-                        endX = shimmerEnd,
-                    ),
-                )
-            }
-        }
-    }
-}
-
-
-@Preview(name = "BootingSplash - Indeterminate")
-@Composable
-fun BootingSplashPreview() {
-    PluviaTheme {
-        BootingSplash(visible = true)
-    }
-}
-
-@Preview(name = "BootingSplash - 50% Progress")
-@Composable
-fun BootingSplashProgressPreview() {
-    PluviaTheme {
-        BootingSplash(
-            visible = true,
-            text = "Loading game files...",
-            progress = 0.5f,
-        )
-    }
-}
-
-@Preview(name = "BootingSplash - Dark", device = "spec:width=1920px,height=1080px,dpi=440")
-@Composable
-fun BootingSplashLandscapePreview() {
-    PluviaTheme {
-        BootingSplash(
-            visible = true,
-            text = "Preparing container...",
-            progress = -1f,
-        )
     }
 }

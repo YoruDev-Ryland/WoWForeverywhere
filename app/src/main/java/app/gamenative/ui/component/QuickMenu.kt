@@ -80,6 +80,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -1696,19 +1697,9 @@ internal fun QuickMenuAdjustmentRow(
             .clip(shape)
             .background(
                 if (isFocused) {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            accentColor.copy(alpha = 0.16f),
-                            accentColor.copy(alpha = 0.08f),
-                        ),
-                    )
+                    SolidColor(accentColor.copy(alpha = 0.16f))
                 } else {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.10f),
-                        ),
-                    )
+                    SolidColor(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f))
                 },
             )
             .then(
@@ -1950,19 +1941,9 @@ internal fun QuickMenuToggleRow(
             .clip(RoundedCornerShape(14.dp))
             .background(
                 if (isFocused) {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            accentColor.copy(alpha = 0.16f),
-                            accentColor.copy(alpha = 0.08f),
-                        ),
-                    )
+                    SolidColor(accentColor.copy(alpha = 0.16f))
                 } else {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.10f),
-                        ),
-                    )
+                    SolidColor(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f))
                 },
             )
             .then(
@@ -2076,19 +2057,9 @@ private fun QuickMenuDetailRow(
             .clip(shape)
             .background(
                 if (isFocused) {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            accentColor.copy(alpha = 0.14f),
-                            accentColor.copy(alpha = 0.06f),
-                        ),
-                    )
+                    SolidColor(accentColor.copy(alpha = 0.14f))
                 } else {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.10f),
-                        ),
-                    )
+                    SolidColor(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f))
                 },
             )
             .then(
@@ -2202,12 +2173,7 @@ private fun QuickMenuItemRow(
                 .then(
                     if (isFocused && isEnabled) {
                         Modifier.background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    accentColor.copy(alpha = 0.15f),
-                                    accentColor.copy(alpha = 0.05f),
-                                ),
-                            ),
+                            brush = SolidColor(accentColor.copy(alpha = 0.15f)),
                         )
                     } else Modifier
                 )

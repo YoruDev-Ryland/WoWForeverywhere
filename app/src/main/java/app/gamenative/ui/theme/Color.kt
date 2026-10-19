@@ -4,19 +4,20 @@ import androidx.compose.ui.graphics.Color
 import com.alorma.compose.settings.ui.base.internal.SettingsTileColors
 import com.alorma.compose.settings.ui.base.internal.SettingsTileDefaults
 
+// Foreverywhere: upstream tokens remapped to the WoW Forever palette (see wow/ui/theme/ForeverywhereTheme.kt)
 // Your custom color scheme
-val customBackground = Color(0xFF09090B)
-val customForeground = Color(0xFFFAFAFA)
-val customCard = Color(0xFF09090B)
-val customCardForeground = Color(0xFFFAFAFA)
-val customPrimary = Color(0xFFA21CAF)
-val customPrimaryForeground = Color(0xFFFAFAFA)
-val customSecondary = Color(0xFF27272A)
-val customSecondaryForeground = Color(0xFFFAFAFA)
-val customMuted = Color(0xFF27272A)
-val customMutedForeground = Color(0xFF94969C)
-val customAccent = Color(0xFF06B6D4)
-val customAccentForeground = Color(0xFFFAFAFA)
+val customBackground = Color(0xFF10171A)
+val customForeground = Color(0xFFEFE6D6)
+val customCard = Color(0xFF19232A)
+val customCardForeground = Color(0xFFEFE6D6)
+val customPrimary = Color(0xFFC9A06A)
+val customPrimaryForeground = Color(0xFF1D150B)
+val customSecondary = Color(0xFF24323A)
+val customSecondaryForeground = Color(0xFFEFE6D6)
+val customMuted = Color(0xFF24323A)
+val customMutedForeground = Color(0xFFA8A08F)
+val customAccent = Color(0xFF3FA7C2)
+val customAccentForeground = Color(0xFF06222B)
 val customDestructive = Color(0xFF7F1D1D)
 
 val pluviaSeedColor = Color(0x284561FF)
@@ -27,26 +28,26 @@ val pluviaSeedColor = Color(0x284561FF)
  */
 
 // Brand
-val PluviaPrimary = Color(0xFFA21CAF)
+val PluviaPrimary = Color(0xFFC9A06A)
 val PluviaSeed = Color(0x284561FF)
 
 // Backgrounds
-val PluviaBackground = Color(0xFF09090B)
-val PluviaSurface = Color(0xFF12121A)
-val PluviaSurfaceElevated = Color(0xFF1A1A24)
-val PluviaCard = Color(0xFF09090B)
+val PluviaBackground = Color(0xFF10171A)
+val PluviaSurface = Color(0xFF19232A)
+val PluviaSurfaceElevated = Color(0xFF24323A)
+val PluviaCard = Color(0xFF19232A)
 
 // Foregrounds
-val PluviaForeground = Color(0xFFFAFAFA)
-val PluviaForegroundMuted = Color(0xFF94969C)
+val PluviaForeground = Color(0xFFEFE6D6)
+val PluviaForegroundMuted = Color(0xFFA8A08F)
 
 // Secondary
-val PluviaSecondary = Color(0xFF27272A)
+val PluviaSecondary = Color(0xFF24323A)
 
 // Accents
-val PluviaCyan = Color(0xFF00D4FF)
-val PluviaPurple = Color(0xFF8B5CF6)
-val PluviaPink = Color(0xFFEC4899)
+val PluviaCyan = Color(0xFF3FA7C2)
+val PluviaPurple = Color(0xFFC9A06A)
+val PluviaPink = Color(0xFFC9A06A)
 
 // Semantic
 val PluviaSuccess = Color(0xFF10B981)
@@ -55,7 +56,7 @@ val PluviaDanger = Color(0xFFEF4444)
 val PluviaDestructive = Color(0xFF7F1D1D)
 
 // Border
-val PluviaBorder = Color(0xFF3A3A4A)
+val PluviaBorder = Color(0xFF30414A)
 
 // Status - Installed/Download states
 val StatusInstalled = Color(0xFF4CAF50)
@@ -73,12 +74,12 @@ val FriendInGameAwayOrSnooze = Color(0x8090BA3C)
 val FriendBlocked = Color(0xFF983D3D)
 
 // WoW Forever
-val WowBackgroundGradient = listOf(Color(0xFF0A0E17), Color(0xFF10192A), Color(0xFF080C14))
-val WowGold = Color(0xFFC79C6E)
-val WowBronze = Color(0xFF9E7138)
-val WowMuted = Color(0xFF88A0C0)
-val WowSubtle = Color(0xFF7A92B0)
-val WowError = Color(0xFFFC8181)
+val WowBackgroundGradient = listOf(Color(0xFF10171A), Color(0xFF10171A)) // flat: Foreverywhere has no gradients
+val WowGold = Color(0xFFC9A06A)
+val WowBronze = Color(0xFFC9A06A)
+val WowMuted = Color(0xFFA8A08F)
+val WowSubtle = Color(0xFFA8A08F)
+val WowError = Color(0xFFE8925A)
 
 // Compatibility
 val CompatibilityGood = Color(0xFF4CAF50)

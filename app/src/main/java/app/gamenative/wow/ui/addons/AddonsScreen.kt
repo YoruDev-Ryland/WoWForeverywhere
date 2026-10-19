@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,7 +43,10 @@ import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.AddonListing
 import app.gamenative.wow.ui.FwPage
 import app.gamenative.wow.ui.LauncherController
+import app.gamenative.wow.ui.components.ArtImage
+import app.gamenative.wow.ui.components.ForeverArt
 import app.gamenative.wow.ui.components.FwButton
+import app.gamenative.wow.ui.components.FwChip
 import app.gamenative.wow.ui.components.FwButtonKind
 import app.gamenative.wow.ui.components.FwDialog
 import app.gamenative.wow.ui.components.FwRow
@@ -63,6 +67,7 @@ fun AddonsRoute(launcher: LauncherController, addons: AddonsController?, onBack:
 @Composable
 fun AddonsScreen(c: AddonsController, onBack: () -> Unit) {
     var showUrlDialog by remember { mutableStateOf(false) }
+    val wideBar = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
     LaunchedEffect(c) { if (c.installed == null) c.refreshInstalled() }
 
     Column(Modifier.fillMaxSize().background(Fw.Ground)) {
@@ -72,32 +77,32 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             FwButton("Back", onBack, kind = FwButtonKind.Ghost)
-            Segment("Installed (${c.installed?.size ?: "…"})", c.mode == AddonsController.Mode.INSTALLED) { c.switchMode(AddonsController.Mode.INSTALLED) }
-            Segment("Browse", c.mode == AddonsController.Mode.BROWSE) { c.switchMode(AddonsController.Mode.BROWSE) }
-            SearchField(c.query, c::search, Modifier.weight(1f))
+            FwChip("Installed ${c.installed?.size ?: "…"}", c.mode == AddonsController.Mode.INSTALLED, { c.switchMode(AddonsController.Mode.INSTALLED) })
+            FwChip("Browse", c.mode == AddonsController.Mode.BROWSE, { c.switchMode(AddonsController.Mode.BROWSE) })
+            if (wideBar) SearchField(c.query, c::search, Modifier.weight(1f))
         }
+        if (!wideBar) SearchField(c.query, c::search, Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp))
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Segment(if (c.includeClassic) "Forever + Classic" else "Forever only", false, c::toggleClassic)
-            Segment(c.source?.let(::sourceName) ?: "All sources", false, c::cycleSource)
+            FwChip(if (c.includeClassic) "Forever + Classic" else "Forever only", false, c::toggleClassic)
+            FwChip(c.source?.let(::sourceName) ?: "All sources", false, c::cycleSource)
             Box(Modifier.weight(1f))
-            FwButton("Install from link", { showUrlDialog = true }, kind = FwButtonKind.Ghost)
+            FwButton("From link", { showUrlDialog = true }, kind = FwButtonKind.Ghost)
             c.updates?.takeIf { it > 0 }?.let { FwButton("Update all ($it)", c::updateAll, enabled = c.working == null) }
         }
         (c.working ?: c.message)?.let {
             Text(it, style = Fw.Secondary.copy(color = if (c.working != null) Fw.Brass else Fw.Ash), modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
         }
-        HorizontalDivider(color = Fw.Rule)
-        BoxWithConstraints(Modifier.fillMaxSize()) {
+        BoxWithConstraints(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 16.dp)) {
             val wide = maxWidth >= 600.dp
             var detailOpen by remember { mutableStateOf(false) }
             if (wide) {
                 Row(Modifier.fillMaxSize()) {
                     AddonList(c, Modifier.weight(1.25f).fillMaxHeight(), onOpen = {})
-                    VerticalDivider(color = Fw.Rule)
+                    Box(Modifier.width(14.dp))
                     c.selected?.let { Detail(c, it, Modifier.weight(1f).fillMaxHeight()) } ?: Box(Modifier.weight(1f))
                 }
             } else {
@@ -143,7 +148,7 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
                 style = Fw.Secondary,
                 modifier = Modifier.padding(20.dp),
             )
-            else -> LazyColumn(Modifier.fillMaxSize()) {
+            else -> LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(c.listings, key = { "${it.remote.provider}:${it.remote.projectId}" }) { listing ->
                     FwRow(
                         selected = c.selected == listing,
@@ -172,7 +177,6 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
                         }
                         Text(state, style = Fw.Data.copy(color = color))
                     }
-                    HorizontalDivider(color = Fw.Rule)
                 }
             }
         }
@@ -183,12 +187,16 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
 private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifier) {
     val remote = listing.remote
     val file = remote.latest[listing.bestFlavor] ?: remote.latest.values.firstOrNull()
-    Column(modifier.verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier.clip(Fw.TileShape).background(Fw.Stone).verticalScroll(rememberScrollState())) {
+        Box(Modifier.fillMaxWidth().height(120.dp).background(Fw.Stone2)) {
+            ArtImage(remote.iconUrl ?: ForeverArt.INTERFACE.url, Modifier.fillMaxSize(), zoom = if (remote.iconUrl == null) ForeverArt.INTERFACE.zoom else 1f)
+        }
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FlavorMark(listing.bestFlavor, size = 40)
+            FlavorMark(listing.bestFlavor, size = 36)
             Text(remote.name, style = Fw.Title)
         }
-        Text(flavorLabel(listing.bestFlavor), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.FOREVER) Fw.Brass else Fw.Ash))
+        Text(flavorLabel(listing.bestFlavor), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.FOREVER) Fw.Gem else Fw.Ash))
         if (remote.summary.isNotBlank()) Text(remote.summary, style = Fw.Text)
         Facts(
             listOfNotNull(
@@ -217,6 +225,7 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
             }
             if (listing.installed != null) FwButton("Remove", { c.remove(listing) }, kind = FwButtonKind.Danger, enabled = idle)
         }
+        }
     }
 }
 
@@ -232,22 +241,9 @@ private fun Facts(rows: List<Pair<String, String>>) {
     }
 }
 
-/** A toggle-style ghost button; the current choice gets a raised fill and a brass underline. */
-@Composable
-private fun Segment(text: String, on: Boolean, onClick: () -> Unit) {
-    Box {
-        FwButton(text, onClick, kind = FwButtonKind.Ghost, modifier = if (on) Modifier.background(Fw.Stone2) else Modifier)
-        if (on) {
-            Box(Modifier.matchParentSize()) {
-                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(3.dp).background(Fw.Brass))
-            }
-        }
-    }
-}
-
 @Composable
 private fun SearchField(value: String, onChange: (String) -> Unit, modifier: Modifier) {
-    Box(modifier.widthIn(min = 160.dp).border(1.dp, Fw.Rule, Fw.Shape).padding(horizontal = 12.dp, vertical = 12.dp)) {
+    Box(modifier.widthIn(min = 160.dp).background(Fw.Stone, Fw.Pill).padding(horizontal = 18.dp, vertical = 12.dp)) {
         if (value.isEmpty()) Text("Search Forever addons…", style = Fw.Text.copy(color = Fw.Ash), maxLines = 1, overflow = TextOverflow.Ellipsis)
         BasicTextField(value, onChange, singleLine = true, textStyle = Fw.Text, cursorBrush = SolidColor(Fw.Brass), modifier = Modifier.fillMaxWidth())
     }
@@ -261,8 +257,8 @@ private fun SearchField(value: String, onChange: (String) -> Unit, modifier: Mod
 fun FlavorMark(flavor: AddonFlavor, size: Int = 28) {
     val base = Modifier.size(size.dp)
     when (flavor) {
-        AddonFlavor.FOREVER -> Box(base.background(Fw.Brass, Fw.Shape), contentAlignment = Alignment.Center) {
-            Text("F", style = Fw.Title.copy(fontSize = (size * 0.62f).sp, lineHeight = (size * 0.62f).sp, color = Fw.BrassInk))
+        AddonFlavor.FOREVER -> Box(base.background(Fw.Gem, Fw.Shape), contentAlignment = Alignment.Center) {
+            Text("F", style = Fw.Title.copy(fontSize = (size * 0.5f).sp, lineHeight = (size * 0.5f).sp, color = Fw.GemInk))
         }
         else -> Box(base.border(2.dp, Fw.Ash, CircleShape), contentAlignment = Alignment.Center) {
             Text(
