@@ -1,0 +1,104 @@
+name: Release
+
+# Builds the signed APK for a version tag (v1.2.3) and publishes it as the latest GitHub release,
+# which is also where the app's built-in updater looks.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and publish (for example v0.2.0)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install the NDK
+        run: |
+          NDK=$(sed -n 's/.*ndkVersion = "\(.*\)".*/\1/p' app/build.gradle.kts)
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$NDK" > /dev/null
+
+      - name: Fetch runtime components
+        run: tools/fetch_components.sh
+
+      - name: Configure signing and API keys
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          WAGO_API_KEY: ${{ secrets.WAGO_API_KEY }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::RELEASE_KEYSTORE_BASE64 is not set; releases must be signed with the release key."
+            exit 1
+          fi
+          mkdir -p app/keystores
+          echo "$KEYSTORE_BASE64" | base64 -d > app/keystores/release.jks
+          {
+            echo "storeFile=keystores/release.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEYSTORE_PASSWORD"
+          } > app/keystores/keystore.properties
+          {
+            echo "sdk.dir=$ANDROID_HOME"
+            echo "CURSEFORGE_API_KEY=$CURSEFORGE_API_KEY"
+            echo "WAGO_API_KEY=$WAGO_API_KEY"
+          } > local.properties
+
+      - name: Check the version matches the tag
+        run: |
+          VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
+          if [ "v$VERSION" != "$TAG" ]; then
+            echo "::error::versionName is $VERSION but the tag is $TAG"
+            exit 1
+          fi
+
+      - name: Build
+        run: ./gradlew --no-daemon assembleModernRelease
+
+      - name: Prepare the APK
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/modern/release/app-modern-release.apk dist/WoW-Foreverywhere.apk
+          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs dist/WoW-Foreverywhere.apk | grep -i "SHA-256" | head -1
+          (cd dist && sha256sum WoW-Foreverywhere.apk > WoW-Foreverywhere.apk.sha256)
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: WoW Foreverywhere ${{ env.TAG }}
+          body_path: .github/release-notes.md
+          make_latest: true
+          files: |
+            dist/WoW-Foreverywhere.apk
+            dist/WoW-Foreverywhere.apk.sha256
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f app/keystores/release.jks app/keystores/keystore.properties local.properties
