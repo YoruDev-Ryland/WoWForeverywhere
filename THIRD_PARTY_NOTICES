@@ -457,3 +457,13 @@ This project bundles `app/src/main/lib/perfsdk-v1.0.0.jar`, the Samsung Performa
 power-control feature. The SDK is proprietary to Samsung Electronics and is NOT covered by
 this project's GPL-3.0 license; it is used under the terms of Samsung's SDK license
 agreement. If you redistribute this project, verify your right to redistribute the SDK.
+
+## Fonts (SIL Open Font License 1.1)
+
+Bundled in `app/src/main/res/font/fw_*.ttf`, unmodified apart from file names:
+
+- IM FELL English SC, (c) 2007 Igino Marini, Reserved Font Name "IM FELL English SC"
+- Atkinson Hyperlegible, (c) 2020 Braille Institute of America, Inc.
+- IBM Plex Mono, (c) 2017 IBM Corp., Reserved Font Name "Plex"
+
+License text: https://openfontlicense.org/open-font-license-official-text/
