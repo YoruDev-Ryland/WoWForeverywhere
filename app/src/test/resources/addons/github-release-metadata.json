@@ -1,0 +1,53 @@
+{
+  "url": "https://api.github.com/repos/BigWigsMods/BigWigs/releases/1",
+  "html_url": "https://github.com/BigWigsMods/BigWigs/releases/tag/v400",
+  "id": 1,
+  "author": { "login": "github-actions[bot]", "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4" },
+  "tag_name": "v400",
+  "name": "BigWigs v400",
+  "draft": false,
+  "prerelease": false,
+  "published_at": "2026-10-10T12:00:00Z",
+  "assets": [
+    {
+      "id": 101,
+      "name": "BigWigs-v400.zip",
+      "content_type": "application/zip",
+      "size": 1000,
+      "download_count": 5000,
+      "browser_download_url": "{{BASE}}/dl/BigWigs-v400.zip"
+    },
+    {
+      "id": 102,
+      "name": "BigWigs-v400-a.zip",
+      "content_type": "application/zip",
+      "size": 1000,
+      "download_count": 300,
+      "browser_download_url": "{{BASE}}/dl/BigWigs-v400-a.zip"
+    },
+    {
+      "id": 103,
+      "name": "BigWigs-v400-b.zip",
+      "content_type": "application/zip",
+      "size": 1000,
+      "download_count": 200,
+      "browser_download_url": "{{BASE}}/dl/BigWigs-v400-b.zip"
+    },
+    {
+      "id": 104,
+      "name": "BigWigs-v400-b-nolib.zip",
+      "content_type": "application/zip",
+      "size": 900,
+      "download_count": 10,
+      "browser_download_url": "{{BASE}}/dl/BigWigs-v400-b-nolib.zip"
+    },
+    {
+      "id": 105,
+      "name": "release.json",
+      "content_type": "application/json",
+      "size": 400,
+      "download_count": 9000,
+      "browser_download_url": "{{BASE}}/dl/release.json"
+    }
+  ]
+}
