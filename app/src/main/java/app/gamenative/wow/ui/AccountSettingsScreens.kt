@@ -104,7 +104,7 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit) {
             ProviderLine("CurseForge", BuildConfig.CURSEFORGE_API_KEY.isNotBlank())
             ProviderLine("Wago Addons", BuildConfig.WAGO_API_KEY.isNotBlank())
             ProviderLine("WoWInterface", true)
-            ProviderLine("GitHub (install from link)", true)
+            ProviderLine("GitHub (addon catalog and links)", true)
             Text("CurseForge and Wago need an API key built into the app. Builds without one still use the other sources.", style = Fw.Secondary)
         }
         FwSection("Device") {

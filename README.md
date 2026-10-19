@@ -1,212 +1,182 @@
+<div align="center">
+
 # WoW Foreverywhere
 
-Play **World of Warcraft: Forever** on a Snapdragon Android handheld, with no PC involved. Install the APK, let the app download the game from Blizzard's servers, pick your addons, and press Play.
+**World of Warcraft: Forever on Snapdragon Android handhelds. No PC needed.**
 
-This is a fork of [jaredgei/wow-forever-android](https://github.com/jaredgei/wow-forever-android). The part that runs the game is upstream's, unchanged: Blizzard's Windows ARM64 client under Proton ARM64EC, with DXVK and a tuned Turnip driver. This fork adds:
+Install the app, let it download the game from Blizzard's servers, pick your addons, and press Play.
 
-- **An in-app installer.** It downloads the client from Blizzard's CDN to internal storage or an SD card, keeps going in the background with a notification, and can pause, resume and repair. The download is about half a gigabyte. The game then streams the rest of its data (about 67 GB) itself while you're at the login screen or playing.
-- **Finding existing installs.** It scans internal storage and SD cards for a copy you already have, such as one copied from a PC for upstream, and uses it as-is.
-- **Beta and launch versions.** It runs the WoW Forever beta (`wow_classic_beta`) and the launch version (`wowf`). From launch day it offers to switch a beta install to the launch version without downloading the game data again.
-- **An addon manager.** Search, install, update and remove addons from CurseForge, Wago, WoWInterface and GitHub. Addons made for Forever are marked differently from Classic addons that may or may not work.
-- **A new controller-first launcher.** Big tiles that work on small screens.
+[![Latest release](https://img.shields.io/github/v/release/YoruDev-Ryland/WoWForeverywhere?label=release&color=c9a06a)](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/YoruDev-Ryland/WoWForeverywhere/total?color=3fa7c2)](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-a8a08f)](LICENSE)
+[![Support on Ko-fi](https://img.shields.io/badge/support-Ko--fi-c9a06a)](https://ko-fi.com/rkremeier)
 
-Installs alongside the upstream app (package `app.wowforeverywhere`).
+<img src=".github/readme/home.jpg" alt="The Foreverywhere home screen with Play, Addons, Game files, Account and Settings tiles" width="900">
 
-Foreverywhere is free and open source. If it saves you time, you can support development on [Ko-fi](https://ko-fi.com/rkremeier).
+</div>
 
-> **Status: early and untested on real hardware.** Everything has been exercised on an Android emulator and in unit tests (installer, addon manager, product detection). The game itself has not been launched from this fork on a device yet.
+## Features
 
-> Unofficial community project, not affiliated with or endorsed by Blizzard Entertainment. You need your own Battle.net account with WoW Forever access. This repo and its releases contain **no** Blizzard game files: the app downloads them from Blizzard's own CDN, like the Battle.net launcher does. Using a third-party launcher may be against Blizzard's terms; use at your own risk.
+- **Installs the game for you.** Foreverywhere downloads the WoW Forever client straight from Blizzard's CDN to internal storage or an SD card. Downloads continue in the background, can be paused and resumed, and every file is verified.
+- **Finds the copy you already have.** If WoW Forever is already on the device (copied from a PC, or set up for another launcher), the app finds it and uses it without downloading anything.
+- **Keeps it up to date.** When Blizzard patches the game, the app offers the update before you play.
+- **Built-in addon manager.** Search, install, update and remove addons from CurseForge, Wago, WoWInterface and GitHub, browse by category, and see at a glance which addons are made for Forever.
+- **Signs you in.** Save your Battle.net login once and the game logs in by itself.
+- **Made for a controller.** Every screen works with the D-pad and face buttons, and the layout adapts to small and portrait screens.
 
-## Setup on the device
+The game runs as Blizzard's own Windows ARM64 client under Wine, with DXVK and a tuned Turnip Vulkan driver for Adreno GPUs. Nothing is emulated as x86.
 
-1. Install the APK and open it.
-2. **Welcome** checks your device: Snapdragon/Adreno GPU, 64-bit ARM, Android 10 or later.
-3. **Find game** looks for an existing install. Pick it to use it as it is, or choose **Install fresh**.
-4. **Install**: choose internal storage or the SD card and start the download. You can leave the app while it runs.
-5. **Sign in**: optionally save your Battle.net login so the game logs in by itself. It's encrypted with the Android keystore and handed to the game in a temporary file that's wiped as soon as the game reads it.
-6. Press **Play**. On the first start, leave the game at the login screen on Wi-Fi for a while so it can stream its data.
+> [!NOTE]
+> Foreverywhere is an unofficial community project. It is not affiliated with or endorsed by Blizzard Entertainment. You need your own Battle.net account with access to WoW Forever. The app and this repository contain no Blizzard game files; everything is downloaded from Blizzard's servers on your device.
 
-## Building
+## Requirements
 
-```bash
-export JAVA_HOME=/path/to/jdk-17-or-21
-tools/fetch_components.sh               # Proton, DXVK and Turnip (~130 MB, checksummed)
-./gradlew assembleModernRelease          # or assembleModernDebug
-./gradlew testModernDebugUnitTest
-```
-
-Addon sources that need keys read them from `local.properties` (never commit them):
-
-```properties
-CURSEFORGE_API_KEY=...   # https://console.curseforge.com (CurseForge 3rd-party API terms)
-WAGO_API_KEY=...         # Wago Addons partner access
-```
-
-Builds without keys still work with WoWInterface and GitHub.
-
-Design notes: `docs/superpowers/specs/`, `docs/superpowers/plans/` and `docs/superpowers/notes/` (including the installer spike).
-
----
-
-The original upstream README follows.
-
----
-
-# WoW Forever for Android
-
-Play the **World of Warcraft: Forever beta** on Snapdragon Android handhelds as a normal Android app. You tap the icon, press Play, and the game runs.
-
-This uses Blizzard's own **Windows ARM64** WoW client, so the game itself runs natively on the phone's CPU. Wine translates the Windows calls, and DXVK plus a patched Turnip Vulkan driver render the game on the Adreno GPU. Nothing is emulated as x86.
-
-> Unofficial community project. Not affiliated with or endorsed by Blizzard Entertainment. You need your own Battle.net account with WoW Forever beta access. This repo and its releases contain **no** Blizzard game files.
-
----
-
-## Supported devices
-
-| Device | Status |
+| | |
 | :--- | :--- |
-| AYN Thor (Snapdragon 8 Gen 2 / Adreno 740) | Tested, reaches the game world with controller support |
-| Retroid Pocket 6 (Snapdragon 8 Gen 2 / Adreno 740) | Tested by the original community setup |
-| AYN Odin 2 / Mini (Snapdragon 8 Gen 2) | Expected to work |
-| AYN Odin Portal (Snapdragon 8 Elite / Adreno 830) | Supported via bundled Turnip v32 driver |
-| RedMagic 11 Pro (Snapdragon 8 Elite / Adreno 840) | Tested in-world by arusiasotto |
-| Samsung Galaxy S23/S24/S25 / Z Fold series | Supported (with automatic Samsung UBWC optimization) |
+| **Chip** | Snapdragon 8 series with an Adreno 7xx or 8xx GPU |
+| **Android** | Android 10 or newer, 64-bit |
+| **Storage** | About 80 GB free for the game (internal storage or SD card), plus about 4 GB of internal storage for the app |
+| **Account** | A Battle.net account with WoW Forever |
+| **Network** | Wi-Fi recommended for the first start, when the game downloads its world data |
 
-Requirements:
+### Devices
 
-- Snapdragon 8 series (Adreno 7xx or Adreno 8xx). The app bundles both the Adreno 740 driver and the Turnip v32 driver for Snapdragon 8 Elite / Adreno 8xx, automatically detecting the GPU and applying the optimal driver and environment flags.
-- Android 10 or newer, 64-bit.
-- About **80 GB** free for the game data (internal storage or SD card), plus about 4 GB of internal storage for the app and its Windows environment.
-- A Mac or PC with the WoW Forever beta installed through Battle.net, to copy the game data from.
+| Device | Chip | Status |
+| :--- | :--- | :--- |
+| AYN Thor | Snapdragon 8 Gen 2 | Reaches the game world with controller support |
+| Retroid Pocket 6 | Snapdragon 8 Gen 2 | Reported working |
+| AYN Odin 2 / Odin 2 Mini | Snapdragon 8 Gen 2 | Expected to work |
+| AYN Odin 3 / Odin Portal | Snapdragon 8 Elite | Supported through the bundled Adreno 8xx driver |
+| RedMagic 11 Pro | Snapdragon 8 Elite | Reported working in-world |
+| Samsung Galaxy S23, S24, S25, Z Fold | Snapdragon 8 Gen 2 and later | Supported |
 
----
+If you try a device that isn't listed, please [open an issue](https://github.com/YoruDev-Ryland/WoWForeverywhere/issues) with the result.
 
-## Installation
+## Getting started
 
-### 1. Install the app
+1. Download **WoW-Foreverywhere.apk** from the [latest release](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/latest) and open it on your device. Android asks you to allow installs from your browser or file manager the first time.
+2. Open **Foreverywhere** and tap **Get started**. The app checks your device and asks for file access, which it needs to install the game in a folder you can reach.
+3. **Find game.** The app looks for an existing install on internal storage and SD cards. Pick one to use it as it is, or choose **Install fresh**.
+4. **Install.** Choose internal storage or the SD card and start the download. You can leave the app while it runs; progress shows in your notifications.
+5. **Sign in.** Optionally save your Battle.net email and password so the game logs you in automatically.
+6. Press **Play**.
 
-Download `WoW-Forever.apk` from the [latest release](https://github.com/jaredgei/wow-forever-android/releases/latest) and install it on your device. The app's package name is `app.wowforever`, so it can sit alongside GameNative or Winlator.
+<p align="center">
+  <img src=".github/readme/find-game.jpg" alt="Find game step listing an existing WoW Forever install" width="49%">
+  <img src=".github/readme/install-game.gif" alt="The game downloading from Blizzard's servers with a progress bar" width="49%">
+</p>
 
-### 2. Copy your WoW game data to the device (one-time setup)
+> [!IMPORTANT]
+> The app downloads the game program, about half a gigabyte. The first time you start the game, it downloads the rest of its world data (about 67 GB) on its own. Your first sessions may load slowly. Leaving the game at the login screen on Wi-Fi for a while speeds this up.
 
-Copy two things from your Battle.net install (on a Mac that's `/Applications/World of Warcraft/`) into a folder on the device. The default is `/storage/emulated/0/WoW Forever/`. Any other folder works too, including one on an SD card. You only need to do this **once**; all subsequent game updates are handled directly in-app over Wi-Fi.
+### Already have the game on a PC?
 
-```
-WoW Forever/
-├── .build.info                   <- from the install root
-└── Data/                         <- the whole Data folder (~67 GB)
-```
+You can copy it over instead of downloading. Copy the hidden `.build.info` file and the whole `Data` folder from your Battle.net install into a folder on the device, for example `WoW Forever` on your SD card. Make sure your file manager shows hidden files, or `.build.info` gets left behind. The app finds the folder on its next scan, or you can point to it with **Game files → Choose folder**.
 
-- `Data/` is the same on every platform, so a Mac, Windows, or ARM install all work.
-- `.build.info` is a hidden file. Copy it too. Without it the game fails with *"CAS system was unable to initialize"*.
-- You don't need `WowB-ARM64.exe`. Mac and x86 installs don't ship it, so the app downloads the matching Windows ARM64 client from Blizzard's CDN when you press Play, and checks its hashes.
-- If you used a different folder, or moved it, the launcher shows **Locate Game Files**. Pick the folder that contains `.build.info` and `Data/`. **Change Location** switches it later.
+## Addons
 
-Transfer the files over to a `WoW Forever/` folder on your device. You can do this by:
+The addon browser brings together CurseForge, Wago, WoWInterface and a curated catalog of addons published on GitHub. The same addon listed on several sites appears once, with a link to each site.
 
-- **SD Card:** Insert the microSD card into your computer and copy the files over (make sure your file manager shows hidden files so `.build.info` is included).
-- **USB File Transfer:** Connect your device to your computer via USB (in File Transfer / MTP mode) and copy the files directly to internal storage (default: `/storage/emulated/0/WoW Forever/`).
-- **ADB Script:** If you have ADB installed and this repo checked out, you can use the sync script to copy initial files easily over USB:
+<p align="center">
+  <img src=".github/readme/install-addon.gif" alt="Selecting BigWigs in the addon browser and installing it" width="900">
+</p>
 
-```bash
-WOW_SRC="/Applications/World of Warcraft" tools/sync_wow_to_device.sh
-```
+- **Forever or Classic.** Each addon shows the round icon of the game version it was made for. Forever addons come first. Classic addons are listed too, with a note that they may not work in Forever. When a Forever version of an installed Classic addon appears, the app offers to switch.
+- **Categories.** Browse by quests, maps, raids and bosses, unit frames, action bars, bags, auction, professions and more.
+- **Updates.** The home screen shows how many addons have updates, and **Update all** installs them in one go.
+- **Your existing addons.** Addons already in the game's `Interface/AddOns` folder are recognized, including ones installed by other managers.
+- **Install from a link.** Paste a GitHub repository or a link to an addon `.zip` to install something that isn't listed.
 
-### 3. Play
+<p align="center">
+  <img src=".github/readme/browse.jpg" alt="Addon browser showing Questie with its description and links" width="49%">
+  <img src=".github/readme/category.jpg" alt="Addon browser filtered to raids and bosses" width="49%">
+</p>
 
-Open **WoW Forever**. Once your game files and Battle.net credentials are configured, the app automatically launches straight into the game. If credentials are not yet configured, the launcher stops at the setup screen so you can enter them before playing. The first launch downloads the ARM64 game client and installs the Windows environment, which takes a few minutes and needs an internet connection.
+### Addon sources
 
-- **Setup screen:** to access folder settings, forget credentials, check environment status, or view updates, hold **Start + Select + L2 + R2** (or tap the back button) during the loading splash to cancel boot and return to the setup screen.
-- The app creates a basic `WTF/Config.wtf` on first run and always sets `gxApi "D3D11"`, the renderer that works with DXVK.
+| Source | What you get |
+| :--- | :--- |
+| **GitHub catalog** | Popular addons that publish releases on GitHub, such as Questie, Deadly Boss Mods, BigWigs, Plater, Dominos and Bartender4. No account or key needed. |
+| **WoWInterface** | The full WoWInterface catalog. No account or key needed. |
+| **CurseForge** | The largest catalog. Available in builds made with a CurseForge API key. |
+| **Wago Addons** | Available in builds made with a Wago Addons API key. |
 
-### Controls and signing in
+The GitHub catalog lives in [`catalog/sources.json`](catalog/sources.json) and is refreshed every night. To suggest an addon, open a pull request that adds its repository. It needs GitHub releases with addon `.zip` files.
 
-- **Controller:** built-in handheld controllers work in-game. WoW's own gamepad mode handles the mapping.
-- **In-game menu:** press Back (the button or the back swipe gesture) to open the sidebar. It has **Keyboard**, on-screen controls, performance overlay and **Exit**.
-- **Keyboard:** the sidebar's **Keyboard** opens the Android keyboard. On dual-screen devices like the Thor it appears on the bottom screen. Symbols like `@` work, and so does pasting.
-- **Battle.net Auto-Login:** configure credentials directly on the launcher setup screen (**Configure Login** / **Update Login**). Credentials are saved encrypted on-device via Android Keystore. On boot, the launcher generates `_classic_beta_/login.txt`, which the WoW client automatically reads on startup to sign in natively without macro simulation or synthetic clicks. Use **Forget Saved Login** on the launcher setup screen to clear credentials and remove the login file.
-  - Authenticator codes still have to be entered by hand.
+## Playing
 
----
+<img src=".github/readme/navigate.gif" alt="Moving between home screen tiles and the addon browser with a controller" width="900">
 
-## Updating the game
+- **Controls.** Use the D-pad or stick to move and **A** to select. **B** goes back. In the game, your handheld's controller works through WoW's own gamepad mode.
+- **Back to the launcher.** While the game is starting, hold **Start + Select + L2 + R2**, or tap the back arrow, to cancel and return to the home screen.
+- **In-game menu.** Press Back during play to open the sidebar with the on-screen keyboard, the performance overlay and **Exit**.
+- **Authenticator codes** are still typed in the game.
 
-WoW Forever v2.0 features a native in-app game updater connected directly to Blizzard's public edge CDNs. **You no longer need a computer or USB cables to keep your game updated.**
+### How your login is stored
 
-Whenever Blizzard patches the game:
-1. **Live Version Check:** The launcher automatically checks the live version against Blizzard's public patch service on startup.
-2. **Update Gate:** If an update is detected, auto-launch cancels and displays the update card with the remote build version, plus a secondary *Launch Anyway (Outdated)* override.
-3. **One-Tap Update:** Tapping **UPDATE TO {version}** downloads the new ARM64 client binaries (`WowB-ARM64.exe` and companion DLLs), saves remote configs to `Data/config/`, syncs new CASC index archives to `Data/indices/`, and atomically updates `.build.info` on disk over Wi-Fi.
-4. **Instant Boot:** Once the update completes, the launcher automatically transitions into booting World of Warcraft at 60 FPS.
-5. **In-Game Streaming:** The game engine's internal streaming client seamlessly streams any newly introduced assets from Blizzard's edge CDNs during gameplay.
+Saving your login is optional, and you can remove it any time under **Account**.
 
-*(Optional fallback: If you ever want to re-seed or mirror your full PC installation over USB, `tools/sync_wow_to_device.sh` is still available.)*
+- The email and password are sealed together with AES-256-GCM using a key held by the Android Keystore. The key never leaves the device's secure hardware where the device has it, and it only works while the device is unlocked.
+- The saved login is excluded from cloud backups and from phone-to-phone transfers.
+- Screenshots and screen recordings of the login form are blocked.
+- To sign in, the game reads your login from a short-lived `login.txt` file in its own folder. This is how the WoW client accepts a login without the Battle.net app. Foreverywhere writes the file when you press Play and wipes it about 20 seconds after the game reads it, or within three minutes at most. It is also wiped when you leave or close the game.
 
----
+Because the game needs the password in plain text for those few seconds, any app with full storage access could read it in that window. If that is a concern, skip saving your login and sign in inside the game instead.
+
+## Settings and game files
+
+<p align="center">
+  <img src=".github/readme/game-files.jpg" alt="Game files screen with the current install and repair options" width="49%">
+  <img src=".github/readme/settings.jpg" alt="Settings screen with app version, support link and addon sources" width="49%">
+</p>
+
+- **Game files** shows where the game is installed and its version. **Install or repair** checks every file and downloads only what's missing or damaged. Once WoW Forever launches, this screen also offers to switch a beta install to the launch version, reusing the game data you already have.
+- **Settings** shows the app version, checks for app updates, and lists which addon sources are available in your build.
 
 ## Troubleshooting
 
-| Symptom | Fix |
+| Problem | What to do |
 | :--- | :--- |
-| *CAS system was unable to initialize: no active install info entries* | `.build.info` or `_classic_beta_/.flavor.info` is missing on the device. |
-| *No realms available* / no servers listed | The device client is out of date. Tap **Update** on the launcher setup screen, or restart the app with Wi-Fi enabled. |
-| Keyboard doesn't appear | Force-stop Gboard (Settings → Apps → Gboard → Force stop) and open **Keyboard** again. It can get stuck on the second screen. |
-| Returns to the launcher after "Launching Game…" | Check the files under `_classic_beta_/Errors/` on the device. |
-| Handheld frontend (e.g. Cocoon) shows the wrong icon | The frontend cached an old icon. Set it with the frontend's "Edit App Artwork", or reinstall the app. |
-
----
+| *CAS system was unable to initialize* | The game folder is missing `.build.info`. Run **Game files → Install or repair**, or copy the file again from your PC install. |
+| *No realms available* | The game is out of date. Open the app with Wi-Fi on and accept the update. |
+| The game is slow the first time | It's downloading its world data in the background. Give it time on Wi-Fi. |
+| The keyboard doesn't appear in the game | Force-stop Gboard under **Settings → Apps → Gboard** and open the keyboard again. |
+| The app returns to the home screen after "Starting World of Warcraft" | Check the files in the game's `Errors` folder (`_forever_/Errors` or `_classic_beta_/Errors`). |
+| "This device can't run the game" | The device has no Adreno GPU. The game needs a Snapdragon chip. |
 
 ## Building from source
 
-Requirements: JDK 17 and the Android SDK (with build-tools and platform-tools).
+Requirements: JDK 17 or 21 and the Android SDK.
 
 ```bash
-tools/fetch_components.sh           # Wine/Proton, DXVK and Turnip archives (~130 MB, not in git)
-./gradlew assembleModernRelease     # app/build/outputs/apk/modern/release/app-modern-release.apk
-./gradlew assembleModernDebug       # unminified debug build, faster to iterate on
+tools/fetch_components.sh          # Wine, DXVK and Turnip runtime archives (~130 MB, checksummed)
+./gradlew assembleModernRelease    # app/build/outputs/apk/modern/release/app-modern-release.apk
+./gradlew testModernDebugUnitTest
 ```
 
-Release builds are signed with `app/keystores/keystore.properties` when it exists (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`). Otherwise they fall back to the debug key. Builds signed with different keys can't update each other, so switching between them means uninstalling first.
+CurseForge and Wago need API keys. Put them in `local.properties`, which is never committed:
 
-`fetch_components.sh` downloads the three runtime archives from this repo's `components-v1` release and checks them against `tools/components.sha256`. If you already have them, pass a folder instead: `tools/fetch_components.sh /path/to/components`.
+```properties
+CURSEFORGE_API_KEY=...
+WAGO_API_KEY=...
+```
 
----
+Builds without keys use WoWInterface and the GitHub catalog. Release builds are signed with `app/keystores/keystore.properties` when it exists and fall back to the debug key otherwise.
 
-## Credits and how it works
+## Credits
 
-This project packages other people's work into a single-purpose app. None of it would exist without:
+Foreverywhere is a fork of [**wow-forever-android**](https://github.com/jaredgei/wow-forever-android) by jaredgei, which made WoW Forever run on Android handhelds in the first place. It in turn builds on:
 
-- **[GameNative](https://github.com/utkarshdalal/GameNative)** by Utkarsh Dalal and contributors (GPL-3.0). The Android app, the Wine container management and the X server are all GameNative, based on v1.2.1. GameNative in turn builds on **[Pluvia](https://github.com/oxters168/Pluvia)**, **[Winlator](https://github.com/brunodev85/winlator)**, **[Winlator Cmod](https://github.com/coffincolors/winlator)** and the **[Bionic Vulkan wrapper](https://github.com/leegao/bionic-vulkan-wrapper)**.
-- **The WoW Forever RP6 community bundle**, which first got the beta running on a Retroid Pocket 6 in GameNative and supplied the three custom runtime components:
-  - **Proton 11 ARM64EC** built from [The412Banner/proton-wine](https://github.com/The412Banner/proton-wine/tree/e5fa703ed7f7329e20d7ede481ab185cf8b1a8b2) with an ARM64 copied-syscall fix and an NLS fallback allocation patch.
-  - **DXVK 2.4.1 (aarch64)** built from [doitsujin/dxvk](https://github.com/doitsujin/dxvk/tree/0cf05780abd7250c2cd713b7749cf32180157cf5).
-    - **Mesa Turnip (Adreno 740)** built from Mesa [`fe067b17d9`](https://github.com/mirror/mesa/tree/fe067b17d9) with a patch limiting barycentric waits to the current block, which fixes a shader scheduler assertion on Adreno 740.
-  - **Mesa Turnip (Adreno 8xx / Snapdragon 8 Elite)** built by **[arusiasotto](https://github.com/arusiasotto/wow-forever-a840)** from **[whitebelyash/mesa-unified](https://github.com/whitebelyash/mesa-unified)** (`turnip/gen8` v32) with the barycentric scheduler fix and ICD exports.
-- **[Wine](https://www.winehq.org/)**, **[Proton](https://github.com/ValveSoftware/Proton)**, **[DXVK](https://github.com/doitsujin/dxvk)**, **[Mesa](https://mesa3d.org/)**, **[FEX-Emu](https://github.com/FEX-Emu/FEX)**, **[box64](https://github.com/ptitSeb/box64)** and **[PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/)**.
-- **Blizzard Entertainment** for World of Warcraft and its Windows ARM64 client. The app icon and splash art come from Blizzard's official [WoW Forever page](https://worldofwarcraft.blizzard.com/en-us/forever). Blizzard owns them and the World of Warcraft marks.
+- [**GameNative**](https://github.com/utkarshdalal/GameNative), [**Pluvia**](https://github.com/oxters168/Pluvia), [**Winlator**](https://github.com/brunodev85/winlator) and the [**Bionic Vulkan wrapper**](https://github.com/leegao/bionic-vulkan-wrapper) for the Android app, Wine container management and X server.
+- The **WoW Forever RP6 community bundle** and [**arusiasotto**](https://github.com/arusiasotto/wow-forever-a840) for the tuned Proton 11 ARM64EC, DXVK and Turnip builds.
+- [**Wine**](https://www.winehq.org/), [**Proton**](https://github.com/ValveSoftware/Proton), [**DXVK**](https://github.com/doitsujin/dxvk), [**Mesa**](https://mesa3d.org/), [**FEX-Emu**](https://github.com/FEX-Emu/FEX), [**box64**](https://github.com/ptitSeb/box64) and [**PulseAudio**](https://www.freedesktop.org/wiki/Software/PulseAudio/).
 
-Full third-party license details are in [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES).
+World of Warcraft, WoW Forever and the artwork shown in the app are owned by Blizzard Entertainment. The app loads that artwork from Blizzard's own servers. Full third-party license details are in [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES).
 
-### What this fork changes from GameNative
+## Support
 
-GameNative is a general game library with Steam, GOG, Epic, Amazon, EA and Rockstar stores, mod management, VR support and per-game container settings. This fork turns it into a launcher for one pre-configured container:
-
-- **Standalone identity:** package `app.wowforever`, WoW name, icons, banners and splash screen, installable next to GameNative.
-- **Direct launch & instant boot:** the app opens to a WoW splash screen (`ui/screen/wow/WoWForeverScreen.kt`) and automatically boots straight into the game once configured. Holding **Start + Select + L2 + R2** or pressing Back on the loading screen cancels boot to return to the setup screen.
-- **Pre-configured container:** bionic, Proton 11 ARM64EC, Turnip through the Vulkan wrapper, DXVK 2.4.1 aarch64, WINEESYNC off, all 8 cores, 1920x1080, and `G:` mapped to `/storage/emulated/0/WoW Forever`.
-- **Native ARM64 launch:** GameNative wraps every Windows program in `winhandler.exe`, an x86-64 helper that needs x86 emulation. ARM64 executables now launch directly, so the game never goes through FEX, and the working directory is set from the mapped drive.
-- **Game file setup:** the launcher writes `_classic_beta_/.flavor.info` and a basic `WTF/Config.wtf` if they're missing, forces `gxApi "D3D11"` (so a copied Mac config that says Metal can't break it), and refuses to start without `.build.info`.
-- **Package-name fixes:** several paths were hard-coded to `app.gamenative`: the bionic library path rewrite (`WINEMU_HOST_PKG` / `HOST_PKG`), the gamepad shared-memory files, the DXVK state cache and the default drives. The controller path was the reason controllers didn't work.
-- **Small robustness fixes:** non-numeric container IDs no longer crash the ID parser, and the bionic redirect library is copied in if it's missing.
-- **Keyboard fixes:** GameNative's on-screen keyboard dropped shifted symbols (`@` came through as `2`), because it sent key codes without the character or the Shift key. The fix is in `Keyboard.java` and `IMEInputReceiver.kt`. The keyboard now always goes through the IME receiver, so it appears on the Thor's bottom screen.
-- **Battle.net auto-login:** native `login.txt` client authentication managed via Keystore-encrypted credentials (`ui/screen/wow/BattleNetSignIn.kt`). Eliminates coordinate-based typing macros in favor of the game client's built-in startup authentication, with configuration available directly from the launcher setup screen.
-- **Native In-App Game Updater (v2.0):** Live version check against Blizzard patch services, direct-from-CDN ARM64 binary and manifest downloads, CASC index synchronization, and atomic `.build.info` updates on-device over Wi-Fi without any PC dependency.
-- **Lean runtime & startup:** eliminated continuous background accelerometer polling during gameplay in favor of native OS window management, removed cold-boot bitmap allocations, guarded background performance metric collection loops, and switched DNS to native platform resolution.
-- **Removed:** every store backend (Steam and JavaSteam, GOG, Epic, Amazon, EA, Rockstar), library, login, settings, custom game scanner, and downloads screens, ExoPlayer and browser dependencies, `DownloadService`, `ContainerMigrator`, Nexus mod management, the Meta Quest/XR build, PostHog analytics, Play Integrity, the self-updater, the Room database, the notification prompt, extra bundled Box64/FEX/DXVK versions and the legacy (Android 9) build. That's roughly 135k lines of code and about half the APK size.
-- **Tooling:** `tools/download_wow_arm64.py` fetches the ARM64 client from Blizzard's CDN, `tools/sync_wow_to_device.sh` handles updates, and `tools/fetch_components.sh` downloads the runtime archives.
+Foreverywhere is free and open source. If it saves you time, you can support its development on [Ko-fi](https://ko-fi.com/rkremeier).
 
 ## License
 
-GPL-3.0, the same as GameNative. See [`LICENSE`](LICENSE). The bundled runtime components carry their own licenses (LGPL, MIT and others). See `THIRD_PARTY_NOTICES` and the notices inside each component archive.
+[GPL-3.0](LICENSE). The bundled runtime components carry their own licenses; see [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES).
