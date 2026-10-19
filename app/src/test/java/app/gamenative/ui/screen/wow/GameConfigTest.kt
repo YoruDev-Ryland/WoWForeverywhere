@@ -42,6 +42,7 @@ class GameConfigTest {
     @Test
     fun staleResolutionIsReset() {
         val existing = listOf(
+            "SET portal \"us\"",
             "SET gxApi \"D3D11\"",
             "SET gxFullscreenResolution \"2560x1440\"",
             "SET gxWindowedResolution \"1280x720\"",
@@ -52,8 +53,31 @@ class GameConfigTest {
     }
 
     @Test
+    fun carriedOverConfigGetsProductPortalAndAgent() {
+        val existing = listOf(
+            "SET agentUID \"wow_classic_beta\"",
+            "SET gxApi \"D3D11\"",
+            "SET gxFullscreenResolution \"1920x1080\"",
+            "SET gxWindowedResolution \"1920x1080\"",
+        )
+        val lines = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080")!!
+        assertTrue("SET portal \"us\"" in lines)
+        assertTrue("SET agentUID \"wowf\"" in lines)
+        assertTrue("SET agentUID \"wow_classic_beta\"" !in lines)
+    }
+
+    @Test
+    fun userPortalIsKept() {
+        val existing = listOf("SET portal \"eu\"", "SET gxApi \"Metal\"")
+        val lines = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080")!!
+        assertTrue("SET portal \"eu\"" in lines)
+        assertTrue(lines.none { it == "SET portal \"us\"" })
+    }
+
+    @Test
     fun unchangedConfigReturnsNull() {
         val existing = listOf(
+            "SET portal \"us\"",
             "SET gxApi \"D3D11\"",
             "SET gxFullscreenResolution \"1920x1080\"",
             "SET gxWindowedResolution \"1920x1080\"",

@@ -1057,10 +1057,20 @@ internal fun buildConfigWtf(existing: List<String>?, product: WowProduct, screen
         val line = existing.firstOrNull { it.startsWith("SET $key ", ignoreCase = true) }
         line == null || !fitsScreen(line.substringAfter(" ").substringAfter(" ").trim('"'), screenSize)
     }
-    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty()) return null
+    // A config carried over from another product (e.g. beta to launch) gets this product's portal and agent.
+    val missingPortal = existing.none { it.startsWith("SET portal ", ignoreCase = true) }
+    val agentLine = "SET agentUID \"${product.code}\""
+    val wrongAgent = existing.any { it.startsWith("SET agentUID ", ignoreCase = true) && it != agentLine }
+    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongAgent) return null
     return existing.filterNot { line ->
-        line.startsWith("SET gxApi ", ignoreCase = true) || staleResolutionKeys.any { line.startsWith("SET $it ", ignoreCase = true) }
-    } + GX_API_LINE + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
+        line.startsWith("SET gxApi ", ignoreCase = true) ||
+            (wrongAgent && line.startsWith("SET agentUID ", ignoreCase = true)) ||
+            staleResolutionKeys.any { line.startsWith("SET $it ", ignoreCase = true) }
+    } + listOfNotNull(
+        GX_API_LINE,
+        "SET portal \"${product.portal}\"".takeIf { missingPortal },
+        agentLine.takeIf { wrongAgent },
+    ) + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
 }
 
 private val RESOLUTION_KEYS = listOf("gxFullscreenResolution", "gxWindowedResolution")
