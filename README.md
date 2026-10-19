@@ -1,8 +1,51 @@
 # WoW Foreverywhere
 
-> **Work in progress.** A fork of [jaredgei/wow-forever-android](https://github.com/jaredgei/wow-forever-android) that aims to make WoW Forever on Android a no-PC experience: install the APK, install the game from inside the app, browse and manage addons (CurseForge, Wago, GitHub, WoWInterface), and play. The game-running side (Wine/Proton, DXVK, Turnip, controller setup) comes from upstream unchanged. See `docs/superpowers/specs/` for the design.
->
-> Installs alongside the upstream app (package `app.wowforeverywhere`). Unofficial; not affiliated with Blizzard Entertainment.
+Play **World of Warcraft: Forever** on a Snapdragon Android handheld, with no PC involved. Install the APK, let the app download the game from Blizzard's servers, pick your addons, and press Play.
+
+This is a fork of [jaredgei/wow-forever-android](https://github.com/jaredgei/wow-forever-android). The part that runs the game is upstream's, unchanged: Blizzard's Windows ARM64 client under Proton ARM64EC, with DXVK and a tuned Turnip driver. This fork adds:
+
+- **An in-app installer.** It downloads the client from Blizzard's CDN to internal storage or an SD card, keeps going in the background with a notification, and can pause, resume and repair. The download is about half a gigabyte. The game then streams the rest of its data (about 67 GB) itself while you're at the login screen or playing.
+- **Finding existing installs.** It scans internal storage and SD cards for a copy you already have, such as one copied from a PC for upstream, and uses it as-is.
+- **Beta and launch versions.** It runs the WoW Forever beta (`wow_classic_beta`) and the launch version (`wowf`). From launch day it offers to switch a beta install to the launch version without downloading the game data again.
+- **An addon manager.** Search, install, update and remove addons from CurseForge, Wago, WoWInterface and GitHub. Addons made for Forever are marked differently from Classic addons that may or may not work.
+- **A new controller-first launcher.** Big tiles that work on small screens.
+
+Installs alongside the upstream app (package `app.wowforeverywhere`).
+
+> **Status: early and untested on real hardware.** Everything has been exercised on an Android emulator and in unit tests (installer, addon manager, product detection). The game itself has not been launched from this fork on a device yet.
+
+> Unofficial community project, not affiliated with or endorsed by Blizzard Entertainment. You need your own Battle.net account with WoW Forever access. This repo and its releases contain **no** Blizzard game files: the app downloads them from Blizzard's own CDN, like the Battle.net launcher does. Using a third-party launcher may be against Blizzard's terms; use at your own risk.
+
+## Setup on the device
+
+1. Install the APK and open it.
+2. **Welcome** checks your device: Snapdragon/Adreno GPU, 64-bit ARM, Android 10 or later.
+3. **Find game** looks for an existing install. Pick it to use it as it is, or choose **Install fresh**.
+4. **Install**: choose internal storage or the SD card and start the download. You can leave the app while it runs.
+5. **Sign in**: optionally save your Battle.net login so the game logs in by itself. It's encrypted with the Android keystore and handed to the game in a temporary file that's wiped as soon as the game reads it.
+6. Press **Play**. On the first start, leave the game at the login screen on Wi-Fi for a while so it can stream its data.
+
+## Building
+
+```bash
+export JAVA_HOME=/path/to/jdk-17-or-21
+tools/fetch_components.sh               # Proton, DXVK and Turnip (~130 MB, checksummed)
+./gradlew assembleModernRelease          # or assembleModernDebug
+./gradlew testModernDebugUnitTest
+```
+
+Addon sources that need keys read them from `local.properties` (never commit them):
+
+```properties
+CURSEFORGE_API_KEY=...   # https://console.curseforge.com (CurseForge 3rd-party API terms)
+WAGO_API_KEY=...         # Wago Addons partner access
+```
+
+Builds without keys still work with WoWInterface and GitHub.
+
+Design notes: `docs/superpowers/specs/`, `docs/superpowers/plans/` and `docs/superpowers/notes/` (including the installer spike).
+
+---
 
 The original upstream README follows.
 
