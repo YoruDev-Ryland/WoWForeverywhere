@@ -60,6 +60,14 @@ object InstallController {
         context.startService(Intent(context, InstallService::class.java).setAction(InstallService.ACTION_PAUSE))
     }
 
+    /** Stops for good and forgets the attempt. Files already downloaded stay, so a later install resumes. */
+    fun cancel(context: Context) {
+        if (state.value is InstallUiState.Running) {
+            context.startService(Intent(context, InstallService::class.java).setAction(InstallService.ACTION_CANCEL))
+        }
+        _state.value = InstallUiState.Idle
+    }
+
     fun resume(context: Context) {
         when (val s = state.value) {
             is InstallUiState.Paused -> start(context, s.request)

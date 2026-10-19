@@ -54,6 +54,7 @@ private enum class Step(val label: String) { WELCOME("Welcome"), FIND("Find game
 @Composable
 fun FirstRunScreen(launcher: LauncherController, onEditLogin: () -> Unit, onDone: () -> Unit, startAtInstall: Boolean = false) {
     var step by remember { mutableStateOf(if (startAtInstall) Step.INSTALL else Step.WELCOME) }
+    var installedFresh by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().background(Fw.Ground)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -74,8 +75,11 @@ fun FirstRunScreen(launcher: LauncherController, onEditLogin: () -> Unit, onDone
                     onUse = { step = Step.SIGN_IN },
                     onInstall = { step = Step.INSTALL },
                 )
-                Step.INSTALL -> InstallStep(launcher, onDone = { step = Step.SIGN_IN }, onBack = { step = Step.FIND })
-                Step.SIGN_IN -> SignIn(launcher, onEditLogin, onDone)
+                Step.INSTALL -> InstallStep(launcher, onDone = {
+                    installedFresh = true
+                    step = Step.SIGN_IN
+                }, onBack = { step = Step.FIND })
+                Step.SIGN_IN -> SignIn(launcher, onEditLogin, onDone, installedFresh)
             }
         }
     }
@@ -226,12 +230,19 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
         is InstallUiState.Paused -> {
             Text(s.reason ?: "Download paused. Everything downloaded so far is kept.", style = Fw.Text)
             s.progress?.let { FwProgress(it.fraction) }
-            FwButton("Resume", { InstallController.resume(context) })
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                FwButton("Resume", { InstallController.resume(context) })
+                FwButton("Cancel download", { InstallController.cancel(context) }, kind = FwButtonKind.Ghost)
+                FwButton("Back", { InstallController.cancel(context); onBack() }, kind = FwButtonKind.Ghost)
+            }
         }
         is InstallUiState.Failed -> {
             Text("The download stopped: ${s.message}", style = Fw.Text.copy(color = Fw.Warn))
             Text("Files already downloaded are kept and checked when you try again.", style = Fw.Secondary)
-            FwButton("Try again", { InstallController.resume(context) })
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                FwButton("Try again", { InstallController.resume(context) })
+                FwButton("Back", { InstallController.cancel(context); onBack() }, kind = FwButtonKind.Ghost)
+            }
         }
         else -> if (repair != null) {
             Text("Repair checks every game file in ${repair.root} and downloads only what's missing or damaged.", style = Fw.Text)
@@ -273,6 +284,9 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
 internal const val STREAMING_NOTE =
     "This download is the game program, about half a gigabyte. The first time you start the game, it downloads the rest of its world data (about 67 GB) by itself in the background, so your first sessions may load slowly. Leave it at the login screen on Wi-Fi to speed this up."
 
+internal const val FIRST_START_NOTE =
+    "The first time you start the game, it downloads the rest of its world data (about 67 GB) by itself in the background, so your first sessions may load slowly. Leave it at the login screen on Wi-Fi to speed this up."
+
 /** The device language if WoW ships it, else English (spec §6.6). */
 private fun deviceLocale(): String {
     val tag = Locale.getDefault().let { it.language + it.country }
@@ -282,14 +296,14 @@ private fun deviceLocale(): String {
 private val WOW_LOCALES = listOf("enUS", "enGB", "deDE", "esES", "esMX", "frFR", "itIT", "koKR", "ptBR", "ruRU", "zhCN", "zhTW")
 
 @Composable
-private fun SignIn(launcher: LauncherController, onEditLogin: () -> Unit, onDone: () -> Unit) {
+private fun SignIn(launcher: LauncherController, onEditLogin: () -> Unit, onDone: () -> Unit, installedFresh: Boolean) {
     Text("Sign in", style = Fw.Title)
     Text(
         "Save your Battle.net email and password so the game logs you in by itself. They're encrypted on this device. Authenticator codes are still typed in the game.",
         style = Fw.Text,
     )
     if (launcher.hasSavedLogin) Text("Login saved.", style = Fw.Text.copy(color = Fw.Ok))
-    Text(STREAMING_NOTE, style = Fw.Secondary)
+    if (installedFresh) Text(FIRST_START_NOTE, style = Fw.Secondary)
     Text("Foreverywhere is free. If you'd like to support it, there's a Ko-fi link in Settings.", style = Fw.Secondary)
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (launcher.hasSavedLogin) {
