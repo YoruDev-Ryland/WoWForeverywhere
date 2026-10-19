@@ -325,7 +325,7 @@ class AddonManagerTest {
               {"id":12,"name":"Foo-1.0-forever.zip","content_type":"application/zip","browser_download_url":"${server.base()}/zips/Foo.zip"}]}
         """.trimIndent()
         serveAddon("Foo")
-        val github = GitHubProvider(OkHttpClient(), apiBase = server.base())
+        val github = GitHubProvider(OkHttpClient(), apiBase = server.base(), catalogUrl = "${server.base()}/no-catalog.json")
 
         val result = manager(cf, github).installFromUrl("https://github.com/me/Foo/releases")
 

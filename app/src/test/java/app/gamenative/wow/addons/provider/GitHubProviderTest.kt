@@ -27,7 +27,7 @@ class GitHubProviderTest {
                 routes[request.url.encodedPath] ?: MockResponse.Builder().code(404).body("{\"message\":\"Not Found\"}").build()
         }
         server.start()
-        provider = GitHubProvider(OkHttpClient(), apiBase = server.base())
+        provider = GitHubProvider(OkHttpClient(), apiBase = server.base(), catalogUrl = "${server.base()}/no-catalog.json")
     }
 
     @After
@@ -88,10 +88,9 @@ class GitHubProviderTest {
     }
 
     @Test
-    fun searchAndPopularAreEmpty() = runBlocking {
+    fun searchAndPopularAreEmptyWithoutCatalog() = runBlocking {
         assertTrue(provider.search("bigwigs", 0).isEmpty())
         assertTrue(provider.popular(0).isEmpty())
-        assertEquals(0, server.requestCount)
     }
 
     @Test

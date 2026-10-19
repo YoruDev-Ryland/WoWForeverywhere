@@ -1,0 +1,51 @@
+name: Addon catalog
+
+# Rebuilds the GitHub addon catalog the app browses without API keys, and publishes it to the
+# `addon-catalog` branch as catalog.json (fetched by the app from raw.githubusercontent.com).
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - catalog/sources.json
+      - tools/catalog/**
+
+permissions:
+  contents: write
+
+concurrency:
+  group: addon-catalog
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build catalog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/catalog/build_catalog.py catalog/sources.json "$RUNNER_TEMP/catalog.json"
+
+      - name: Publish to addon-catalog branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin addon-catalog >/dev/null; then
+            git fetch --depth 1 origin addon-catalog
+            git switch addon-catalog
+          else
+            git switch --orphan addon-catalog
+            git rm -rf --quiet . || true
+          fi
+          cp "$RUNNER_TEMP/catalog.json" catalog.json
+          git add catalog.json
+          # Only the timestamp changed: nothing to publish.
+          if git diff --cached --quiet -I '"generated"'; then
+            echo "Catalog unchanged"
+            exit 0
+          fi
+          git commit -m "Update addon catalog"
+          git push origin addon-catalog

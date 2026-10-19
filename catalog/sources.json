@@ -1,0 +1,23 @@
+{
+  "_readme": "Addons the app can browse from GitHub without an API key. Add an entry with the repo, the name to show, a category from wow/addons/AddonCategory.kt and a short summary; the nightly 'Addon catalog' workflow fills in versions, Forever/Classic files and download links. Only repos whose GitHub releases ship zips (ideally with a packager release.json) work.",
+  "addons": [
+    { "repo": "Questie/Questie", "name": "Questie", "category": "QUESTS", "summary": "Shows quest givers, objectives and turn-ins on your map and minimap." },
+    { "repo": "RestedXP/RXPGuides", "name": "RestedXP Guides", "category": "QUESTS", "summary": "Step-by-step leveling guides with waypoints." },
+    { "repo": "DeadlyBossMods/DeadlyBossMods", "name": "Deadly Boss Mods", "category": "RAIDS", "summary": "Raid and dungeon boss warnings and timers." },
+    { "repo": "DeadlyBossMods/DBM-Dungeons", "name": "DBM Dungeons", "category": "RAIDS", "summary": "Dungeon modules for Deadly Boss Mods.", "requires": ["DeadlyBossMods/DeadlyBossMods"] },
+    { "repo": "BigWigsMods/BigWigs", "name": "BigWigs", "category": "RAIDS", "summary": "Lightweight boss timers and warnings." },
+    { "repo": "BigWigsMods/LittleWigs", "name": "LittleWigs", "category": "RAIDS", "summary": "Dungeon modules for BigWigs.", "requires": ["BigWigsMods/BigWigs"] },
+    { "repo": "Tercioo/Plater-Nameplates", "name": "Plater Nameplates", "category": "UNIT_FRAMES", "summary": "Highly customizable nameplates." },
+    { "repo": "Nevcairiel/ShadowedUnitFrames", "name": "Shadowed Unit Frames", "category": "UNIT_FRAMES", "summary": "Clean, configurable unit frames." },
+    { "repo": "tullamods/Dominos", "name": "Dominos", "category": "ACTION_BARS", "summary": "Movable, configurable action bars." },
+    { "repo": "Nevcairiel/Bartender4", "name": "Bartender4", "category": "ACTION_BARS", "summary": "Full action bar replacement." },
+    { "repo": "tullamods/OmniCC", "name": "OmniCC", "category": "BUFFS", "summary": "Cooldown counts on everything." },
+    { "repo": "WeakAuras/WeakAuras2", "name": "WeakAuras", "category": "BUFFS", "summary": "Custom displays for buffs, cooldowns and almost anything else." },
+    { "repo": "Nevcairiel/Mapster", "name": "Mapster", "category": "MAP", "summary": "World map improvements." },
+    { "repo": "Nevcairiel/HandyNotes", "name": "HandyNotes", "category": "MAP", "summary": "Notes and pins on the world map." },
+    { "repo": "kemayo/wow-silverdragon", "name": "SilverDragon", "category": "MAP", "summary": "Rare mob alerts and locations." },
+    { "repo": "Hoizame/AtlasLootClassic", "name": "AtlasLoot Classic", "category": "RAIDS", "summary": "Loot tables for dungeons, raids and more." },
+    { "repo": "AdiAddons/AdiBags", "name": "AdiBags", "category": "BAGS", "summary": "Sorted, filtered single-window bags." },
+    { "repo": "SFX-WoW/Masque", "name": "Masque", "category": "INTERFACE", "summary": "Skins for buttons and action bars." }
+  ]
+}
