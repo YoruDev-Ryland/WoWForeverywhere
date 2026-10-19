@@ -71,7 +71,23 @@ object RichText {
         .replace(Regex("(?i)\\[/?(url|color|size|b|i|u|s|center|left|right|font|quote|code|list|img|indent|highlight|spoiler)(?:[=\\s][^\\]]*)?]"), "")
         .replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'")
         .replace("\r", "")
-        .lines().joinToString("\n") { it.trim() }
+        .lines().map { it.trim() }
+        .let(::unwrap)
         .replace(Regex("\n{3,}"), "\n\n")
         .trim()
+
+    /**
+     * Joins lines the author wrapped by hand back into paragraphs. A line break stays when either side
+     * is blank, the next line starts a list item, or the line ends a sentence-like heading (colon).
+     */
+    private fun unwrap(lines: List<String>): String = buildString {
+        lines.forEachIndexed { i, line ->
+            append(line)
+            val next = lines.getOrNull(i + 1) ?: return@forEachIndexed
+            val keepBreak = line.isEmpty() || next.isEmpty() || line.endsWith(":") || LIST_ITEM.containsMatchIn(next)
+            append(if (keepBreak) "\n" else " ")
+        }
+    }
+
+    private val LIST_ITEM = Regex("^([*•-]|\\d+[.)])\\s")
 }

@@ -20,4 +20,13 @@ class RichTextTest {
     fun collapsesBlankLines() {
         assertEquals("a\n\nb", RichText.toPlain("a\r\n\r\n\r\n\r\nb"))
     }
+
+    @Test
+    fun joinsHardWrappedLinesButKeepsParagraphsAndBullets() {
+        val text = "BigWigs is a boss add-on. It consists of many\nindividual\nencounter scripts.\n\nTry these:\n* LittleWigs covers dungeons\n* Capping covers\nbattlegrounds"
+        assertEquals(
+            "BigWigs is a boss add-on. It consists of many individual encounter scripts.\n\nTry these:\n* LittleWigs covers dungeons\n* Capping covers battlegrounds",
+            RichText.toPlain(text),
+        )
+    }
 }

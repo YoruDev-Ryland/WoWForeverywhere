@@ -154,11 +154,20 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
         selected = selected?.let { sel -> listings.firstOrNull { it.remote.projectId == sel.remote.projectId } } ?: listings.firstOrNull()
     }
 
-    fun install(listing: AddonListing) = act("Installing ${listing.remote.name}") { manager.install(listing.remote) }
+    fun install(listing: AddonListing) = act("Installing ${listing.remote.name}") { markInstalled(listing, manager.install(listing.remote)) }
 
     fun update(listing: AddonListing) = act("Updating ${listing.remote.name}") {
         val record = listing.installed ?: return@act
-        if (record.flavor == AddonFlavor.CLASSIC && listing.bestFlavor == AddonFlavor.FOREVER) manager.install(listing.remote) else manager.update(record)
+        val updated = if (record.flavor == AddonFlavor.CLASSIC && listing.bestFlavor == AddonFlavor.FOREVER) manager.install(listing.remote) else manager.update(record)
+        markInstalled(listing, updated)
+    }
+
+    /** Shows the new state right away; the full refresh after the action fills in the rest. */
+    private suspend fun markInstalled(listing: AddonListing, record: app.gamenative.wow.addons.InstalledAddon) = withContext(Dispatchers.Main) {
+        val key = keyOf(listing)
+        val patch = { l: AddonListing -> if (keyOf(l) == key) l.copy(installed = record, updateAvailable = false) else l }
+        listings = listings.map(patch)
+        selected = selected?.let(patch)
     }
 
     fun remove(listing: AddonListing) = act("Removing ${listing.remote.name}") { listing.installed?.let { manager.remove(it) } }
