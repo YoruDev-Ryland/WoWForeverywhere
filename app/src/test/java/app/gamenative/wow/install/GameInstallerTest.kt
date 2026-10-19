@@ -157,6 +157,15 @@ class GameInstallerTest {
     }
 
     @Test
+    fun progressTextIsReadable() {
+        val p = InstallProgress(InstallProgress.Phase.DOWNLOADING, 48_000_000, 472_000_000, "Data/indices/abc.index")
+        assertEquals("48 MB of 472 MB", p.sizeText)
+        assertEquals("Archive indexes", p.stepText)
+        assertEquals("Wow-arm64.exe", p.copy(currentFile = "_forever_/Wow-arm64.exe").stepText)
+        assertEquals("25.4 GB of 67.2 GB", p.copy(doneBytes = 25_400_000_000, totalBytes = 67_200_000_000).sizeText)
+    }
+
+    @Test
     fun caseFolderKeepsFirstDirectoryCasing() {
         val folder = CaseFolder()
         assertEquals("Utils/a.dll", folder.fold("Utils/a.dll"))

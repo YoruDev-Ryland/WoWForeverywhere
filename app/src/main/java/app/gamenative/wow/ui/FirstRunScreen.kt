@@ -215,11 +215,11 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
             Text("Downloading from Blizzard's servers to ${s.request.root}. You can leave the app: the download keeps going and shows progress in your notifications.", style = Fw.Text)
             val p = s.progress
             Text(
-                if (p.totalBytes > 0) "%.1f of %.1f GB".format(p.doneBytes / 1e9, p.totalBytes / 1e9) else "Reading the build manifest…",
+                if (p.totalBytes > 0) p.sizeText else "Reading the build manifest…",
                 style = Fw.Data.copy(color = Fw.Bone),
             )
             FwProgress(p.fraction)
-            p.currentFile?.let { Text(it, style = Fw.Data) }
+            p.stepText?.let { Text(it, style = Fw.Data) }
             Text(STREAMING_NOTE, style = Fw.Secondary)
             FwButton("Pause", { InstallController.pause(context) }, kind = FwButtonKind.Ghost)
         }

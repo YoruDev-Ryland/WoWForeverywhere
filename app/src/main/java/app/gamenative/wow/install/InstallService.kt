@@ -224,7 +224,7 @@ class InstallService : Service() {
         return NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.fw_ic_download)
             .setContentTitle("Installing ${req.product.displayName}")
-            .setContentText(if (total > 0) "%.1f of %.1f GB".format(done / 1e9, total / 1e9) else "Preparing download…")
+            .setContentText(progress?.takeIf { total > 0 }?.sizeText ?: "Preparing download…")
             .setProgress(1000, if (total > 0) (done * 1000 / total).toInt() else 0, total <= 0)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

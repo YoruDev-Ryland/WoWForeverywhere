@@ -38,6 +38,25 @@ data class InstallProgress(val phase: Phase, val doneBytes: Long, val totalBytes
     enum class Phase { RESOLVING, DOWNLOADING, FINALIZING, DONE }
 
     val fraction get() = if (totalBytes > 0) (doneBytes.toFloat() / totalBytes).coerceIn(0f, 1f) else null
+
+    /** "120 MB of 472 MB", switching to GB from 1 GB up. */
+    val sizeText get() = "${bytesText(doneBytes)} of ${bytesText(totalBytes)}"
+
+    /** What's being downloaded, in words: the stage for configs and indexes, the file name otherwise. */
+    val stepText: String? get() = currentFile?.let {
+        when {
+            it.startsWith("Data/indices/") -> "Archive indexes"
+            it.startsWith("Data/config/") -> "Build configuration"
+            else -> it.substringAfterLast('/')
+        }
+    }
+
+    companion object {
+        fun bytesText(bytes: Long): String = when {
+            bytes >= 1_000_000_000 -> "%.1f GB".format(bytes / 1e9)
+            else -> "%.0f MB".format(bytes / 1e6)
+        }
+    }
 }
 
 class MissingOnCdnException(path: String) : IOException("Blizzard's CDN is missing $path")
