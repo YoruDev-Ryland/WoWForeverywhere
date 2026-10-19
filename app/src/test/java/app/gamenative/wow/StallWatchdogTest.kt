@@ -16,10 +16,11 @@ class StallWatchdogTest {
     @Test
     fun writesReportWhenMainThreadDoesNotRespond() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        StallWatchdog.start(context)
+        val dir = File(context.getExternalFilesDir(null), "crash_logs")
+        StallWatchdog(dir).run()
         // The paused main looper never runs the watchdog's pings: a stall from its point of view.
         Thread.sleep(4_000)
-        val reports = File(context.getExternalFilesDir(null), "crash_logs").listFiles { f -> f.name.startsWith("stall_") }.orEmpty()
+        val reports = dir.listFiles { f -> f.name.startsWith("stall_") }.orEmpty()
         assertTrue("no stall report written", reports.isNotEmpty())
         val text = reports.first().readText()
         assertTrue(text.startsWith("Main thread stall detected"))

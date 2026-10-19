@@ -15,20 +15,25 @@ import java.util.concurrent.atomic.AtomicLong
  * [PING_MS]; once a ping is unanswered for [STALL_MS] it writes the main thread's stack (sampled again
  * while the stall lasts) and every other thread's stack to `crash_logs/stall_*.txt`.
  */
-object StallWatchdog {
-    private const val PING_MS = 500L
-    private const val STALL_MS = 2_000L
-    private const val SAMPLE_MS = 1_000L
-    private const val MAX_REPORTS = 10
+class StallWatchdog(private val dir: File) {
+    companion object {
+        private const val PING_MS = 500L
+        private const val STALL_MS = 2_000L
+        private const val SAMPLE_MS = 1_000L
+        private const val MAX_REPORTS = 10
 
-    @Volatile private var started = false
+        @Volatile private var instance: StallWatchdog? = null
+
+        /** Starts the app-wide watchdog once per process. Not under Robolectric (unit tests). */
+        fun start(context: Context) {
+            if (instance != null || android.os.Build.FINGERPRINT == "robolectric") return
+            instance = StallWatchdog(File(context.getExternalFilesDir(null), "crash_logs")).also { it.run() }
+        }
+    }
 
     private fun now() = System.nanoTime() / 1_000_000
 
-    fun start(context: Context) {
-        if (started) return
-        started = true
-        val dir = File(context.getExternalFilesDir(null), "crash_logs")
+    fun run() {
         val main = Handler(Looper.getMainLooper())
         val lastPong = AtomicLong(now())
         Thread({
@@ -41,7 +46,7 @@ object StallWatchdog {
                     reported = false
                 } else if (!reported) {
                     reported = true
-                    runCatching { report(dir, lastPong) }
+                    runCatching { report(lastPong) }
                 }
             }
         }, "StallWatchdog").apply {
@@ -54,7 +59,7 @@ object StallWatchdog {
      * Writes the snapshot straight away and appends each later sample, so the report survives even if
      * the user picks "Close app" on Android's not-responding dialog while the stall is still going.
      */
-    private fun report(dir: File, lastPong: AtomicLong) {
+    private fun report(lastPong: AtomicLong) {
         val started = lastPong.get()
         val stamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
         dir.mkdirs()
