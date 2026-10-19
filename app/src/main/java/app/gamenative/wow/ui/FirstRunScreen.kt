@@ -200,6 +200,7 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
             )
             FwProgress(p.fraction)
             p.currentFile?.let { Text(it, style = Fw.Data) }
+            Text(STREAMING_NOTE, style = Fw.Secondary)
             FwButton("Pause", { InstallController.pause(context) }, kind = FwButtonKind.Ghost)
         }
         is InstallUiState.Paused -> {
@@ -249,6 +250,9 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
     }
 }
 
+internal const val STREAMING_NOTE =
+    "This download is the game program, about half a gigabyte. The first time you start the game, it downloads the rest of its world data (about 67 GB) by itself in the background, so your first sessions may load slowly. Leave it at the login screen on Wi-Fi to speed this up."
+
 /** The device language if WoW ships it, else English (spec §6.6). */
 private fun deviceLocale(): String {
     val tag = Locale.getDefault().let { it.language + it.country }
@@ -265,6 +269,7 @@ private fun SignIn(launcher: LauncherController, onEditLogin: () -> Unit, onDone
         style = Fw.Text,
     )
     if (launcher.hasSavedLogin) Text("Login saved.", style = Fw.Text.copy(color = Fw.Ok))
+    Text(STREAMING_NOTE, style = Fw.Secondary)
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (launcher.hasSavedLogin) {
             FwButton("Continue", onDone)

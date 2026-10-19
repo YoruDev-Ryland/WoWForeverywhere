@@ -18,6 +18,23 @@ class GameConfigTest {
     }
 
     @Test
+    fun newConfigUsesInstallLocale() {
+        val lines = buildConfigWtf(null, WowProduct.FOREVER, "1920x1080", "deDE")!!
+        assertTrue("SET textLocale \"deDE\"" in lines)
+        assertTrue("SET audioLocale \"deDE\"" in lines)
+    }
+
+    @Test
+    fun installLocaleReadsBuildInfoTags() {
+        val root = java.nio.file.Files.createTempDirectory("wow").toFile()
+        assertEquals("enUS", installLocale(root, WowProduct.FOREVER))
+        java.io.File(root, ".build.info").writeText(
+            "Active!DEC:1|Tags!STRING:0|Product!STRING:0\n1|Windows arm64 EU? acct-EUA? geoip-EU? deDE speech?:Windows arm64 EU? deDE text?|wowf\n",
+        )
+        assertEquals("deDE", installLocale(root, WowProduct.FOREVER))
+    }
+
+    @Test
     fun newBetaConfigUsesTestPortal() {
         val lines = buildConfigWtf(null, WowProduct.BETA, "1280x720")!!
         assertTrue("SET portal \"test\"" in lines)

@@ -996,12 +996,12 @@ private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile
 
 private const val GX_API_LINE = "SET gxApi \"D3D11\""
 
-private fun configDefaults(product: WowProduct) = linkedMapOf(
+private fun configDefaults(product: WowProduct, locale: String) = linkedMapOf(
     "portal" to "\"${product.portal}\"",
     "agentUID" to "\"${product.code}\"",
     "gxApi" to "\"D3D11\"",
-    "textLocale" to "\"enUS\"",
-    "audioLocale" to "\"enUS\"",
+    "textLocale" to "\"$locale\"",
+    "audioLocale" to "\"$locale\"",
     "gxMaximize" to "\"1\"",
     "graphicsQuality" to "\"0\"",
     "ResampleQuality" to "\"0\"",
@@ -1036,7 +1036,7 @@ private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String
         flavorInfo.writeText(flavorInfoText(product))
     }
     val configWtf = File(flavorDir, "WTF/Config.wtf")
-    val updated = buildConfigWtf(configWtf.takeIf { it.exists() }?.readLines(), product, screenSize) ?: return
+    val updated = buildConfigWtf(configWtf.takeIf { it.exists() }?.readLines(), product, screenSize, installLocale(root, product)) ?: return
     configWtf.parentFile?.mkdirs()
     configWtf.writeText(updated.joinToString("\n") + "\n")
 }
@@ -1048,9 +1048,9 @@ private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String
  * select Metal. Resolutions are reset when missing or no longer fitting the screen (e.g. after a fold
  * or unfold): WoW's "auto" otherwise picks a 720p size because it sees a low-end Intel GPU via Wine.
  */
-internal fun buildConfigWtf(existing: List<String>?, product: WowProduct, screenSize: String): List<String>? {
+internal fun buildConfigWtf(existing: List<String>?, product: WowProduct, screenSize: String, locale: String = "enUS"): List<String>? {
     if (existing == null) {
-        val defaults = configDefaults(product) + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
+        val defaults = configDefaults(product, locale) + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
         return defaults.entries.map { "SET ${it.key} ${it.value}" }
     }
     val staleResolutionKeys = RESOLUTION_KEYS.filter { key ->
@@ -1072,6 +1072,11 @@ internal fun buildConfigWtf(existing: List<String>?, product: WowProduct, screen
         agentLine.takeIf { wrongAgent },
     ) + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
 }
+
+/** The language the install was made for, from the locale tag in `.build.info` (e.g. `deDE`); English if none. */
+internal fun installLocale(root: File, product: WowProduct): String =
+    app.gamenative.wow.product.BuildInfo.read(root)?.active(product)?.get("Tags")
+        ?.split(" ", ":")?.firstOrNull { Regex("[a-z]{2}[A-Z]{2}").matches(it) } ?: "enUS"
 
 private val RESOLUTION_KEYS = listOf("gxFullscreenResolution", "gxWindowedResolution")
 
