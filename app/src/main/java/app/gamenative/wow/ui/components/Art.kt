@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -136,3 +137,17 @@ fun ArtImage(url: String?, modifier: Modifier = Modifier, zoom: Float = 1f, fitI
 
 @Composable
 fun ArtImage(art: ForeverArt, modifier: Modifier = Modifier) = ArtImage(art.url, modifier, art.zoom)
+
+/** A Blizzard game icon at [size]; shows [placeholder] until it loads (or when offline). */
+@Composable
+fun GameIconImage(icon: GameIcon, size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier, placeholder: @Composable () -> Unit = {}) {
+    val context = LocalContext.current
+    val px = with(androidx.compose.ui.platform.LocalDensity.current) { size.roundToPx() }
+    val image by produceState<ImageBitmap?>(null, icon, px) { value = ArtCache.loadSvg(context, icon, px) }
+    val loaded = image
+    if (loaded != null) {
+        Image(loaded, contentDescription = null, modifier = modifier.then(Modifier.size(size)))
+    } else {
+        placeholder()
+    }
+}

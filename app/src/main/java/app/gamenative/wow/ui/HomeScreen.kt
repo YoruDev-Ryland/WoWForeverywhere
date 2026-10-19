@@ -37,6 +37,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import app.gamenative.wow.ui.components.ForeverArt
+import app.gamenative.wow.ui.components.GameIcon
+import app.gamenative.wow.ui.components.GameIconImage
 import app.gamenative.wow.ui.components.Links
 import app.gamenative.wow.ui.components.FwActionBar
 import app.gamenative.wow.ui.components.FwButton
@@ -109,7 +111,7 @@ private fun SupportLink() {
 private fun Header(launcher: LauncherController) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.size(26.dp).background(Fw.Brass, Fw.Shape))
+            GameIconImage(GameIcon.FOREVER, 34.dp) { Box(Modifier.size(34.dp)) }
             Text("Foreverywhere", style = Fw.Title.copy(fontSize = 21.sp))
         }
         val version = launcher.versionStatus
