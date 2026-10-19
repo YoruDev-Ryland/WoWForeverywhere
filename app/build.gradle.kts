@@ -62,8 +62,8 @@ android {
         manifestPlaceholders["screenOrientation"] = "unspecified"
         buildConfigField("boolean", "XR_BUILD", "false")
 
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.2.1"
 
         buildConfigField("boolean", "GOLD", "false")
         buildConfigField("String", "CURSEFORGE_API_KEY", "\"${javaString(apiKey("CURSEFORGE_API_KEY"))}\"")
