@@ -83,6 +83,13 @@ class LauncherController(
         private set
     var needsInstallPermission by mutableStateOf(false)
 
+    /**
+     * Set when Play is pressed on a device without an Adreno GPU (an emulator, a non-Snapdragon phone).
+     * The game's graphics stack crashes the whole app there, so ask before launching.
+     */
+    var unsupportedDeviceWarning by mutableStateOf(false)
+    private val supportedGpu = runCatching { com.winlator.core.GPUInformation.isAdrenoGPU(context) }.getOrDefault(true)
+
     /** Launch-version product is live and this install only has the beta. */
     var canConvertToLaunch by mutableStateOf(false)
         private set
@@ -155,9 +162,13 @@ class LauncherController(
         scope.launch { fetchAppUpdate() }
     }
 
-    fun launchGame() {
+    fun launchGame(confirmedUnsupported: Boolean = false) {
         val product = files.product
         if (isLaunching || product == null) return
+        if (!supportedGpu && !confirmedUnsupported) {
+            unsupportedDeviceWarning = true
+            return
+        }
         if (!files.hasStorageAccess) {
             needsStoragePermission = true
             return
@@ -358,8 +369,10 @@ class LauncherController(
                 WoWLauncherState.shouldAutoLaunch = false
                 if (versionStatus?.isOutdated == true || update != null) {
                     PluviaApp.events.emit(AndroidEvent.ClearBootingSplash)
-                } else {
+                } else if (supportedGpu) {
                     launchGame()
+                } else {
+                    PluviaApp.events.emit(AndroidEvent.ClearBootingSplash)
                 }
             }
         }

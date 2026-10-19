@@ -139,6 +139,18 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 dismiss = "Later",
             )
         }
+        if (launcher.unsupportedDeviceWarning) {
+            FwDialog(
+                title = "This device can't run the game",
+                message = "WoW Forever needs a Snapdragon chip with an Adreno GPU. On this device, including Android emulators, starting the game will most likely crash the app.",
+                confirm = "Try anyway",
+                onConfirm = {
+                    launcher.unsupportedDeviceWarning = false
+                    launcher.launchGame(confirmedUnsupported = true)
+                },
+                onDismiss = { launcher.unsupportedDeviceWarning = false },
+            )
+        }
         if (launcher.needsInstallPermission) {
             FwDialog(
                 title = "Allow app installs",
