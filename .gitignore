@@ -84,3 +84,4 @@ WowB-ARM64/
 docs/*
 !docs/superpowers/
 .superpowers/
+.claude/
