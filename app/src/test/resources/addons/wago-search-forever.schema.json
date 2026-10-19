@@ -1,0 +1,21 @@
+{
+  "data": [
+    {
+      "display_name": "Questie",
+      "id": "q1w2e3r4",
+      "releases": {
+        "stable": {
+          "download_link": "{{BASE}}/wago/q1w2e3r4/forever.zip",
+          "label": "10.0.1-forever",
+          "created_at": "2026-10-10T10:00:00Z",
+          "logical_timestamp": 1792000000
+        }
+      },
+      "summary": "Quest helper",
+      "thumbnail_image": "https://addons.wago.io/thumb/questie.png",
+      "authors": ["AeroScripts", "Logon"],
+      "download_count": 120000,
+      "website_url": "https://addons.wago.io/addons/questie"
+    }
+  ]
+}

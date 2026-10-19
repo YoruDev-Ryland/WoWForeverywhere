@@ -1,0 +1,32 @@
+{
+  "releases": [
+    {
+      "name": "BigWigs",
+      "version": "v400",
+      "filename": "BigWigs-v400.zip",
+      "nolib": false,
+      "metadata": [{ "flavor": "mainline", "interface": 120100 }]
+    },
+    {
+      "name": "BigWigs",
+      "version": "v400",
+      "filename": "BigWigs-v400-a.zip",
+      "nolib": false,
+      "metadata": [{ "flavor": "vanilla", "interface": 11507 }]
+    },
+    {
+      "name": "BigWigs",
+      "version": "v400",
+      "filename": "BigWigs-v400-b-nolib.zip",
+      "nolib": true,
+      "metadata": [{ "flavor": "forever", "interface": 16001 }]
+    },
+    {
+      "name": "BigWigs",
+      "version": "v400",
+      "filename": "BigWigs-v400-b.zip",
+      "nolib": false,
+      "metadata": [{ "flavor": "forever", "interface": 16001 }]
+    }
+  ]
+}

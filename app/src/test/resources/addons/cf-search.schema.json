@@ -1,0 +1,117 @@
+{
+  "data": [
+    {
+      "id": 334372,
+      "gameId": 1,
+      "name": "Questie",
+      "slug": "questie",
+      "links": { "websiteUrl": "https://www.curseforge.com/wow/addons/questie" },
+      "summary": "The ultimate WoW Classic quest helper",
+      "status": 4,
+      "downloadCount": 90000000,
+      "authors": [{ "id": 1, "name": "AeroScripts", "url": "https://www.curseforge.com/members/aeroscripts" }],
+      "logo": { "id": 1, "modId": 334372, "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/questie.png", "url": "https://media.forgecdn.net/avatars/questie.png" },
+      "allowModDistribution": true,
+      "latestFiles": [
+        {
+          "id": 5000,
+          "modId": 334372,
+          "displayName": "Questie 10.0.0 Classic",
+          "fileName": "Questie-10.0.0.zip",
+          "releaseType": 1,
+          "downloadUrl": "{{BASE}}/files/5000/Questie-10.0.0.zip",
+          "sortableGameVersions": [{ "gameVersionName": "1.15.7", "gameVersion": "1.15.7", "gameVersionTypeId": 67408 }],
+          "dependencies": [],
+          "modules": [{ "name": "Questie", "fingerprint": 1 }]
+        },
+        {
+          "id": 5001,
+          "modId": 334372,
+          "displayName": "Questie 10.0.1 Forever",
+          "fileName": "Questie-10.0.1-forever.zip",
+          "releaseType": 1,
+          "downloadUrl": "{{BASE}}/files/5001/Questie-10.0.1-forever.zip",
+          "sortableGameVersions": [{ "gameVersionName": "1.60.1", "gameVersion": "1.60.1", "gameVersionTypeId": 88568 }],
+          "dependencies": [
+            { "modId": 9999, "relationType": 3 },
+            { "modId": 8888, "relationType": 2 },
+            { "modId": 7777, "relationType": 1 }
+          ],
+          "modules": [{ "name": "Questie", "fingerprint": 2 }]
+        },
+        {
+          "id": 5002,
+          "modId": 334372,
+          "displayName": "Questie 10.0.2 Forever beta",
+          "fileName": "Questie-10.0.2-forever.zip",
+          "releaseType": 2,
+          "downloadUrl": "{{BASE}}/files/5002/Questie-10.0.2-forever.zip",
+          "sortableGameVersions": [{ "gameVersionName": "1.60.1", "gameVersion": "1.60.1", "gameVersionTypeId": 88568 }],
+          "dependencies": [],
+          "modules": [{ "name": "Questie", "fingerprint": 3 }]
+        }
+      ],
+      "latestFilesIndexes": [
+        { "gameVersion": "1.60.1", "fileId": 5002, "filename": "Questie-10.0.2-forever.zip", "releaseType": 2, "gameVersionTypeId": 88568 },
+        { "gameVersion": "1.60.1", "fileId": 5001, "filename": "Questie-10.0.1-forever.zip", "releaseType": 1, "gameVersionTypeId": 88568 },
+        { "gameVersion": "1.15.7", "fileId": 5000, "filename": "Questie-10.0.0.zip", "releaseType": 1, "gameVersionTypeId": 67408 }
+      ]
+    },
+    {
+      "id": 4444,
+      "gameId": 1,
+      "name": "Locked Addon",
+      "slug": "locked-addon",
+      "links": { "websiteUrl": "https://www.curseforge.com/wow/addons/locked-addon" },
+      "summary": "Third-party distribution disabled",
+      "downloadCount": 1000,
+      "authors": [{ "id": 2, "name": "Locksmith" }],
+      "logo": null,
+      "allowModDistribution": false,
+      "latestFiles": [
+        {
+          "id": 6000,
+          "modId": 4444,
+          "displayName": "Locked 1.0",
+          "fileName": "Locked-1.0.zip",
+          "releaseType": 1,
+          "downloadUrl": null,
+          "sortableGameVersions": [{ "gameVersionName": "1.15.7", "gameVersionTypeId": 67408 }],
+          "dependencies": [],
+          "modules": [{ "name": "Locked", "fingerprint": 4 }]
+        }
+      ],
+      "latestFilesIndexes": [
+        { "gameVersion": "1.15.7", "fileId": 6000, "filename": "Locked-1.0.zip", "releaseType": 1, "gameVersionTypeId": 67408 }
+      ]
+    },
+    {
+      "id": 5555,
+      "gameId": 1,
+      "name": "Retail Only",
+      "slug": "retail-only",
+      "links": { "websiteUrl": "https://www.curseforge.com/wow/addons/retail-only" },
+      "summary": "Mainline only",
+      "downloadCount": 50000000,
+      "authors": [{ "id": 3, "name": "Someone" }],
+      "allowModDistribution": true,
+      "latestFiles": [
+        {
+          "id": 7000,
+          "modId": 5555,
+          "displayName": "Retail 1.0",
+          "fileName": "Retail-1.0.zip",
+          "releaseType": 1,
+          "downloadUrl": "{{BASE}}/files/7000/Retail-1.0.zip",
+          "sortableGameVersions": [{ "gameVersionName": "12.1.0", "gameVersionTypeId": 517 }],
+          "dependencies": [],
+          "modules": [{ "name": "Retail", "fingerprint": 5 }]
+        }
+      ],
+      "latestFilesIndexes": [
+        { "gameVersion": "12.1.0", "fileId": 7000, "filename": "Retail-1.0.zip", "releaseType": 1, "gameVersionTypeId": 517 }
+      ]
+    }
+  ],
+  "pagination": { "index": 0, "pageSize": 50, "resultCount": 3, "totalCount": 3 }
+}
