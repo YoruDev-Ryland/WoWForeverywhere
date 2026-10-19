@@ -54,7 +54,7 @@ object TactFixtures {
         for (tag in tagNames) {
             out.write(tag.toByteArray())
             out.write(0)
-            out.write(byteArrayOf(0, 1))
+            out.write(byteArrayOf(0, tagType(tag).toByte()))
             val mask = ByteArray(maskSize)
             files.forEachIndexed { i, f -> if (tag in f.tags) mask[i / 8] = (mask[i / 8].toInt() or (0x80 ushr (i % 8))).toByte() }
             out.write(mask)
@@ -90,6 +90,15 @@ object TactFixtures {
         val block = ByteBuffer.allocate(4096)
         for ((ekey, loc) in entries.toSortedMap()) block.put(unhex(ekey)).putInt(loc.second).putInt(loc.first)
         return block.array() + ByteArray(64)
+    }
+
+    /** Tag types as Blizzard groups them: 1 platform, 2 architecture, 3 locale, 4 region, 5 other. */
+    fun tagType(tag: String) = when {
+        tag in setOf("Windows", "OSX", "Android") -> 1
+        tag in setOf("arm64", "x86_64", "x86_32") -> 2
+        Regex("[a-z]{2}[A-Z]{2}").matches(tag) -> 3
+        tag in setOf("US", "EU", "KR", "TW", "CN") -> 4
+        else -> 5
     }
 
     fun unhex(s: String): ByteArray = ByteArray(s.length / 2) { s.substring(it * 2, it * 2 + 2).toInt(16).toByte() }

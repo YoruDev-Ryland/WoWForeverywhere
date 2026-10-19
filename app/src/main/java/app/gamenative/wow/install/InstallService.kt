@@ -81,6 +81,9 @@ class InstallService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var lastNotified = 0L
 
+    /** Set before cancelling, so a file that finishes mid-pause can't report "running" again. */
+    @Volatile private var stopping = false
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -104,6 +107,7 @@ class InstallService : Service() {
 
     private fun startInstall(req: InstallRequest) {
         if (job?.isActive == true) return
+        stopping = false
         request = req
         startForegroundCompat(notification(req, null))
         wakeLock = getSystemService(PowerManager::class.java)
@@ -112,6 +116,7 @@ class InstallService : Service() {
         job = scope.launch {
             try {
                 GameInstaller().run(req) { progress ->
+                    if (stopping) return@run
                     lastProgress = progress
                     InstallController.update(InstallUiState.Running(req, progress))
                     val now = System.currentTimeMillis()
@@ -132,6 +137,7 @@ class InstallService : Service() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                if (stopping) return@launch
                 Timber.e(e, "Install failed")
                 InstallController.update(InstallUiState.Failed(req, e.message ?: "Install failed"))
                 finish()
@@ -141,6 +147,7 @@ class InstallService : Service() {
 
     private fun pause(reason: String?) {
         val req = request ?: return
+        stopping = true
         job?.cancel()
         job = null
         InstallController.update(InstallUiState.Paused(req, lastProgress, reason))

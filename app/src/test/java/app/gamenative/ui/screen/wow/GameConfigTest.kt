@@ -11,7 +11,7 @@ class GameConfigTest {
     @Test
     fun newForeverConfigUsesLivePortalAndProduct() {
         val lines = buildConfigWtf(null, WowProduct.FOREVER, "1920x1080")!!
-        assertTrue("SET portal \"us\"" in lines)
+        assertTrue("SET portal \"US\"" in lines)
         assertTrue("SET agentUID \"wowf\"" in lines)
         assertTrue("SET gxApi \"D3D11\"" in lines)
         assertTrue("SET gxFullscreenResolution \"1920x1080\"" in lines)
@@ -27,7 +27,7 @@ class GameConfigTest {
     @Test
     fun existingConfigKeepsUserLinesAndForcesD3D11() {
         val existing = listOf(
-            "SET portal \"us\"",
+            "SET portal \"US\"",
             "SET gxApi \"Metal\"",
             "SET graphicsQuality \"7\"",
             "SET gxFullscreenResolution \"1920x1080\"",
@@ -42,7 +42,7 @@ class GameConfigTest {
     @Test
     fun staleResolutionIsReset() {
         val existing = listOf(
-            "SET portal \"us\"",
+            "SET portal \"US\"",
             "SET gxApi \"D3D11\"",
             "SET gxFullscreenResolution \"2560x1440\"",
             "SET gxWindowedResolution \"1280x720\"",
@@ -61,7 +61,7 @@ class GameConfigTest {
             "SET gxWindowedResolution \"1920x1080\"",
         )
         val lines = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080")!!
-        assertTrue("SET portal \"us\"" in lines)
+        assertTrue("SET portal \"US\"" in lines)
         assertTrue("SET agentUID \"wowf\"" in lines)
         assertTrue("SET agentUID \"wow_classic_beta\"" !in lines)
     }
@@ -71,13 +71,13 @@ class GameConfigTest {
         val existing = listOf("SET portal \"eu\"", "SET gxApi \"Metal\"")
         val lines = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080")!!
         assertTrue("SET portal \"eu\"" in lines)
-        assertTrue(lines.none { it == "SET portal \"us\"" })
+        assertTrue(lines.none { it == "SET portal \"US\"" })
     }
 
     @Test
     fun unchangedConfigReturnsNull() {
         val existing = listOf(
-            "SET portal \"us\"",
+            "SET portal \"US\"",
             "SET gxApi \"D3D11\"",
             "SET gxFullscreenResolution \"1920x1080\"",
             "SET gxWindowedResolution \"1920x1080\"",

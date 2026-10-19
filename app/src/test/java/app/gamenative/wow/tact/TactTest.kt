@@ -58,6 +58,27 @@ class TactTest {
     }
 
     @Test
+    fun selectFollowsTagTypes() {
+        // Language- and region-neutral files carry every locale and region tag, as in Blizzard's manifests.
+        val any = setOf("enUS", "deDE", "US", "EU")
+        val (entries, types) = InstallManifest.parseWithTagTypes(
+            TactFixtures.installManifest(
+                listOf(
+                    FileSpec("Wow-arm64.exe", ByteArray(1), setOf("Windows", "arm64") + any),
+                    FileSpec("Wow.exe", ByteArray(2), setOf("Windows", "x86_64") + any),
+                    FileSpec("Wow.app", ByteArray(3), setOf("OSX", "arm64") + any),
+                    FileSpec("enUS.dat", ByteArray(4), setOf("Windows", "arm64", "enUS", "US", "EU")),
+                    FileSpec("deDE.dat", ByteArray(5), setOf("Windows", "arm64", "deDE", "US", "EU")),
+                    FileSpec("eu.bin", ByteArray(6), setOf("Windows", "arm64", "enUS", "deDE", "EU")),
+                    FileSpec("us.bin", ByteArray(7), setOf("Windows", "arm64", "enUS", "deDE", "US")),
+                ),
+            ),
+        )
+        val picked = InstallManifest.select(entries, types, setOf("Windows", "arm64", "enUS", "US")).map { it.name }
+        assertEquals(listOf("Wow-arm64.exe", "enUS.dat", "us.bin"), picked)
+    }
+
+    @Test
     fun archiveIndexLocates() {
         val key = "0123456789abcdef0123456789abcdef"
         val index = ArchiveIndex(TactFixtures.archiveIndex(mapOf(key to (4096 to 77), "f".repeat(32) to (0 to 1))))

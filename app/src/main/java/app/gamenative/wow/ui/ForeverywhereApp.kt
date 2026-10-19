@@ -33,6 +33,7 @@ object Routes {
     const val ACCOUNT = "account"
     const val SETTINGS = "settings"
     const val FIRST_RUN = "firstrun"
+    const val INSTALL = "install"
 }
 
 /** The app's own screens. Hosted by upstream's NavHost in place of `WoWForeverScreen`. */
@@ -75,12 +76,21 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                         onOpenSettings = { nav.navigate(Routes.SETTINGS) },
                     )
                 }
-                composable(Routes.GAME) { GameFilesScreen(launcher, onBack = { nav.popBackStack() }, onInstall = { nav.navigate(Routes.FIRST_RUN) }) }
+                composable(Routes.GAME) { GameFilesScreen(launcher, onBack = { nav.popBackStack() }, onInstall = { nav.navigate(Routes.INSTALL) }) }
                 composable(Routes.ACCOUNT) {
                     AccountScreen(launcher, onBack = { nav.popBackStack() }, onEditLogin = { showLoginDialog = true })
                 }
                 composable(Routes.SETTINGS) { SettingsScreen(launcher, onBack = { nav.popBackStack() }) }
                 composable(Routes.ADDONS) { AddonsRoute(launcher, addons, onBack = { nav.popBackStack() }) }
+                composable(Routes.INSTALL) {
+                    val back = { nav.popBackStack(); Unit }
+                    FwPage("Install or repair", back) {
+                        val repair = launcher.files.product?.takeIf { !launcher.filesMissing }?.let {
+                            app.gamenative.wow.product.GameInstall(launcher.gamePath, it, launcher.versionStatus?.localVersion.orEmpty())
+                        }
+                        InstallStep(launcher, onDone = back, onBack = back, repair = repair)
+                    }
+                }
                 composable(Routes.FIRST_RUN) {
                     FirstRunScreen(
                         launcher = launcher,

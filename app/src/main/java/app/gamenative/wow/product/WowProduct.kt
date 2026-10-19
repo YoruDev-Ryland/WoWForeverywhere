@@ -17,7 +17,7 @@ enum class WowProduct(
     /** When the servers open. The patch service lists the launch product earlier than this. */
     val releaseDate: LocalDate? = null,
 ) {
-    FOREVER("wowf", "_forever_", "Wow-arm64.exe", "Wow.exe", "us", "WoW Forever", LocalDate.of(2026, 11, 4)),
+    FOREVER("wowf", "_forever_", "Wow-arm64.exe", "Wow.exe", "US", "WoW Forever", LocalDate.of(2026, 11, 4)),
     BETA("wow_classic_beta", "_classic_beta_", "WowB-ARM64.exe", "WowB.exe", "test", "WoW Forever Beta"),
     ;
 

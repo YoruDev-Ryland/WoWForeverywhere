@@ -50,9 +50,9 @@ class GameInstallerTest {
         root = Files.createTempDirectory("install").toFile()
         val manifest = TactFixtures.installManifest(
             listOf(
-                FileSpec("Wow-arm64.exe", exe, setOf("Windows", "arm64")),
-                FileSpec("Utils\\loader.dll", dll, setOf("Windows", "arm64", "enUS")),
-                FileSpec("Wow.exe", x64, setOf("Windows", "x86_64")),
+                FileSpec("Wow-arm64.exe", exe, setOf("Windows", "arm64", "enUS", "deDE", "US", "EU")),
+                FileSpec("Utils\\loader.dll", dll, setOf("Windows", "arm64", "enUS", "US", "EU")),
+                FileSpec("Wow.exe", x64, setOf("Windows", "x86_64", "enUS", "deDE", "US", "EU")),
             ),
         )
         val encoding = TactFixtures.encodingFile(
@@ -140,6 +140,29 @@ class GameInstallerTest {
         assertFalse("exe re-downloaded", requested.contains(cdnPath("data", exeEkey)))
         assertArrayEquals(dll, File(root, "_forever_/Utils/loader.dll").readBytes())
         assertEquals(WowProduct.FOREVER, detectProduct(root))
+    }
+
+    @Test
+    fun missingIndexIsSkipped() = runBlocking {
+        val cdnKey = files.keys.first { it.startsWith("/tpr/wow/config/") && String(files.getValue(it)).startsWith("# CDN") }
+        val extra = "99".repeat(16)
+        val config = String(files.getValue(cdnKey)).replace("archives = $archive", "archives = $archive $extra")
+        files.remove(cdnKey)
+        val newKey = TactFixtures.md5(config.toByteArray())
+        files[cdnPath("config", newKey)] = config.toByteArray()
+        files["/wowf/versions"] = String(files.getValue("/wowf/versions")).replace(cdnKey.substringAfterLast('/'), newKey).toByteArray()
+        installer().run(req) {}
+        assertEquals(WowProduct.FOREVER, detectProduct(root))
+        assertFalse(File(root, "Data/indices/$extra.index").exists())
+    }
+
+    @Test
+    fun caseFolderKeepsFirstDirectoryCasing() {
+        val folder = CaseFolder()
+        assertEquals("Utils/a.dll", folder.fold("Utils/a.dll"))
+        assertEquals("Utils/B.DLL", folder.fold("UTILS/B.DLL"))
+        assertEquals("Utils/SUB/c", folder.fold("utils/SUB/c"))
+        assertEquals("Utils/SUB/d", folder.fold("UTILS/sub/d"))
     }
 
     @Test

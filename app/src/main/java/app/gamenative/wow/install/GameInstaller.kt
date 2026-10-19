@@ -40,6 +40,8 @@ data class InstallProgress(val phase: Phase, val doneBytes: Long, val totalBytes
     val fraction get() = if (totalBytes > 0) (doneBytes.toFloat() / totalBytes).coerceIn(0f, 1f) else null
 }
 
+class MissingOnCdnException(path: String) : IOException("Blizzard's CDN is missing $path")
+
 class InsufficientSpaceException(val needed: Long, val available: Long) :
     IOException("Not enough space: needs ${needed / 1_000_000_000} GB, ${available / 1_000_000_000} GB free")
 
@@ -57,6 +59,8 @@ data class PlanItem(
     val size: Long,
     val ckey: String? = null,
     val verifyRaw: Boolean = false,
+    /** The CDN doesn't always carry every listed index; a missing optional item is skipped, not fatal. */
+    val optional: Boolean = false,
 )
 
 data class InstallPlan(
@@ -101,20 +105,25 @@ class GameInstaller(
         for (key in listOf(buildConfigKey, cdnConfigKey)) {
             items += PlanItem("config:$key", "config", key, configPath(key), 0, verifyRaw = true)
         }
-        val indices = listOf("archives", "patch-archives").flatMap { cdnConfig[it].orEmpty() } +
-            listOf("file-index", "patch-file-index").mapNotNull { cdnConfig[it]?.firstOrNull() }
-        val indexSizes = listOf("archives-index-size", "patch-archives-index-size").flatMap { cdnConfig[it].orEmpty() }
+        row["KeyRing"]?.takeIf { it.isNotBlank() }?.let { key ->
+            items += PlanItem("config:$key", "config", key, configPath(key), 0, verifyRaw = true, optional = true)
+        }
+        // Pre-seeds the archive indexes. The client fetches any that are missing (patch-archive indexes
+        // live elsewhere on the CDN and archive-group indexes are built locally), so these are optional.
+        val indices = cdnConfig["archives"].orEmpty() + listOfNotNull(cdnConfig["file-index"]?.firstOrNull())
+        val indexSizes = cdnConfig["archives-index-size"].orEmpty()
         indices.distinct().forEachIndexed { i, hash ->
-            items += PlanItem("index:$hash", "data", "$hash.index", "Data/indices/$hash.index", indexSizes.getOrNull(i)?.toLongOrNull() ?: 0)
+            items += PlanItem("index:$hash", "data", "$hash.index", "Data/indices/$hash.index", indexSizes.getOrNull(i)?.toLongOrNull() ?: 0, optional = true)
         }
 
         val installEkey = buildConfig.getValue("install").getOrElse(1) { throw IOException("Build config has no install manifest key") }
-        val manifest = InstallManifest.parse(Blte.decode(cdn.require("data", installEkey)))
-        val wanted = manifest.filter { it.matches(req) }
+        val (manifest, tagTypes) = InstallManifest.parseWithTagTypes(Blte.decode(cdn.require("data", installEkey)))
+        val wanted = InstallManifest.select(manifest, tagTypes, setOf("Windows", req.arch, req.locale, req.region.uppercase()))
+        val paths = CaseFolder()
         val ekeys = EncodingLookup(cdn, buildConfig.getValue("encoding")[1]).find(wanted.map { it.ckey }.toSet())
         for (entry in wanted) {
             val ekey = ekeys[entry.ckey] ?: throw IOException("${entry.name} is missing from the encoding table")
-            items += PlanItem("file:${entry.name}", "data", ekey, "${req.product.flavorDir}/${entry.relativePath}", entry.size, ckey = entry.ckey)
+            items += PlanItem("file:${entry.name}", "data", ekey, "${req.product.flavorDir}/${paths.fold(entry.relativePath)}", entry.size, ckey = entry.ckey)
         }
 
         val plan = InstallPlan(
@@ -149,7 +158,11 @@ class GameInstaller(
             val fresh = item.id in done && dest.isFile
             if (!fresh && !isValid(item, dest)) {
                 onProgress(InstallProgress(InstallProgress.Phase.DOWNLOADING, doneBytes, p.totalBytes, item.dest))
-                fetch(p.cdn, item, dest, archives)
+                try {
+                    fetch(p.cdn, item, dest, archives)
+                } catch (e: MissingOnCdnException) {
+                    if (!item.optional) throw e
+                }
             }
             done += item.id
             writeState(stateFile, done)
@@ -176,7 +189,7 @@ class GameInstaller(
         dest.parentFile?.mkdirs()
         val temp = File(dest.parentFile, "${dest.name}.download")
         if (item.ckey == null) {
-            if (!cdn.download(item.kind, item.key, temp)) throw IOException("Blizzard's CDN is missing ${item.dest}")
+            if (!cdn.download(item.kind, item.key, temp)) throw MissingOnCdnException(item.dest)
             if (item.verifyRaw && md5Hex(temp) != item.key) {
                 temp.delete()
                 throw IOException("Checksum mismatch for ${item.dest}")
@@ -272,11 +285,19 @@ class GameInstaller(
     }
 }
 
-/** Client files for this platform: tagged Windows + the CPU architecture, and the locale when locale-tagged. */
-internal fun app.gamenative.wow.tact.InstallEntry.matches(req: InstallRequest): Boolean {
-    if ("Windows" !in tags || req.arch !in tags) return false
-    val localeTags = tags.filter { LOCALE.matches(it) }
-    return localeTags.isEmpty() || req.locale in localeTags
-}
+/**
+ * Install-manifest names mix case (`UTILS\` and `Utils\`). Keeps the first casing seen for each folder
+ * so case-sensitive storage doesn't end up with two copies of the same directory.
+ */
+internal class CaseFolder {
+    private val dirs = mutableMapOf<String, String>()
 
-private val LOCALE = Regex("[a-z]{2}[A-Z]{2}")
+    fun fold(path: String): String {
+        val parts = path.split('/').toMutableList()
+        for (i in 0 until parts.size - 1) {
+            val key = parts.subList(0, i + 1).joinToString("/").lowercase()
+            parts[i] = dirs.getOrPut(key) { parts[i] }
+        }
+        return parts.joinToString("/")
+    }
+}
