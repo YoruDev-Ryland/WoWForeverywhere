@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.gamenative.Crypto
+import app.gamenative.wow.product.WowProduct
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -57,9 +58,9 @@ object BattleNetSignIn {
         prefs(context).edit().clear().apply()
     }
 
-    fun writeLoginFile(gameRoot: File, login: Login) {
+    fun writeLoginFile(gameRoot: File, product: WowProduct, login: Login) {
         try {
-            val file = File(File(gameRoot, WowClientDownloader.FLAVOR_DIR), "login.txt")
+            val file = File(File(gameRoot, product.flavorDir), "login.txt")
             file.parentFile?.mkdirs()
             file.writeText("${login.email}\n${login.password}\n")
         } catch (e: Exception) {
@@ -67,21 +68,24 @@ object BattleNetSignIn {
         }
     }
 
+    /** Wipes login.txt from every product folder, since a shared install can hold more than one. */
     fun removeLoginFile(gameRoot: File) {
-        try {
-            val file = File(File(gameRoot, WowClientDownloader.FLAVOR_DIR), "login.txt")
-            if (file.exists()) {
-                file.writeBytes(ByteArray(file.length().coerceAtMost(4096).toInt()))
-                file.delete()
+        for (product in WowProduct.entries) {
+            try {
+                val file = File(File(gameRoot, product.flavorDir), "login.txt")
+                if (file.exists()) {
+                    file.writeBytes(ByteArray(file.length().coerceAtMost(4096).toInt()))
+                    file.delete()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to remove login.txt")
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to remove login.txt")
         }
     }
 
-    fun startLoginWatcher(gameRoot: File) {
+    fun startLoginWatcher(gameRoot: File, product: WowProduct) {
         CoroutineScope(Dispatchers.IO).launch {
-            val hotfixLog = File(File(gameRoot, WowClientDownloader.FLAVOR_DIR), "Logs/Hotfix.log")
+            val hotfixLog = File(File(gameRoot, product.flavorDir), "Logs/Hotfix.log")
             hotfixLog.delete()
             val deadline = System.currentTimeMillis() + 180_000L
             while (isActive && System.currentTimeMillis() < deadline) {

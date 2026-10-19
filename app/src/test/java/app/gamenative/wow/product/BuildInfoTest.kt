@@ -44,12 +44,20 @@ class BuildInfoTest {
     }
 
     @Test
-    fun withProductAddsActiveRowAndDeactivatesOld() {
+    fun withProductAddsActiveRowAndKeepsOld() {
         val converted = BuildInfo.parse(text).withProduct(WowProduct.BETA, WowProduct.FOREVER)
         assertEquals("wowf", converted.active(WowProduct.FOREVER)!!["Product"])
         assertEquals("1", converted.active(WowProduct.FOREVER)!!["Active"])
-        assertEquals("0", converted.rows.single { it["Product"] == "wow_classic_beta" }["Active"])
-        assertEquals("wowf", converted.active()!!["Product"])
+        assertEquals("1", converted.active(WowProduct.BETA)!!["Active"])
+        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), converted.products())
+    }
+
+    @Test
+    fun detectPrefersSupportedProductInSharedInstall() {
+        val dir = Files.createTempDirectory("bi").toFile()
+        val retail = row.replace("wow_classic_beta", "wow")
+        File(dir, ".build.info").writeText("$header\n$retail\n$row\n")
+        assertEquals(WowProduct.BETA, detectProduct(dir))
     }
 
     @Test

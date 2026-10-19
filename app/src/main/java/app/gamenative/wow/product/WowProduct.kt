@@ -23,5 +23,5 @@ enum class WowProduct(
     }
 }
 
-/** The product of the active build in [root]'s `.build.info`, or null if missing or not a product we support. */
-fun detectProduct(root: File): WowProduct? = WowProduct.fromCode(BuildInfo.read(root)?.active()?.get("Product"))
+/** The preferred supported product installed in [root] (launch product before beta), or null if none. */
+fun detectProduct(root: File): WowProduct? = BuildInfo.read(root)?.products()?.firstOrNull()

@@ -21,11 +21,17 @@ data class BuildInfo(val header: List<String>, val rows: List<Map<String, String
         return copy(rows = rows.map { if (it === target) it + known else it })
     }
 
-    /** Makes [to] the active product, cloning [from]'s row when [to] has none yet. */
+    /** Supported products present in this file, launch product first. A shared install can hold several. */
+    fun products(): List<WowProduct> = WowProduct.entries.filter { p -> rows.any { it["Product"] == p.code } }
+
+    /**
+     * Adds an active row for [to], cloned from [from]'s row, when [to] has none yet. [from] stays active:
+     * products in one install share `Data/`, and each product's row carries its own Active flag.
+     */
     fun withProduct(from: WowProduct, to: WowProduct): BuildInfo {
-        val existing = rows.any { it["Product"] == to.code }
-        val withTarget = if (existing) rows else rows + (active(from) ?: return this).plus("Product" to to.code)
-        return copy(rows = withTarget.map { it + ("Active" to if (it["Product"] == to.code) "1" else "0") })
+        if (rows.any { it["Product"] == to.code }) return this
+        val source = active(from) ?: return this
+        return copy(rows = rows + source.plus(listOf("Product" to to.code, "Active" to "1")))
     }
 
     fun serialize(): String =

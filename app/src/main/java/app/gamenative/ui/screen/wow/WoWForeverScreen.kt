@@ -38,9 +38,6 @@ import app.gamenative.BuildConfig
 import app.gamenative.PluviaApp
 import app.gamenative.events.AndroidEvent
 import app.gamenative.ui.screen.wow.WowClientDownloader.BUILD_INFO
-import app.gamenative.ui.screen.wow.WowClientDownloader.EXE_NAME
-import app.gamenative.ui.screen.wow.WowClientDownloader.FLAVOR_DIR
-import app.gamenative.ui.screen.wow.WowClientDownloader.TARGET_PRODUCT
 import app.gamenative.ui.theme.WowBackgroundGradient
 import app.gamenative.ui.theme.WowBronze
 import app.gamenative.ui.theme.WowError
@@ -50,6 +47,8 @@ import app.gamenative.ui.theme.WowSubtle
 import app.gamenative.utils.AppUpdater
 import app.gamenative.utils.StorageUtils
 import app.gamenative.utils.renderReleaseNotes
+import app.gamenative.wow.product.WowProduct
+import app.gamenative.wow.product.detectProduct
 import com.winlator.container.Container
 import com.winlator.container.ContainerManager
 import com.winlator.contents.ContentProfile
@@ -158,7 +157,7 @@ fun WoWForeverScreen(
 
     suspend fun fetchVersionStatus() {
         isCheckingVersion = true
-        versionStatus = withContext(Dispatchers.IO) { WowClientDownloader.checkVersion(File(gamePath)) }
+        versionStatus = withContext(Dispatchers.IO) { WowClientDownloader.checkVersion(File(gamePath), files.product) }
         isCheckingVersion = false
     }
 
@@ -170,7 +169,7 @@ fun WoWForeverScreen(
     fun checkFiles(): Boolean {
         files = GamePath.status(context, gamePath)
         if (files.isWrongGame) {
-            errorMessage = "Incompatible game (${files.product}). WoW Forever requires World of Warcraft Classic Beta ($TARGET_PRODUCT)."
+            errorMessage = "Incompatible game (${files.productCode}). This app runs WoW Forever (${WowProduct.entries.joinToString { it.code }})."
         }
         return files.isReady
     }
@@ -188,7 +187,8 @@ fun WoWForeverScreen(
     }
 
     fun launchGame() {
-        if (isLaunching || files.isWrongGame) return
+        val product = files.product
+        if (isLaunching || product == null) return
         if (!files.hasStorageAccess) {
             showStoragePermissionDialog = true
             return
@@ -201,7 +201,7 @@ fun WoWForeverScreen(
             try {
                 val screenSize = fitScreenSizeToWindow(context, gpu.screenSize)
                 val containerId = withContext(Dispatchers.IO) {
-                    prepareLaunch(context, File(gamePath), gpu, screenSize) { msg ->
+                    prepareLaunch(context, File(gamePath), product, gpu, screenSize) { msg ->
                         scope.launch(Dispatchers.Main) { statusText = msg }
                     }
                 }
@@ -280,6 +280,7 @@ fun WoWForeverScreen(
 
     fun performUpdate() {
         val target = versionStatus ?: return
+        val product = files.product ?: return
         if (isUpdating || isLaunching) return
         if (!files.hasStorageAccess) {
             showStoragePermissionDialog = true
@@ -291,7 +292,7 @@ fun WoWForeverScreen(
         scope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    WowClientDownloader.updateGame(File(gamePath), target) { msg ->
+                    WowClientDownloader.updateGame(File(gamePath), product, target) { msg ->
                         scope.launch(Dispatchers.Main) { updateStatusText = msg }
                     }
                 }
@@ -390,10 +391,11 @@ fun WoWForeverScreen(
                     Spacer(modifier = Modifier.height(14.dp))
 
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CheckItem(label = if (files.exeExists) "ARM64 Binary ($EXE_NAME)" else "ARM64 Binary (downloads on Play)", ready = files.exeExists)
+                        val exeName = files.product?.armExe ?: "ARM64 client"
+                        CheckItem(label = if (files.exeExists) "ARM64 Binary ($exeName)" else "ARM64 Binary (downloads on Play)", ready = files.exeExists)
                         CheckItem(label = "Game Asset Archives (Data/)", ready = files.dataExists)
                         CheckItem(
-                            label = if (files.isWrongGame) "Install Info ($BUILD_INFO - requires $TARGET_PRODUCT)" else "Install Info ($BUILD_INFO)",
+                            label = if (files.isWrongGame) "Install Info ($BUILD_INFO - not WoW Forever)" else "Install Info ($BUILD_INFO, ${files.product?.displayName ?: "missing"})",
                             ready = files.buildInfoExists && !files.isWrongGame
                         )
                         CheckItem(label = "All Files Access Permission", ready = files.hasStorageAccess)
@@ -568,7 +570,7 @@ fun WoWForeverScreen(
                             onClick = { StorageUtils.requestManageExternalStoragePermission(context) },
                         )
                         else -> PrimaryButton(
-                            text = if (files.isWrongGame) "FOREVER BETA REQUIRED" else "PLAY WORLD OF WARCRAFT",
+                            text = if (files.isWrongGame) "WOW FOREVER REQUIRED" else "PLAY WORLD OF WARCRAFT",
                             icon = Icons.Default.PlayArrow,
                             enabled = canPlay,
                             onClick = ::launchGame,
@@ -783,27 +785,30 @@ object GamePath {
         val exeExists: Boolean = false,
         val dataExists: Boolean = false,
         val buildInfoExists: Boolean = false,
-        val product: String = "",
+        val product: WowProduct? = null,
+        val productCode: String = "",
         val hasStorageAccess: Boolean = true,
     ) {
-        val isWrongGame get() = buildInfoExists && product.isNotBlank() && product != TARGET_PRODUCT
+        val isWrongGame get() = buildInfoExists && product == null
         val isReady get() = exeExists && dataExists && buildInfoExists && hasStorageAccess && !isWrongGame
     }
 
     fun status(context: Context, path: String): Status {
         val root = File(path)
+        val product = detectProduct(root)
         return Status(
-            exeExists = File(root, "$FLAVOR_DIR/$EXE_NAME").exists(),
+            exeExists = product != null && File(root, "${product.flavorDir}/${product.armExe}").exists(),
             dataExists = File(root, "Data").listFiles()?.isNotEmpty() == true,
             buildInfoExists = File(root, BUILD_INFO).isFile,
-            product = productOf(root).orEmpty(),
+            product = product,
+            productCode = WowClientDownloader.readBuildInfo(File(root, BUILD_INFO))?.get("Product").orEmpty(),
             hasStorageAccess = StorageUtils.hasStoragePermission(context, path),
         )
     }
 
     fun load(context: Context): String {
         val saved = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_GAME_PATH, null)?.let(::File)
-        val usable = listOfNotNull(saved, defaultPath).firstOrNull { productOf(it) == TARGET_PRODUCT }
+        val usable = listOfNotNull(saved, defaultPath).firstOrNull { detectProduct(it) != null }
         return (usable ?: saved ?: defaultPath).absolutePath
     }
 
@@ -812,14 +817,12 @@ object GamePath {
     }
 
     fun isReady(context: Context, path: String = load(context)): Boolean =
-        path.isNotEmpty() && status(context, path).let { it.isReady && it.product == TARGET_PRODUCT }
+        path.isNotEmpty() && status(context, path).isReady
 
     fun findGameRoot(picked: File): File? =
         sequenceOf(picked, picked.parentFile, File(picked, "WoW Forever"), File(picked, "World of Warcraft"))
             .filterNotNull()
             .firstOrNull { File(it, BUILD_INFO).isFile }
-
-    private fun productOf(root: File) = WowClientDownloader.readBuildInfo(File(root, BUILD_INFO))?.get("Product")
 }
 
 @Composable
@@ -917,34 +920,41 @@ internal fun fitScreenSize(baseSize: String, windowWidth: Int, windowHeight: Int
     return "${(width / 2).roundToInt() * 2}x${(height / 2).roundToInt() * 2}"
 }
 
-private fun prepareLaunch(context: Context, gameRoot: File, gpu: GpuProfile, screenSize: String, onStatus: (String) -> Unit): String {
+private fun prepareLaunch(
+    context: Context,
+    gameRoot: File,
+    product: WowProduct,
+    gpu: GpuProfile,
+    screenSize: String,
+    onStatus: (String) -> Unit,
+): String {
     installBundledComponents(context, onStatus)
 
     check(File(gameRoot, BUILD_INFO).exists()) { "Missing $BUILD_INFO in $gameRoot. Copy it from your WoW install." }
     try {
-        ensureGameConfig(gameRoot, screenSize)
+        ensureGameConfig(gameRoot, product, screenSize)
     } catch (e: Exception) {
         if (e.isPermissionDenied()) throw StorageAccessDeniedException(e)
         throw e
     }
 
-    val arm64Exe = File(gameRoot, "$FLAVOR_DIR/$EXE_NAME")
+    val arm64Exe = File(gameRoot, "${product.flavorDir}/${product.armExe}")
     BattleNetSignIn.load(context)?.let { login ->
-        BattleNetSignIn.writeLoginFile(gameRoot, login)
-        BattleNetSignIn.startLoginWatcher(gameRoot)
+        BattleNetSignIn.writeLoginFile(gameRoot, product, login)
+        BattleNetSignIn.startLoginWatcher(gameRoot, product)
     }
     if (!arm64Exe.exists()) {
         try {
-            WowClientDownloader.download(gameRoot, onStatus)
+            WowClientDownloader.download(gameRoot, product, onStatus)
         } catch (e: Exception) {
-            if (!arm64Exe.exists()) throw IllegalStateException("Couldn't download $EXE_NAME: ${e.message}", e)
-            Timber.w(e, "Client update check failed, launching the existing $EXE_NAME")
+            if (!arm64Exe.exists()) throw IllegalStateException("Couldn't download ${product.armExe}: ${e.message}", e)
+            Timber.w(e, "Client update check failed, launching the existing ${product.armExe}")
         }
     }
 
     onStatus("Configuring ${gpu.label} container...")
     val containerManager = ContainerManager(context)
-    val config = containerConfig(gameRoot, gpu, screenSize)
+    val config = containerConfig(gameRoot, product, gpu, screenSize)
     val container = containerManager.getContainerById(CONTAINER_ID)
     if (container == null) {
         onStatus("Creating prefix environment (first boot)...")
@@ -957,7 +967,7 @@ private fun prepareLaunch(context: Context, gameRoot: File, gpu: GpuProfile, scr
     return CONTAINER_ID
 }
 
-private fun containerConfig(gameRoot: File, gpu: GpuProfile, screenSize: String): JSONObject {
+private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile, screenSize: String): JSONObject {
     val samsungEnv = if (Build.MANUFACTURER.equals("samsung", ignoreCase = true)) " FD_DEV_FEATURES=enable_tp_ubwc_flag_hint=1" else ""
     val envVars = "WRAPPER_MAX_IMAGE_COUNT=0 ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact,deck_emu MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=0 MESA_VK_WSI_PRESENT_MODE=mailbox TU_DEBUG=${gpu.tuDebug} VKD3D_SHADER_MODEL=6_0 PULSE_LATENCY_MSEC=144$samsungEnv"
     return JSONObject().apply {
@@ -975,7 +985,7 @@ private fun containerConfig(gameRoot: File, gpu: GpuProfile, screenSize: String)
         put("containerVariant", "bionic")
         put("fexcoreVersion", "2609-0")
         put("drives", "D:/storage/emulated/0/DownloadE:/data/data/${BuildConfig.APPLICATION_ID}/storageG:${gameRoot.path}")
-        put("executablePath", "G:\\$FLAVOR_DIR\\$EXE_NAME")
+        put("executablePath", "G:\\${product.flavorDir}\\${product.armExe}")
         put("execArgs", "-d3d11")
         put("showFPS", true)
         put("startupSelection", Container.STARTUP_SELECTION_AGGRESSIVE.toInt())
@@ -984,9 +994,11 @@ private fun containerConfig(gameRoot: File, gpu: GpuProfile, screenSize: String)
     }
 }
 
-private val CONFIG_DEFAULTS = linkedMapOf(
-    "portal" to "\"test\"",
-    "agentUID" to "\"$TARGET_PRODUCT\"",
+private const val GX_API_LINE = "SET gxApi \"D3D11\""
+
+private fun configDefaults(product: WowProduct) = linkedMapOf(
+    "portal" to "\"${product.portal}\"",
+    "agentUID" to "\"${product.code}\"",
     "gxApi" to "\"D3D11\"",
     "textLocale" to "\"enUS\"",
     "audioLocale" to "\"enUS\"",
@@ -1014,37 +1026,41 @@ private val CONFIG_DEFAULTS = linkedMapOf(
     "InputDeviceInterfaceStyle" to "\"1\"",
 )
 
-private fun ensureGameConfig(root: File, screenSize: String) {
-    val flavorDir = File(root, FLAVOR_DIR)
+internal fun flavorInfoText(product: WowProduct) = "Product Flavor!STRING:0\n${product.code}\n"
+
+private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String) {
+    val flavorDir = File(root, product.flavorDir)
     flavorDir.mkdirs()
     val flavorInfo = File(flavorDir, ".flavor.info")
     if (!flavorInfo.exists()) {
-        flavorInfo.writeText("Product Flavor!STRING:0\n$TARGET_PRODUCT\n")
+        flavorInfo.writeText(flavorInfoText(product))
     }
-    // Handheld defaults are only written on first boot so in-game changes stick, with two exceptions.
-    // gxApi is always forced: DXVK only works with D3D11, and a config copied from a Mac would otherwise
-    // select Metal. Resolutions are reset when missing or no longer fitting the screen (e.g. after a fold
-    // or unfold): WoW's "auto" otherwise picks a 720p size because it sees a low-end Intel GPU via Wine.
     val configWtf = File(flavorDir, "WTF/Config.wtf")
-    if (!configWtf.exists()) {
-        configWtf.parentFile?.mkdirs()
-        val defaults = CONFIG_DEFAULTS + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
-        configWtf.writeText(defaults.entries.joinToString("\n") { "SET ${it.key} ${it.value}" } + "\n")
-        return
-    }
+    val updated = buildConfigWtf(configWtf.takeIf { it.exists() }?.readLines(), product, screenSize) ?: return
+    configWtf.parentFile?.mkdirs()
+    configWtf.writeText(updated.joinToString("\n") + "\n")
+}
 
-    val gxApi = "SET gxApi ${CONFIG_DEFAULTS.getValue("gxApi")}"
-    val original = configWtf.readLines()
+/**
+ * Returns the Config.wtf lines to write, or null when [existing] needs no change.
+ * Handheld defaults are only written on first boot so in-game changes stick, with two exceptions.
+ * gxApi is always forced: DXVK only works with D3D11, and a config copied from a Mac would otherwise
+ * select Metal. Resolutions are reset when missing or no longer fitting the screen (e.g. after a fold
+ * or unfold): WoW's "auto" otherwise picks a 720p size because it sees a low-end Intel GPU via Wine.
+ */
+internal fun buildConfigWtf(existing: List<String>?, product: WowProduct, screenSize: String): List<String>? {
+    if (existing == null) {
+        val defaults = configDefaults(product) + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
+        return defaults.entries.map { "SET ${it.key} ${it.value}" }
+    }
     val staleResolutionKeys = RESOLUTION_KEYS.filter { key ->
-        val line = original.firstOrNull { it.startsWith("SET $key ", ignoreCase = true) }
+        val line = existing.firstOrNull { it.startsWith("SET $key ", ignoreCase = true) }
         line == null || !fitsScreen(line.substringAfter(" ").substringAfter(" ").trim('"'), screenSize)
     }
-    val updated = original.filterNot { line ->
+    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty()) return null
+    return existing.filterNot { line ->
         line.startsWith("SET gxApi ", ignoreCase = true) || staleResolutionKeys.any { line.startsWith("SET $it ", ignoreCase = true) }
-    } + gxApi + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
-    if (original.none { it == gxApi } || staleResolutionKeys.isNotEmpty()) {
-        configWtf.writeText(updated.joinToString("\n") + "\n")
-    }
+    } + GX_API_LINE + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
 }
 
 private val RESOLUTION_KEYS = listOf("gxFullscreenResolution", "gxWindowedResolution")
