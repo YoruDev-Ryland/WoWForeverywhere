@@ -14,6 +14,10 @@ import app.gamenative.ui.screen.wow.StorageAccessDeniedException
 import app.gamenative.ui.screen.wow.WoWLauncherState
 import app.gamenative.ui.screen.wow.WowClientDownloader
 import app.gamenative.ui.screen.wow.fitScreenSizeToWindow
+import app.gamenative.ui.screen.wow.installLocale
+import app.gamenative.wow.install.GameInstaller
+import app.gamenative.wow.install.InstallProgress
+import app.gamenative.wow.install.InstallRequest
 import app.gamenative.ui.screen.wow.isPermissionDenied
 import app.gamenative.ui.screen.wow.prepareLaunch
 import app.gamenative.utils.AppUpdater
@@ -205,9 +209,16 @@ class LauncherController(
         errorMessage = null
         scope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    WowClientDownloader.updateGame(File(gamePath), product, target) { msg ->
-                        scope.launch(Dispatchers.Main) { updateStatusText = msg }
+                // The full installer, not upstream's binaries-only updater: patches also change the
+                // client's .dat/.pak/.bin files (see the installer spike notes).
+                val root = File(gamePath)
+                GameInstaller().run(InstallRequest(root, product, installLocale(root, product))) { p ->
+                    scope.launch(Dispatchers.Main) {
+                        updateStatusText = when (p.phase) {
+                            InstallProgress.Phase.RESOLVING -> "Reading build ${target.remoteVersion}..."
+                            InstallProgress.Phase.DOWNLOADING -> p.fraction?.let { "Updating game files ${(it * 100).toInt()}%" } ?: "Updating game files..."
+                            else -> "Finishing update..."
+                        }
                     }
                 }
                 checkFiles()
