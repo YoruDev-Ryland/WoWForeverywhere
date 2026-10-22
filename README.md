@@ -15,6 +15,12 @@ Install the app, let it download the game from Blizzard's servers, pick your add
 
 </div>
 
+> [!TIP]
+> ### New in 0.3.0: CurseForge support
+> The addon browser now includes the full **CurseForge** catalog. Search, install and update CurseForge addons right on your handheld, with WoW Forever versions picked automatically. No account or key needed.
+>
+> **[Download v0.3.0](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/latest)** · [What's new](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/tag/v0.3.0)
+
 ## Features
 
 - **Installs the game for you.** Foreverywhere downloads the WoW Forever client straight from Blizzard's CDN to internal storage or an SD card. Downloads continue in the background, can be paused and resumed, and every file is verified.
