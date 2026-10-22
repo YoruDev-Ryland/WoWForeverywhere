@@ -214,7 +214,7 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
         Box(Modifier.fillMaxWidth().height(150.dp).background(Fw.Stone2)) {
             val banner = remote.screenshots.firstOrNull()
             if (banner != null) {
-                ArtImage(banner, Modifier.fillMaxSize(), fitIfNarrowerThan = 640)
+                ArtImage(banner, Modifier.fillMaxSize(), fitIfNarrowerThan = 640, keepOnDisk = false)
             } else {
                 ArtImage(ForeverArt.INTERFACE, Modifier.fillMaxSize())
             }
@@ -281,7 +281,7 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(remote.screenshots.drop(1).take(8)) { shot ->
                         Box(Modifier.size(width = 168.dp, height = 96.dp).clip(Fw.Shape).background(Fw.Stone2)) {
-                            ArtImage(shot, Modifier.fillMaxSize(), fitIfNarrowerThan = 320)
+                            ArtImage(shot, Modifier.fillMaxSize(), fitIfNarrowerThan = 320, keepOnDisk = false)
                         }
                     }
                 }
@@ -304,7 +304,7 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
 private fun AddonIcon(listing: AddonListing, size: Int) {
     val url = listing.remote.iconUrl
     Box(Modifier.size(size.dp).clip(Fw.Shape).background(Fw.Stone2), contentAlignment = Alignment.Center) {
-        if (url == null) FlavorMark(listing.bestFlavor, size = (size * 0.6f).toInt()) else ArtImage(url, Modifier.fillMaxSize())
+        if (url == null) FlavorMark(listing.bestFlavor, size = (size * 0.6f).toInt()) else ArtImage(url, Modifier.fillMaxSize(), keepOnDisk = false)
     }
 }
 

@@ -1,0 +1,18 @@
+services:
+  curseforge-proxy:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      PROXY_HOST: ${PROXY_HOST:-cf.yorudev.com}
+      CURSEFORGE_API_KEY: ${CURSEFORGE_API_KEY:?Set CURSEFORGE_API_KEY in .env}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

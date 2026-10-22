@@ -34,7 +34,11 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
         addonsDir = addonsDir,
         db = AddonDb.forAddonsDir(addonsDir),
         providers = listOf(
-            CurseForgeProvider(BuildConfig.CURSEFORGE_API_KEY),
+            CurseForgeProvider(
+                BuildConfig.CURSEFORGE_API_KEY,
+                apiBase = BuildConfig.CURSEFORGE_API_BASE,
+                proxy = BuildConfig.CURSEFORGE_API_KEY.isBlank(),
+            ),
             WagoProvider(BuildConfig.WAGO_API_KEY),
             WowInterfaceProvider(),
             GitHubProvider(),

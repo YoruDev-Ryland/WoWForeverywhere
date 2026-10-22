@@ -118,4 +118,14 @@ class CurseForgeProviderTest {
         assertTrue(disabled.getMany(listOf("334372")).isEmpty())
         assertEquals(0, server.requestCount)
     }
+
+    @Test
+    fun proxyWorksWithoutKeyAndSendsNone() = runBlocking {
+        val proxied = CurseForgeProvider("", OkHttpClient(), apiBase = server.base(), proxy = true)
+        assertTrue(proxied.enabled)
+        assertEquals(listOf("334372", "4444"), proxied.search("questie", 0).map { it.projectId })
+        val req = server.takeRequest()
+        assertNull(req.headers["x-api-key"])
+        assertTrue(req.headers["User-Agent"]!!.startsWith("WoWForeverywhere/"))
+    }
 }

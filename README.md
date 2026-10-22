@@ -98,7 +98,7 @@ The addon browser brings together CurseForge, Wago, WoWInterface and a curated c
 | :--- | :--- |
 | **GitHub catalog** | Popular addons that publish releases on GitHub, such as Questie, Deadly Boss Mods, BigWigs, Plater, Dominos and Bartender4. No account or key needed. |
 | **WoWInterface** | The full WoWInterface catalog. No account or key needed. |
-| **CurseForge** | The largest catalog. Available in builds made with a CurseForge API key. |
+| **CurseForge** | The largest catalog. No account or key needed. |
 | **Wago Addons** | Available in builds made with a Wago Addons API key. |
 
 The GitHub catalog lives in [`catalog/sources.json`](catalog/sources.json) and is refreshed every night. To suggest an addon, open a pull request that adds its repository. It needs GitHub releases with addon `.zip` files.
@@ -154,14 +154,14 @@ tools/fetch_components.sh          # Wine, DXVK and Turnip runtime archives (~13
 ./gradlew testModernDebugUnitTest
 ```
 
-CurseForge and Wago need API keys. Put them in `local.properties`, which is never committed:
+Builds reach CurseForge through the project's proxy, which holds the API key (see [`server/curseforge-proxy`](server/curseforge-proxy)). To use your own CurseForge key instead, or to enable Wago, put the keys in `local.properties`, which is never committed:
 
 ```properties
 CURSEFORGE_API_KEY=...
 WAGO_API_KEY=...
 ```
 
-Builds without keys use WoWInterface and the GitHub catalog. Release builds are signed with `app/keystores/keystore.properties` when it exists and fall back to the debug key otherwise.
+Release builds are signed with `app/keystores/keystore.properties` when it exists and fall back to the debug key otherwise.
 
 ## Credits
 

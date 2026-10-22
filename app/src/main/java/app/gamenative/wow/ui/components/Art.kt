@@ -83,10 +83,22 @@ object ArtCache {
         return file.takeIf { temp.renameTo(it) }
     }
 
-    suspend fun load(context: Context, url: String): ImageBitmap? {
+    /**
+     * Loads [url], from memory, then the disk cache, then the network. Addon icons and screenshots
+     * pass [keepOnDisk] false: CurseForge's API terms don't allow storing its data, so those stay in
+     * memory only and are downloaded again in a later session.
+     */
+    suspend fun load(context: Context, url: String, keepOnDisk: Boolean = true): ImageBitmap? {
         memory.get(url)?.let { return it }
         return withContext(Dispatchers.IO) {
             runCatching {
+                if (!keepOnDisk) {
+                    val bytes = Net.http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                        if (!response.isSuccessful) return@runCatching null
+                        response.body!!.bytes()
+                    }
+                    return@runCatching decode(bytes)?.asImageBitmap()?.also { memory.put(url, it) }
+                }
                 val dir = File(context.cacheDir, "art").apply { mkdirs() }
                 val file = File(dir, sha1(url) + ".img")
                 if (!file.isFile || file.length() == 0L) {
@@ -97,18 +109,18 @@ object ArtCache {
                     }
                     temp.renameTo(file)
                 }
-                decode(file)?.asImageBitmap()?.also { memory.put(url, it) }
+                decode(file.readBytes())?.asImageBitmap()?.also { memory.put(url, it) }
             }.onFailure { Timber.w(it, "Art load failed: $url") }.getOrNull()
         }
     }
 
     /** Decodes at most ~1600 px wide: screenshots can be far larger than any tile. */
-    private fun decode(file: File): android.graphics.Bitmap? {
+    private fun decode(bytes: ByteArray): android.graphics.Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.path, bounds)
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         var sample = 1
         while (bounds.outWidth / (sample * 2) >= MAX_WIDTH) sample *= 2
-        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
     }
 
     private const val MAX_WIDTH = 1600
@@ -118,9 +130,9 @@ object ArtCache {
 
 /** Full-bleed art that fills its parent; shows nothing (the parent's surface) until loaded or when offline. */
 @Composable
-fun ArtImage(url: String?, modifier: Modifier = Modifier, zoom: Float = 1f, fitIfNarrowerThan: Int = 0) {
+fun ArtImage(url: String?, modifier: Modifier = Modifier, zoom: Float = 1f, fitIfNarrowerThan: Int = 0, keepOnDisk: Boolean = true) {
     val context = LocalContext.current
-    val image by produceState<ImageBitmap?>(null, url) { value = url?.let { ArtCache.load(context, it) } }
+    val image by produceState<ImageBitmap?>(null, url) { value = url?.let { ArtCache.load(context, it, keepOnDisk) } }
     image?.let {
         Image(
             bitmap = it,

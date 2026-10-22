@@ -1,0 +1,46 @@
+# Forwards the app's CurseForge requests with the API key added, so the key never ships in the APK.
+# Only the requests the app makes are allowed, all for World of Warcraft (game id 1). Nothing is cached:
+# CurseForge's API terms don't allow storing its data.
+{
+	order rate_limit before handle
+}
+
+{$PROXY_HOST} {
+	request_body {
+		max_size 16KB
+	}
+
+	# Per device, and a ceiling for everyone together so one abuser can't use up the key's quota.
+	rate_limit {
+		zone per_ip {
+			key {remote_host}
+			events 300
+			window 1m
+		}
+		zone everyone {
+			key static
+			events 6000
+			window 1m
+		}
+	}
+
+	handle /health {
+		respond "ok" 200
+	}
+
+	@allowed expression `
+		(method('GET') && path('/v1/mods/search', '/v1/categories') && {query.gameId} == '1')
+		|| (method('GET') && path_regexp('^/v1/mods/[0-9]+(/description)?$'))
+		|| (method('POST') && path('/v1/mods'))
+	`
+	handle @allowed {
+		reverse_proxy https://api.curseforge.com {
+			header_up Host api.curseforge.com
+			header_up x-api-key {env.CURSEFORGE_API_KEY}
+		}
+	}
+
+	handle {
+		respond 404
+	}
+}

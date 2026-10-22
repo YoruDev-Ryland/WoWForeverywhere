@@ -1,5 +1,6 @@
 package app.gamenative.wow.addons.provider
 
+import app.gamenative.BuildConfig
 import app.gamenative.utils.Net
 import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
@@ -14,18 +15,26 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 
 /**
- * CurseForge v1 API (https://docs.curseforge.com). Needs an API key; a blank key disables the
- * provider. Files are picked per flavor through `latestFilesIndexes[].gameVersionTypeId`.
+ * CurseForge v1 API (https://docs.curseforge.com). Needs an API key, or [proxy] when [apiBase] is our
+ * proxy that adds the key itself; otherwise the provider is disabled. Files are picked per flavor
+ * through `latestFilesIndexes[].gameVersionTypeId`.
  */
 class CurseForgeProvider(
     private val apiKey: String,
     private val http: OkHttpClient = Net.http,
     private val apiBase: String = "https://api.curseforge.com",
+    proxy: Boolean = false,
 ) : AddonProvider {
     override val id: String = ProviderIds.CURSEFORGE
-    override val enabled: Boolean = apiKey.isNotBlank()
+    override val enabled: Boolean = apiKey.isNotBlank() || proxy
 
-    private val headers by lazy { Headers.headersOf("x-api-key", apiKey, "Accept", "application/json") }
+    private val headers by lazy {
+        Headers.Builder()
+            .add("Accept", "application/json")
+            .add("User-Agent", "WoWForeverywhere/${BuildConfig.VERSION_NAME}")
+            .apply { if (apiKey.isNotBlank()) add("x-api-key", apiKey) }
+            .build()
+    }
 
     override suspend fun search(query: String, page: Int): List<RemoteAddon> = searchIn(query, page, null)
 

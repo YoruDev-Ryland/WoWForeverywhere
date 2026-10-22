@@ -33,6 +33,7 @@ fun apiKey(name: String): String = providers.gradleProperty(name).orNull ?: loca
 // string keys. Ours are added below as proper string fields instead.
 secrets {
     ignoreList.add("CURSEFORGE_API_KEY")
+    ignoreList.add("CURSEFORGE_PROXY")
     ignoreList.add("WAGO_API_KEY")
 }
 
@@ -66,7 +67,12 @@ android {
         versionName = "0.2.1"
 
         buildConfigField("boolean", "GOLD", "false")
-        buildConfigField("String", "CURSEFORGE_API_KEY", "\"${javaString(apiKey("CURSEFORGE_API_KEY"))}\"")
+        // With a key the app calls CurseForge directly; without one (release builds) it goes through the
+        // proxy in server/curseforge-proxy, which adds the key so it never ships in the APK.
+        val curseForgeKey = apiKey("CURSEFORGE_API_KEY")
+        val curseForgeBase = if (curseForgeKey.isNotBlank()) "https://api.curseforge.com" else apiKey("CURSEFORGE_PROXY").ifBlank { "https://cf.yorudev.com" }
+        buildConfigField("String", "CURSEFORGE_API_KEY", "\"${javaString(curseForgeKey)}\"")
+        buildConfigField("String", "CURSEFORGE_API_BASE", "\"${javaString(curseForgeBase)}\"")
         buildConfigField("String", "WAGO_API_KEY", "\"${javaString(apiKey("WAGO_API_KEY"))}\"")
         val iconValue = "@mipmap/ic_launcher"
         val iconRoundValue = "@mipmap/ic_launcher_round"
