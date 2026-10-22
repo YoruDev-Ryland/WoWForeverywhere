@@ -26,6 +26,10 @@ class AddonCategoryTest {
         assertEquals(AddonCategory.COMBAT, AddonCategory.fromName("Damage Dealer"))
         assertEquals(AddonCategory.PROFESSIONS, AddonCategory.fromName("Professions"))
         assertEquals(AddonCategory.CHAT, AddonCategory.fromName("Chat & Communication"))
+        assertEquals(AddonCategory.UNIT_FRAMES, AddonCategory.fromName("Raid Frames"))
+        assertEquals(AddonCategory.PROFESSIONS, AddonCategory.fromName("Skinning"))
+        assertEquals(AddonCategory.PROFESSIONS, AddonCategory.fromName("Tailoring"))
+        assertEquals(AddonCategory.OTHER, AddonCategory.fromName("Plugins"))
     }
 
     @Test

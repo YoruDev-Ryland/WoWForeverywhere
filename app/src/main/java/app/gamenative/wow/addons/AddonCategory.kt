@@ -8,14 +8,20 @@ package app.gamenative.wow.addons
 enum class AddonCategory(val label: String, keywords: List<String>) {
     QUESTS("Quests & leveling", listOf("quest", "leveling", "character advancement")),
     MAP("Map & navigation", listOf("map", "coords", "compass", "minimap")),
-    RAIDS("Raids & bosses", listOf("raid", "boss", "encounter", "dungeon")),
+    RAIDS("Raids & bosses", listOf("raid(?! frame)", "boss", "encounter", "dungeon")),
     COMBAT("Combat & meters", listOf("combat", "damage", "dps", "healer", "tank", "threat")),
-    UNIT_FRAMES("Unit frames", listOf("unit", "ouf", "nui")),
+    UNIT_FRAMES("Unit frames", listOf("unit", "raid frame", "ouf", "nui")),
     ACTION_BARS("Action bars", listOf("action bar")),
     BUFFS("Buffs & cooldowns", listOf("buff", "debuff", "cooldown", "casting bar", "spell")),
     BAGS("Bags & inventory", listOf("bag", "inventory", "bank")),
     AUCTION("Auction & gold", listOf("auction", "vendor", "economy", "gold")),
-    PROFESSIONS("Professions", listOf("profession", "tradeskill")),
+    PROFESSIONS(
+        "Professions",
+        listOf(
+            "profession", "tradeskill", "alchemy", "blacksmith", "cooking", "enchanting", "engineering", "first aid",
+            "fishing", "herbalism", "leatherworking", "mining", "skinning", "tailoring", "jewelcrafting", "inscription",
+        ),
+    ),
     CHAT("Chat & social", listOf("chat", "communication", "guild", "group", "friends", "mail")),
     TOOLTIPS("Tooltips", listOf("tooltip")),
     INTERFACE("Interface & media", listOf("graphic ui", "ui media", "hud", "artwork", "suite", "skin", "titan panel", "data broker", "fubar", "info bar")),
@@ -23,7 +29,7 @@ enum class AddonCategory(val label: String, keywords: List<String>) {
     PVP("PvP", listOf("pvp", "arena", "battleground")),
     PETS("Mounts & pets", listOf("mount", "pet", "companion")),
     LIBRARIES("Libraries", listOf("librar", "ace", "developer", "development")),
-    OTHER("Other", listOf("miscellaneous", "other", "roleplay", "music", "mini game", "minigame", "data mods", "plug-ins")),
+    OTHER("Other", listOf("miscellaneous", "other", "roleplay", "music", "mini game", "minigame", "data mods", "plug-ins", "plugins")),
     ;
 
     private val patterns = keywords.map { Regex("\\b$it") }
@@ -32,7 +38,8 @@ enum class AddonCategory(val label: String, keywords: List<String>) {
         /**
          * Keywords match at the start of a word ("librar" matches "Libraries", "ace" doesn't match
          * "Interface"); a trailing `\b` makes one a whole word, so "Classic - General", a game-version
-         * folder rather than a topic, isn't "Class".
+         * folder rather than a topic, isn't "Class". The first match wins, so CurseForge's "Skinning" is a
+         * profession, not an interface skin, and its "Raid Frames" are unit frames, not raid addons.
          */
         fun fromName(name: String): AddonCategory? {
             val lower = name.lowercase()
