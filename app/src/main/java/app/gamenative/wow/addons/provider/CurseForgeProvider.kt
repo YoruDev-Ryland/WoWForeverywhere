@@ -97,7 +97,7 @@ class CurseForgeProvider(
     /** Maps a mod; mods without a Forever or Classic file are dropped unless [keepEmpty]. */
     private fun toRemote(mod: CfMod, keepEmpty: Boolean = false): RemoteAddon? {
         val latest = LinkedHashMap<AddonFlavor, RemoteFile>()
-        for ((flavor, typeId) in listOf(AddonFlavor.FOREVER to FOREVER_TYPE_ID, AddonFlavor.CLASSIC to CLASSIC_ERA_TYPE_ID)) {
+        for ((flavor, typeId) in listOf(AddonFlavor.MAIN to FOREVER_TYPE_ID, AddonFlavor.FALLBACK to CLASSIC_ERA_TYPE_ID)) {
             pickFile(mod, typeId)?.let { latest[flavor] = it }
         }
         if (latest.isEmpty() && !keepEmpty) return null

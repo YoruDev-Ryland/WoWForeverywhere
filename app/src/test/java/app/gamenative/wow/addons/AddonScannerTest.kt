@@ -108,13 +108,13 @@ class AddonScannerTest {
         val questie = result.getValue("Questie")
         assertEquals(listOf("Questie"), questie.folders)
         assertEquals(SourceRef("curseforge", "334372"), questie.source)
-        assertEquals(AddonFlavor.CLASSIC, questie.flavor)
+        assertEquals(AddonFlavor.FALLBACK, questie.flavor)
         assertEquals("10.1.0", questie.version)
 
         val dbm = result.getValue("DBM Core")
         assertEquals(listOf("DBM-Core", "DBM-StatusBarTimers"), dbm.folders.sorted())
         assertEquals(SourceRef("curseforge", "3358"), dbm.source)
-        assertEquals(AddonFlavor.FOREVER, dbm.flavor)
+        assertEquals(AddonFlavor.MAIN, dbm.flavor)
 
         val mine = result.getValue("My Addon")
         assertEquals(listOf("MyAddon"), mine.folders)
@@ -139,7 +139,7 @@ class AddonScannerTest {
             name = "Questie (Wago)",
             folders = listOf("Questie"),
             version = "9.9",
-            flavor = AddonFlavor.CLASSIC,
+            flavor = AddonFlavor.FALLBACK,
             source = SourceRef("wago", "abc", "rel1"),
             installedAt = 42,
         )
@@ -155,9 +155,9 @@ class AddonScannerTest {
         val known = listOf(
             InstalledAddon(
                 "curseforge:3358", "DBM", listOf("DBM-Core", "DBM-StatusBarTimers", "DBM-Gone"), "1",
-                AddonFlavor.FOREVER, SourceRef("curseforge", "3358"), 1,
+                AddonFlavor.MAIN, SourceRef("curseforge", "3358"), 1,
             ),
-            InstalledAddon("curseforge:999", "Removed", listOf("Removed"), "1", AddonFlavor.CLASSIC, SourceRef("curseforge", "999"), 1),
+            InstalledAddon("curseforge:999", "Removed", listOf("Removed"), "1", AddonFlavor.FALLBACK, SourceRef("curseforge", "999"), 1),
         )
         File(addons, "MyAddon").deleteRecursively()
         val result = AddonScanner.scan(addons, known).associateBy { it.id }
@@ -180,7 +180,7 @@ class AddonScannerTest {
         assertEquals(File(root, "_forever_/Interface/.foreverywhere-addons.json"), db.file)
         assertEquals(emptyList<InstalledAddon>(), db.load())
         val list = listOf(
-            InstalledAddon("curseforge:1", "A", listOf("A", "A_Lib"), "1.0", AddonFlavor.FOREVER, SourceRef("curseforge", "1", "55"), 7),
+            InstalledAddon("curseforge:1", "A", listOf("A", "A_Lib"), "1.0", AddonFlavor.MAIN, SourceRef("curseforge", "1", "55"), 7),
             InstalledAddon("local:B", "B", listOf("B"), null, AddonFlavor.OTHER, null, 8),
         )
         db.save(list)

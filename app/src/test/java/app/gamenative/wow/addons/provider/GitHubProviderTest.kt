@@ -47,12 +47,12 @@ class GitHubProviderTest {
         assertEquals("BigWigs", addon.name)
         assertEquals("BigWigsMods", addon.author)
         assertEquals("https://github.com/BigWigsMods/BigWigs", addon.websiteUrl)
-        assertEquals(setOf(AddonFlavor.FOREVER, AddonFlavor.CLASSIC), addon.latest.keys)
-        val forever = addon.latest.getValue(AddonFlavor.FOREVER)
+        assertEquals(setOf(AddonFlavor.MAIN, AddonFlavor.FALLBACK), addon.latest.keys)
+        val forever = addon.latest.getValue(AddonFlavor.MAIN)
         assertEquals("103", forever.fileId)
         assertEquals("v400", forever.version)
         assertEquals("${server.base()}/dl/BigWigs-v400-b.zip", forever.downloadUrl)
-        assertEquals("102", addon.latest.getValue(AddonFlavor.CLASSIC).fileId)
+        assertEquals("102", addon.latest.getValue(AddonFlavor.FALLBACK).fileId)
     }
 
     @Test
@@ -61,9 +61,9 @@ class GitHubProviderTest {
 
         val addon = provider.get("someone/Foo")!!
 
-        assertEquals(setOf(AddonFlavor.FOREVER, AddonFlavor.CLASSIC), addon.latest.keys)
-        assertEquals("203", addon.latest.getValue(AddonFlavor.FOREVER).fileId)
-        assertEquals("202", addon.latest.getValue(AddonFlavor.CLASSIC).fileId)
+        assertEquals(setOf(AddonFlavor.MAIN, AddonFlavor.FALLBACK), addon.latest.keys)
+        assertEquals("203", addon.latest.getValue(AddonFlavor.MAIN).fileId)
+        assertEquals("202", addon.latest.getValue(AddonFlavor.FALLBACK).fileId)
     }
 
     @Test

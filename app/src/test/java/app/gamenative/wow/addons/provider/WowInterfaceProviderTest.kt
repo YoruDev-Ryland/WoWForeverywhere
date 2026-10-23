@@ -49,8 +49,8 @@ class WowInterfaceProviderTest {
         assertEquals("https://www.wowinterface.com/downloads/info3896-Atlas.html", atlas.websiteUrl)
         assertEquals("https://cdn-wow.mmoui.com/preview/tiny/pvw51580.png", atlas.iconUrl)
         // Atlas lists Classic 1.15.7 (plus retail versions that are ignored).
-        assertEquals(setOf(AddonFlavor.CLASSIC), atlas.latest.keys)
-        assertEquals("v1.54.03", atlas.latest.getValue(AddonFlavor.CLASSIC).version)
+        assertEquals(setOf(AddonFlavor.FALLBACK), atlas.latest.keys)
+        assertEquals("v1.54.03", atlas.latest.getValue(AddonFlavor.FALLBACK).version)
     }
 
     @Test
@@ -79,15 +79,15 @@ class WowInterfaceProviderTest {
         val results = provider.popular(0)
         assertEquals(listOf("Classic Only Thing", "Forever Questing"), results.map { it.name })
         val forever = results.last()
-        assertEquals(setOf(AddonFlavor.FOREVER, AddonFlavor.CLASSIC), forever.latest.keys)
-        assertEquals(setOf(AddonFlavor.CLASSIC), results.first().latest.keys)
+        assertEquals(setOf(AddonFlavor.MAIN, AddonFlavor.FALLBACK), forever.latest.keys)
+        assertEquals(setOf(AddonFlavor.FALLBACK), results.first().latest.keys)
     }
 
     @Test
     fun getUsesFileDetailsForDownload() = runBlocking {
         val provider = start("wowi-filelist.json")
         val atlas = provider.get("3896")!!
-        val file = atlas.latest.getValue(AddonFlavor.CLASSIC)
+        val file = atlas.latest.getValue(AddonFlavor.FALLBACK)
         assertEquals("https://cdn.wowinterface.com/downloads/getfile.php?id=3896&d=1792311003&minion", file.downloadUrl)
         assertEquals("v1.54.03", file.version)
         assertNull(provider.get("424242"))

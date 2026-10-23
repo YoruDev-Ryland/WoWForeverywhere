@@ -71,21 +71,21 @@ class CurseForgeProviderTest {
     fun picksForeverReleaseFileOverClassic() = runBlocking {
         val questie = provider.get("334372")!!
 
-        assertEquals(setOf(AddonFlavor.FOREVER, AddonFlavor.CLASSIC), questie.latest.keys)
-        val forever = questie.latest.getValue(AddonFlavor.FOREVER)
+        assertEquals(setOf(AddonFlavor.MAIN, AddonFlavor.FALLBACK), questie.latest.keys)
+        val forever = questie.latest.getValue(AddonFlavor.MAIN)
         // The stable release wins over the newer beta.
         assertEquals("5001", forever.fileId)
         assertEquals("Questie 10.0.1 Forever", forever.version)
         assertEquals("${server.base()}/files/5001/Questie-10.0.1-forever.zip", forever.downloadUrl)
         // Only required dependencies (relationType 3).
         assertEquals(listOf(SourceRef("curseforge", "9999")), forever.dependencies)
-        assertEquals("5000", questie.latest.getValue(AddonFlavor.CLASSIC).fileId)
+        assertEquals("5000", questie.latest.getValue(AddonFlavor.FALLBACK).fileId)
     }
 
     @Test
     fun disabledDistributionIsNotInstallable() = runBlocking {
         val locked = provider.search("locked", 0).single { it.projectId == "4444" }
-        val file = locked.latest.getValue(AddonFlavor.CLASSIC)
+        val file = locked.latest.getValue(AddonFlavor.FALLBACK)
         assertEquals("", file.downloadUrl)
         assertFalse(file.installable)
         assertEquals("https://www.curseforge.com/wow/addons/locked-addon", locked.websiteUrl)

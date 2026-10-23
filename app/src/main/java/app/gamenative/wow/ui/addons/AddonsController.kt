@@ -150,7 +150,7 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
     private fun show(items: List<AddonListing>) {
         val q = query.trim().lowercase()
         listings = items.filter { listing ->
-            (includeClassic || listing.bestFlavor != AddonFlavor.CLASSIC) &&
+            (includeClassic || listing.bestFlavor != AddonFlavor.FALLBACK) &&
                 (source == null || source in listing.sources) &&
                 (mode == Mode.BROWSE || category == null || category in listing.remote.categories) &&
                 (mode == Mode.BROWSE || q.isEmpty() || q in listing.remote.name.lowercase())
@@ -162,7 +162,7 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
 
     fun update(listing: AddonListing) = act("Updating ${listing.remote.name}") {
         val record = listing.installed ?: return@act
-        val updated = if (record.flavor == AddonFlavor.CLASSIC && listing.bestFlavor == AddonFlavor.FOREVER) manager.install(listing.remote) else manager.update(record)
+        val updated = if (record.flavor == AddonFlavor.FALLBACK && listing.bestFlavor == AddonFlavor.MAIN) manager.install(listing.remote) else manager.update(record)
         markInstalled(listing, updated)
     }
 

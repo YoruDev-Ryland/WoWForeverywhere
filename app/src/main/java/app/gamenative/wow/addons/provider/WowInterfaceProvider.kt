@@ -100,7 +100,7 @@ class WowInterfaceProvider(
             author = entry.author,
             iconUrl = entry.thumbs?.firstOrNull(),
             downloads = entry.downloads.toLongOrNull() ?: 0,
-            latest = listOf(AddonFlavor.FOREVER, AddonFlavor.CLASSIC).filter { it in flavors }.associateWith { file },
+            latest = listOf(AddonFlavor.MAIN, AddonFlavor.FALLBACK).filter { it in flavors }.associateWith { file },
             websiteUrl = entry.infoUrl,
             categories = setOfNotNull(AddonCategory.fromWowInterfaceId(entry.categoryId)),
             screenshots = entry.images.orEmpty(),
@@ -113,9 +113,9 @@ class WowInterfaceProvider(
         val major = parts.getOrNull(0)
         val minor = parts.getOrNull(1) ?: 0
         return when {
-            "forever" in name || "camelot" in name -> AddonFlavor.FOREVER
-            major == 1 && minor >= 60 -> AddonFlavor.FOREVER
-            major == 1 -> AddonFlavor.CLASSIC
+            "forever" in name || "camelot" in name -> AddonFlavor.MAIN
+            major == 1 && minor >= 60 -> AddonFlavor.MAIN
+            major == 1 -> AddonFlavor.FALLBACK
             else -> null
         }
     }

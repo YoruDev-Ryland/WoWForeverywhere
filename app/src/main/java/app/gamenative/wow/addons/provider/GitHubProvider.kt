@@ -68,7 +68,7 @@ class GitHubProvider(
     private fun CatalogAddon.toRemote(): RemoteAddon {
         val deps = requires.map { SourceRef(ProviderIds.GITHUB, it) }
         val latest = LinkedHashMap<AddonFlavor, RemoteFile>()
-        for ((key, flavor) in listOf("forever" to AddonFlavor.FOREVER, "classic" to AddonFlavor.CLASSIC)) {
+        for ((key, flavor) in listOf("forever" to AddonFlavor.MAIN, "classic" to AddonFlavor.FALLBACK)) {
             files[key]?.let { latest[flavor] = RemoteFile(it.fileId, it.version, it.url, deps) }
         }
         return RemoteAddon(
@@ -131,8 +131,8 @@ class GitHubProvider(
 
     private fun fromFileNames(zips: List<GhAsset>): Map<AddonFlavor, GhAsset> {
         val result = LinkedHashMap<AddonFlavor, GhAsset>()
-        zips.firstOrNull { foreverName.containsMatchIn(it.name) }?.let { result[AddonFlavor.FOREVER] = it }
-        zips.firstOrNull { classicName.containsMatchIn(it.name) }?.let { result[AddonFlavor.CLASSIC] = it }
+        zips.firstOrNull { foreverName.containsMatchIn(it.name) }?.let { result[AddonFlavor.MAIN] = it }
+        zips.firstOrNull { classicName.containsMatchIn(it.name) }?.let { result[AddonFlavor.FALLBACK] = it }
         if (result.isEmpty() && zips.size == 1) result[AddonFlavor.OTHER] = zips.single()
         return result
     }
@@ -202,8 +202,8 @@ class GitHubProvider(
         )
 
         private fun metadataFlavor(flavor: String): AddonFlavor? = when (flavor.lowercase()) {
-            "classic", "vanilla" -> AddonFlavor.CLASSIC
-            "forever", "camelot" -> AddonFlavor.FOREVER
+            "classic", "vanilla" -> AddonFlavor.FALLBACK
+            "forever", "camelot" -> AddonFlavor.MAIN
             else -> null
         }
 

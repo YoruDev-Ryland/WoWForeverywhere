@@ -152,7 +152,7 @@ class AddonManager(
         }
         val records = db.load()
         return merge(results, records)
-            .filter { includeClassic || it.bestFlavor != AddonFlavor.CLASSIC }
+            .filter { includeClassic || it.bestFlavor != AddonFlavor.FALLBACK }
             .filter { category == null || category in it.remote.categories }
     }
 
@@ -160,7 +160,7 @@ class AddonManager(
         val groups = LinkedHashMap<String, MutableList<RemoteAddon>>()
         results.forEach { groups.getOrPut(mergeKey(it)) { mutableListOf() } += it }
         return groups.values.map { group ->
-            val primary = group.maxWith(compareBy<RemoteAddon>({ AddonFlavor.FOREVER in it.latest }, { it.downloads }))
+            val primary = group.maxWith(compareBy<RemoteAddon>({ AddonFlavor.MAIN in it.latest }, { it.downloads }))
             val installed = records.firstOrNull { record -> group.any { record.source.matches(it) } }
             AddonListing(
                 // Sources fill in for each other: one may list categories or screenshots another lacks.
@@ -177,7 +177,7 @@ class AddonManager(
                 sourceIds = group.associate { it.provider to it.projectId },
                 pages = (listOf(primary) + group).distinctBy { it.provider }.mapNotNull { r -> r.pageUrl()?.let { r.provider to it } }.toMap(),
             )
-        }.sortedWith(compareBy<AddonListing>({ it.bestFlavor != AddonFlavor.FOREVER }, { -it.remote.downloads }))
+        }.sortedWith(compareBy<AddonListing>({ it.bestFlavor != AddonFlavor.MAIN }, { -it.remote.downloads }))
     }
 
     /**
@@ -190,8 +190,8 @@ class AddonManager(
     private fun normalize(text: String): String = text.lowercase().filter { it.isLetterOrDigit() }
 
     private fun bestFlavor(group: List<RemoteAddon>): AddonFlavor = when {
-        group.any { AddonFlavor.FOREVER in it.latest } -> AddonFlavor.FOREVER
-        group.any { AddonFlavor.CLASSIC in it.latest } -> AddonFlavor.CLASSIC
+        group.any { AddonFlavor.MAIN in it.latest } -> AddonFlavor.MAIN
+        group.any { AddonFlavor.FALLBACK in it.latest } -> AddonFlavor.FALLBACK
         else -> AddonFlavor.OTHER
     }
 
@@ -208,14 +208,14 @@ class AddonManager(
             source.fileId != null -> best.fileId != source.fileId
             else -> installed.version == null || !best.version.contains(installed.version)
         }
-        val switchToForever = installed.flavor == AddonFlavor.CLASSIC &&
-            group.any { it.latest[AddonFlavor.FOREVER]?.installable == true }
+        val switchToForever = installed.flavor == AddonFlavor.FALLBACK &&
+            group.any { it.latest[AddonFlavor.MAIN]?.installable == true }
         return changed || switchToForever
     }
 
     /** Forever first, then a generic file, then Classic; installable files win within that order. */
     private fun bestFile(remote: RemoteAddon): Pair<AddonFlavor, RemoteFile>? {
-        val ordered = listOf(AddonFlavor.FOREVER, AddonFlavor.OTHER, AddonFlavor.CLASSIC)
+        val ordered = listOf(AddonFlavor.MAIN, AddonFlavor.OTHER, AddonFlavor.FALLBACK)
             .mapNotNull { flavor -> remote.latest[flavor]?.let { flavor to it } }
         return ordered.firstOrNull { it.second.installable } ?: ordered.firstOrNull()
     }

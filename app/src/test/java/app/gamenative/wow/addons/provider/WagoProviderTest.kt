@@ -72,25 +72,25 @@ class WagoProviderTest {
     @Test
     fun picksForeverFileAndStableRelease() = runBlocking {
         val questie = provider.search("questie", 0).first()
-        assertEquals(setOf(AddonFlavor.FOREVER, AddonFlavor.CLASSIC), questie.latest.keys)
-        val forever = questie.latest.getValue(AddonFlavor.FOREVER)
+        assertEquals(setOf(AddonFlavor.MAIN, AddonFlavor.FALLBACK), questie.latest.keys)
+        val forever = questie.latest.getValue(AddonFlavor.MAIN)
         assertEquals("10.0.1-forever", forever.version)
         assertEquals("10.0.1-forever", forever.fileId)
         assertEquals("${server.base()}/wago/q1w2e3r4/forever.zip", forever.downloadUrl)
         // Stable is preferred over a newer beta.
-        assertEquals("10.0.0", questie.latest.getValue(AddonFlavor.CLASSIC).version)
+        assertEquals("10.0.0", questie.latest.getValue(AddonFlavor.FALLBACK).version)
 
         // A classic-only addon with only an alpha release still lists it.
         val old = provider.search("questie", 0).last()
-        assertEquals(setOf(AddonFlavor.CLASSIC), old.latest.keys)
+        assertEquals(setOf(AddonFlavor.FALLBACK), old.latest.keys)
     }
 
     @Test
     fun getReadsDetailsPerFlavor() = runBlocking {
         val questie = provider.get("q1w2e3r4")!!
-        assertEquals("forever-1.0", questie.latest.getValue(AddonFlavor.FOREVER).version)
-        assertEquals("classic-1.0", questie.latest.getValue(AddonFlavor.CLASSIC).version)
-        assertEquals("${server.base()}/wago/q1w2e3r4/forever-1.0.zip", questie.latest.getValue(AddonFlavor.FOREVER).downloadUrl)
+        assertEquals("forever-1.0", questie.latest.getValue(AddonFlavor.MAIN).version)
+        assertEquals("classic-1.0", questie.latest.getValue(AddonFlavor.FALLBACK).version)
+        assertEquals("${server.base()}/wago/q1w2e3r4/forever-1.0.zip", questie.latest.getValue(AddonFlavor.MAIN).downloadUrl)
         assertNull(provider.get("missing1"))
     }
 
@@ -98,8 +98,8 @@ class WagoProviderTest {
     fun getManyUsesRecents() = runBlocking {
         val results = provider.getMany(listOf("q1w2e3r4"))
         val questie = results.single()
-        assertEquals("forever-2.0", questie.latest.getValue(AddonFlavor.FOREVER).fileId)
-        assertEquals("classic-2.0", questie.latest.getValue(AddonFlavor.CLASSIC).fileId)
+        assertEquals("forever-2.0", questie.latest.getValue(AddonFlavor.MAIN).fileId)
+        assertEquals("classic-2.0", questie.latest.getValue(AddonFlavor.FALLBACK).fileId)
         assertTrue(requests.all { it.method == "POST" })
     }
 

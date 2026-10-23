@@ -129,12 +129,12 @@ class AddonManagerTest {
     @Test
     fun searchMergesDuplicatesAcrossProviders() = runBlocking {
         cf.addons = listOf(
-            remote("curseforge", "1", "Questie", "AeroScripts", 1_000, mapOf(AddonFlavor.CLASSIC to file("c1"))),
-            remote("curseforge", "2", "Bagnon", "Jaliborc", 500, mapOf(AddonFlavor.CLASSIC to file("c2"))),
+            remote("curseforge", "1", "Questie", "AeroScripts", 1_000, mapOf(AddonFlavor.FALLBACK to file("c1"))),
+            remote("curseforge", "2", "Bagnon", "Jaliborc", 500, mapOf(AddonFlavor.FALLBACK to file("c2"))),
         )
         wago.addons = listOf(
-            remote("wago", "q", "Questie ", "aeroscripts, Logon", 10, mapOf(AddonFlavor.FOREVER to file("w1"))),
-            remote("wago", "b", "Bagnon", "Jaliborc", 900, mapOf(AddonFlavor.CLASSIC to file("w2"))),
+            remote("wago", "q", "Questie ", "aeroscripts, Logon", 10, mapOf(AddonFlavor.MAIN to file("w1"))),
+            remote("wago", "b", "Bagnon", "Jaliborc", 900, mapOf(AddonFlavor.FALLBACK to file("w2"))),
         )
 
         val results = manager().search("")
@@ -143,7 +143,7 @@ class AddonManagerTest {
         val questie = results.single { it.remote.name.trim() == "Questie" }
         assertEquals("wago", questie.remote.provider) // the source with a Forever file wins
         assertEquals(listOf("wago", "curseforge"), questie.sources)
-        assertEquals(AddonFlavor.FOREVER, questie.bestFlavor)
+        assertEquals(AddonFlavor.MAIN, questie.bestFlavor)
         val bagnon = results.single { it.remote.name == "Bagnon" }
         assertEquals("wago", bagnon.remote.provider) // most downloads wins without Forever
         assertEquals(listOf("wago", "curseforge"), bagnon.sources)
@@ -154,13 +154,13 @@ class AddonManagerTest {
     @Test
     fun searchMergesSameAddonDespiteAuthorAndSuffixDifferences() = runBlocking {
         cf.addons = listOf(
-            remote("curseforge", "1", "BigWigs (Boss Timers & Tools)", "Funkydude", 900, mapOf(AddonFlavor.CLASSIC to file("c1"))),
-            remote("curseforge", "2", "Deadly Boss Mods", "MysticalOS", 800, mapOf(AddonFlavor.CLASSIC to file("c2"))),
+            remote("curseforge", "1", "BigWigs (Boss Timers & Tools)", "Funkydude", 900, mapOf(AddonFlavor.FALLBACK to file("c1"))),
+            remote("curseforge", "2", "Deadly Boss Mods", "MysticalOS", 800, mapOf(AddonFlavor.FALLBACK to file("c2"))),
         )
         wago.addons = listOf(
-            remote("wago", "bw", "BigWigs", "BigWigsMods", 10, mapOf(AddonFlavor.FOREVER to file("w1"))),
-            remote("wago", "dbm", "Deadly Boss Mods", "DeadlyBossMods", 10, mapOf(AddonFlavor.FOREVER to file("w2"))),
-            remote("wago", "dbmd", "Deadly Boss Mods - Dungeons", "DeadlyBossMods", 5, mapOf(AddonFlavor.FOREVER to file("w3"))),
+            remote("wago", "bw", "BigWigs", "BigWigsMods", 10, mapOf(AddonFlavor.MAIN to file("w1"))),
+            remote("wago", "dbm", "Deadly Boss Mods", "DeadlyBossMods", 10, mapOf(AddonFlavor.MAIN to file("w2"))),
+            remote("wago", "dbmd", "Deadly Boss Mods - Dungeons", "DeadlyBossMods", 5, mapOf(AddonFlavor.MAIN to file("w3"))),
         )
         val results = manager().search("")
         assertEquals(3, results.size)
@@ -170,9 +170,9 @@ class AddonManagerTest {
 
     @Test
     fun classicOnlyAddonIsMarkedClassic() = runBlocking {
-        cf.addons = listOf(remote("curseforge", "1", "OldThing", latest = mapOf(AddonFlavor.CLASSIC to file("c1"))))
+        cf.addons = listOf(remote("curseforge", "1", "OldThing", latest = mapOf(AddonFlavor.FALLBACK to file("c1"))))
         val listing = manager().search("old").single()
-        assertEquals(AddonFlavor.CLASSIC, listing.bestFlavor)
+        assertEquals(AddonFlavor.FALLBACK, listing.bestFlavor)
         assertNull(listing.installed)
         assertFalse(listing.updateAvailable)
     }
@@ -180,8 +180,8 @@ class AddonManagerTest {
     @Test
     fun includeClassicFalseHidesClassic() = runBlocking {
         cf.addons = listOf(
-            remote("curseforge", "1", "OldThing", latest = mapOf(AddonFlavor.CLASSIC to file("c1"))),
-            remote("curseforge", "2", "NewThing", latest = mapOf(AddonFlavor.FOREVER to file("f2"), AddonFlavor.CLASSIC to file("c2"))),
+            remote("curseforge", "1", "OldThing", latest = mapOf(AddonFlavor.FALLBACK to file("c1"))),
+            remote("curseforge", "2", "NewThing", latest = mapOf(AddonFlavor.MAIN to file("f2"), AddonFlavor.FALLBACK to file("c2"))),
         )
         assertEquals(listOf("NewThing"), manager().search("thing", includeClassic = false).map { it.remote.name })
         assertEquals(listOf("NewThing"), manager().popular(includeClassic = false).map { it.remote.name })
@@ -190,13 +190,13 @@ class AddonManagerTest {
 
     @Test
     fun installResolvesDependencies() = runBlocking {
-        installedOnDisk(record("curseforge:libd", listOf("LibD"), AddonFlavor.FOREVER, SourceRef("curseforge", "libd", "d1")))
+        installedOnDisk(record("curseforge:libd", listOf("LibD"), AddonFlavor.MAIN, SourceRef("curseforge", "libd", "d1")))
         zips["/zips/LibD.zip"] = TestZips.addon("LibD")
         cf.addons = listOf(
             remote(
                 "curseforge", "a", "AddonA",
                 latest = mapOf(
-                    AddonFlavor.FOREVER to file(
+                    AddonFlavor.MAIN to file(
                         "a1", serveAddon("AddonA"),
                         listOf(SourceRef("curseforge", "libb"), SourceRef("curseforge", "libd"), SourceRef("curseforge", "a")),
                     ),
@@ -205,14 +205,14 @@ class AddonManagerTest {
             remote(
                 "curseforge", "libb", "LibB",
                 latest = mapOf(
-                    AddonFlavor.FOREVER to file("b1", serveAddon("LibB"), listOf(SourceRef("curseforge", "libc"))),
+                    AddonFlavor.MAIN to file("b1", serveAddon("LibB"), listOf(SourceRef("curseforge", "libc"))),
                 ),
             ),
             // LibC depends back on LibB: a cycle.
             remote(
                 "curseforge", "libc", "LibC",
                 latest = mapOf(
-                    AddonFlavor.CLASSIC to file("c1", serveAddon("LibC", "## Interface: 11507\n"), listOf(SourceRef("curseforge", "libb"))),
+                    AddonFlavor.FALLBACK to file("c1", serveAddon("LibC", "## Interface: 11507\n"), listOf(SourceRef("curseforge", "libb"))),
                 ),
             ),
         )
@@ -222,10 +222,10 @@ class AddonManagerTest {
         assertEquals("curseforge:a", result.id)
         assertEquals(listOf("AddonA"), result.folders)
         assertEquals(SourceRef("curseforge", "a", "a1"), result.source)
-        assertEquals(AddonFlavor.FOREVER, result.flavor)
+        assertEquals(AddonFlavor.MAIN, result.flavor)
         val records = db.load().associateBy { it.id }
         assertEquals(setOf("curseforge:libd", "curseforge:a", "curseforge:libb", "curseforge:libc"), records.keys)
-        assertEquals(AddonFlavor.CLASSIC, records.getValue("curseforge:libc").flavor)
+        assertEquals(AddonFlavor.FALLBACK, records.getValue("curseforge:libc").flavor)
         listOf("AddonA", "LibB", "LibC").forEach { assertTrue(it, File(addonsDir, "$it/$it.toc").isFile) }
         assertFalse("/zips/LibD.zip" in requested)
         assertFalse("libd" in cf.gets)
@@ -235,7 +235,7 @@ class AddonManagerTest {
 
     @Test
     fun installRefusesDisabledDistribution() = runBlocking {
-        val locked = remote("curseforge", "x", "Locked", latest = mapOf(AddonFlavor.CLASSIC to file("x1", "")))
+        val locked = remote("curseforge", "x", "Locked", latest = mapOf(AddonFlavor.FALLBACK to file("x1", "")))
         val error = runCatching { manager().install(locked) }.exceptionOrNull()
         assertTrue(error is IOException)
         assertTrue(db.load().isEmpty())
@@ -244,25 +244,25 @@ class AddonManagerTest {
     @Test
     fun updateDetectsClassicToForeverSwitch() = runBlocking {
         val questie = installedOnDisk(
-            record("curseforge:1", listOf("Questie"), AddonFlavor.CLASSIC, SourceRef("curseforge", "1", "5000"), version = "v5000"),
+            record("curseforge:1", listOf("Questie"), AddonFlavor.FALLBACK, SourceRef("curseforge", "1", "5000"), version = "v5000"),
         )
-        cf.addons = listOf(remote("curseforge", "1", "Questie", latest = mapOf(AddonFlavor.CLASSIC to file("5000", serveAddon("Questie")))))
+        cf.addons = listOf(remote("curseforge", "1", "Questie", latest = mapOf(AddonFlavor.FALLBACK to file("5000", serveAddon("Questie")))))
         assertTrue(manager().checkUpdates().isEmpty())
 
         cf.addons = listOf(
             remote(
                 "curseforge", "1", "Questie",
-                latest = mapOf(AddonFlavor.CLASSIC to file("5000"), AddonFlavor.FOREVER to file("5001", serveAddon("Questie"))),
+                latest = mapOf(AddonFlavor.FALLBACK to file("5000"), AddonFlavor.MAIN to file("5001", serveAddon("Questie"))),
             ),
         )
         val updates = manager().checkUpdates()
         val listing = updates.single()
         assertTrue(listing.updateAvailable)
         assertEquals(questie, listing.installed)
-        assertEquals(AddonFlavor.FOREVER, listing.bestFlavor)
+        assertEquals(AddonFlavor.MAIN, listing.bestFlavor)
 
         val updated = manager().update(questie)
-        assertEquals(AddonFlavor.FOREVER, updated.flavor)
+        assertEquals(AddonFlavor.MAIN, updated.flavor)
         assertEquals("5001", updated.source!!.fileId)
         assertEquals(listOf(updated), db.load())
         assertTrue(manager().checkUpdates().isEmpty())
@@ -270,11 +270,11 @@ class AddonManagerTest {
 
     @Test
     fun updateAllUpdatesEverythingOutdated() = runBlocking {
-        installedOnDisk(InstalledAddon("curseforge:1", "A", listOf("A"), "v1", AddonFlavor.FOREVER, SourceRef("curseforge", "1", "1"), 1))
-        installedOnDisk(InstalledAddon("curseforge:2", "B", listOf("B"), "v1", AddonFlavor.FOREVER, SourceRef("curseforge", "2", "1"), 1))
+        installedOnDisk(InstalledAddon("curseforge:1", "A", listOf("A"), "v1", AddonFlavor.MAIN, SourceRef("curseforge", "1", "1"), 1))
+        installedOnDisk(InstalledAddon("curseforge:2", "B", listOf("B"), "v1", AddonFlavor.MAIN, SourceRef("curseforge", "2", "1"), 1))
         cf.addons = listOf(
-            remote("curseforge", "1", "A", latest = mapOf(AddonFlavor.FOREVER to file("2", serveAddon("A")))),
-            remote("curseforge", "2", "B", latest = mapOf(AddonFlavor.FOREVER to file("1", serveAddon("B")))),
+            remote("curseforge", "1", "A", latest = mapOf(AddonFlavor.MAIN to file("2", serveAddon("A")))),
+            remote("curseforge", "2", "B", latest = mapOf(AddonFlavor.MAIN to file("1", serveAddon("B")))),
         )
         val updated = manager().updateAll()
         assertEquals(listOf("curseforge:1"), updated.map { it.id })
@@ -284,9 +284,9 @@ class AddonManagerTest {
     @Test
     fun removeKeepsSharedFolders() = runBlocking {
         val a =
-            installedOnDisk(record("curseforge:a", listOf("A", "Libs", "!BugGrabber"), AddonFlavor.FOREVER, SourceRef("curseforge", "a")))
+            installedOnDisk(record("curseforge:a", listOf("A", "Libs", "!BugGrabber"), AddonFlavor.MAIN, SourceRef("curseforge", "a")))
         val b =
-            installedOnDisk(record("curseforge:b", listOf("B", "Libs", "!BugGrabber"), AddonFlavor.FOREVER, SourceRef("curseforge", "b")))
+            installedOnDisk(record("curseforge:b", listOf("B", "Libs", "!BugGrabber"), AddonFlavor.MAIN, SourceRef("curseforge", "b")))
 
         manager().remove(a)
 
@@ -312,8 +312,8 @@ class AddonManagerTest {
 
     @Test
     fun checkUpdatesOfflineReturnsEmpty() = runBlocking {
-        installedOnDisk(InstalledAddon("curseforge:1", "A", listOf("A"), "v1", AddonFlavor.FOREVER, SourceRef("curseforge", "1", "1"), 1))
-        cf.addons = listOf(remote("curseforge", "1", "A", latest = mapOf(AddonFlavor.FOREVER to file("2", serveAddon("A")))))
+        installedOnDisk(InstalledAddon("curseforge:1", "A", listOf("A"), "v1", AddonFlavor.MAIN, SourceRef("curseforge", "1", "1"), 1))
+        cf.addons = listOf(remote("curseforge", "1", "A", latest = mapOf(AddonFlavor.MAIN to file("2", serveAddon("A")))))
         cf.offline = true
         wago.offline = true
 
@@ -329,7 +329,7 @@ class AddonManagerTest {
         File(addonsDir, "Loose/Loose.toc").writeText("## Interface: 11507\n## Title: Loose Addon\n")
         val listing = manager().installed().single()
         assertEquals("Loose Addon", listing.installed!!.name)
-        assertEquals(AddonFlavor.CLASSIC, listing.bestFlavor)
+        assertEquals(AddonFlavor.FALLBACK, listing.bestFlavor)
         assertFalse(listing.updateAvailable)
         assertEquals("local:Loose", db.load().single().id)
     }
@@ -349,7 +349,7 @@ class AddonManagerTest {
         assertEquals("github:me/Foo", result.id)
         assertEquals(SourceRef("github", "me/Foo", "12"), result.source)
         assertEquals(listOf("Foo"), result.folders)
-        assertEquals(AddonFlavor.FOREVER, result.flavor)
+        assertEquals(AddonFlavor.MAIN, result.flavor)
         assertTrue(File(addonsDir, "Foo/Foo.toc").isFile)
         assertFalse("/zips/Classic.zip" in requested)
     }
@@ -361,7 +361,7 @@ class AddonManagerTest {
         assertEquals("Zipped Thing", result.name)
         assertEquals("3.2", result.version)
         assertEquals(SourceRef("url", url), result.source)
-        assertEquals(AddonFlavor.CLASSIC, result.flavor)
+        assertEquals(AddonFlavor.FALLBACK, result.flavor)
         assertThrows(IllegalArgumentException::class.java) { runBlocking { manager().installFromUrl("not a url") } }
     }
 }

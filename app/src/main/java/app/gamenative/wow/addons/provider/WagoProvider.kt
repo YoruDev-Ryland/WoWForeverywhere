@@ -216,6 +216,6 @@ class WagoProvider(
     }
 
     companion object {
-        private val FLAVORS = listOf(AddonFlavor.FOREVER to "forever", AddonFlavor.CLASSIC to "classic")
+        private val FLAVORS = listOf(AddonFlavor.MAIN to "forever", AddonFlavor.FALLBACK to "classic")
     }
 }

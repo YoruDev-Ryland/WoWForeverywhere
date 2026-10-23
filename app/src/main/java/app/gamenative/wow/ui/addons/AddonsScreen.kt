@@ -229,14 +229,14 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FlavorMark(listing.bestFlavor, size = 22)
-                Text(flavorLabel(listing.bestFlavor), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.FOREVER) Fw.Gem else Fw.Ash))
+                Text(flavorLabel(listing.bestFlavor), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.MAIN) Fw.Gem else Fw.Ash))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 val idle = c.working == null
                 when {
                     listing.installed == null -> FwButton("Install", { c.install(listing) }, enabled = idle && file?.installable == true)
                     listing.updateAvailable -> FwButton(
-                        if (listing.installed.flavor == AddonFlavor.CLASSIC && listing.bestFlavor == AddonFlavor.FOREVER) "Switch to Forever version" else "Update",
+                        if (listing.installed.flavor == AddonFlavor.FALLBACK && listing.bestFlavor == AddonFlavor.MAIN) "Switch to Forever version" else "Update",
                         { c.update(listing) },
                         enabled = idle,
                     )
@@ -335,8 +335,8 @@ private fun SearchField(value: String, onChange: (String) -> Unit, modifier: Mod
 @Composable
 fun FlavorMark(flavor: AddonFlavor, size: Int = 28) {
     val icon = when (flavor) {
-        AddonFlavor.FOREVER -> GameIcon.FOREVER
-        AddonFlavor.CLASSIC -> GameIcon.CLASSIC
+        AddonFlavor.MAIN -> GameIcon.FOREVER
+        AddonFlavor.FALLBACK -> GameIcon.CLASSIC
         AddonFlavor.OTHER -> null
     }
     val context = LocalContext.current
@@ -348,14 +348,14 @@ fun FlavorMark(flavor: AddonFlavor, size: Int = 28) {
         return
     }
     when (flavor) {
-        AddonFlavor.FOREVER -> Box(base.background(Fw.Gem, Fw.Shape))
+        AddonFlavor.MAIN -> Box(base.background(Fw.Gem, Fw.Shape))
         else -> Box(base.border(2.dp, Fw.Ash, CircleShape))
     }
 }
 
 fun flavorLabel(flavor: AddonFlavor) = when (flavor) {
-    AddonFlavor.FOREVER -> "Made for WoW Forever"
-    AddonFlavor.CLASSIC -> "Made for Classic. It may not work in Forever."
+    AddonFlavor.MAIN -> "Made for WoW Forever"
+    AddonFlavor.FALLBACK -> "Made for Classic. It may not work in Forever."
     AddonFlavor.OTHER -> "No game version listed. It may not work in Forever."
 }
 

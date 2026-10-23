@@ -41,13 +41,13 @@ class GitHubCatalogTest {
         val addons = start().popular(0).associateBy { it.projectId }
         assertEquals(setOf("Questie/Questie", "BigWigsMods/LittleWigs", "Nevcairiel/Mapster"), addons.keys)
         val questie = addons.getValue("Questie/Questie")
-        assertEquals(setOf(AddonFlavor.FOREVER, AddonFlavor.CLASSIC), questie.latest.keys)
+        assertEquals(setOf(AddonFlavor.MAIN, AddonFlavor.FALLBACK), questie.latest.keys)
         assertEquals(setOf(AddonCategory.QUESTS), questie.categories)
-        assertTrue(questie.latest.getValue(AddonFlavor.FOREVER).downloadUrl.startsWith("https://github.com/Questie/Questie/releases/download/"))
-        assertEquals(setOf(AddonFlavor.FOREVER), addons.getValue("Nevcairiel/Mapster").latest.keys)
+        assertTrue(questie.latest.getValue(AddonFlavor.MAIN).downloadUrl.startsWith("https://github.com/Questie/Questie/releases/download/"))
+        assertEquals(setOf(AddonFlavor.MAIN), addons.getValue("Nevcairiel/Mapster").latest.keys)
         assertEquals(
             listOf(SourceRef("github", "BigWigsMods/BigWigs")),
-            addons.getValue("BigWigsMods/LittleWigs").latest.getValue(AddonFlavor.CLASSIC).dependencies,
+            addons.getValue("BigWigsMods/LittleWigs").latest.getValue(AddonFlavor.FALLBACK).dependencies,
         )
     }
 

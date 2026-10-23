@@ -63,10 +63,10 @@ class TocTest {
 
     @Test
     fun suffixFlavors() {
-        assertEquals(AddonFlavor.FOREVER, FlavorRules.ofTocFileName("Foo_Forever.toc"))
-        assertEquals(AddonFlavor.FOREVER, FlavorRules.ofTocFileName("Foo-Camelot.toc"))
-        assertEquals(AddonFlavor.CLASSIC, FlavorRules.ofTocFileName("Foo-Vanilla.toc"))
-        assertEquals(AddonFlavor.CLASSIC, FlavorRules.ofTocFileName("Foo_Classic.toc"))
+        assertEquals(AddonFlavor.MAIN, FlavorRules.ofTocFileName("Foo_Forever.toc"))
+        assertEquals(AddonFlavor.MAIN, FlavorRules.ofTocFileName("Foo-Camelot.toc"))
+        assertEquals(AddonFlavor.FALLBACK, FlavorRules.ofTocFileName("Foo-Vanilla.toc"))
+        assertEquals(AddonFlavor.FALLBACK, FlavorRules.ofTocFileName("Foo_Classic.toc"))
         assertNull(FlavorRules.ofTocFileName("Foo.toc"))
         assertNull(FlavorRules.ofTocFileName("Foo_Mainline.toc"))
     }
@@ -96,16 +96,16 @@ class TocTest {
     @Test
     fun classifyPlainClassicInterface() {
         val toc = TocParser.parse("Foo", "Foo.toc", "## Interface: 11507\n")
-        assertEquals(AddonFlavor.CLASSIC, FlavorRules.classify(listOf(toc)))
+        assertEquals(AddonFlavor.FALLBACK, FlavorRules.classify(listOf(toc)))
     }
 
     @Test
     fun classifyForeverInterfaceAndSuffix() {
         val plain = TocParser.parse("Foo", "Foo.toc", "## Interface: 11507\n")
         val forever = TocParser.parse("Foo", "Foo_Forever.toc", "## Interface: 11507\n")
-        assertEquals(AddonFlavor.FOREVER, FlavorRules.classify(listOf(plain, forever)))
+        assertEquals(AddonFlavor.MAIN, FlavorRules.classify(listOf(plain, forever)))
         val iface = TocParser.parse("Foo", "Foo.toc", "## Interface: 11507, $FOREVER_INTERFACE\n")
-        assertEquals(AddonFlavor.FOREVER, FlavorRules.classify(listOf(iface)))
+        assertEquals(AddonFlavor.MAIN, FlavorRules.classify(listOf(iface)))
         val retail = TocParser.parse("Foo", "Foo.toc", "## Interface: 120100\n")
         assertEquals(AddonFlavor.OTHER, FlavorRules.classify(listOf(retail)))
     }

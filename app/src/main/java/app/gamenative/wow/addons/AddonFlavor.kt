@@ -1,6 +1,7 @@
 package app.gamenative.wow.addons
 
 import java.io.File
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -12,8 +13,20 @@ const val FOREVER_INTERFACE = 16001
 /** Interface numbers treated as Forever: the whole 1.60.x patch line of [FOREVER_INTERFACE]. */
 val FOREVER_INTERFACE_RANGE = (FOREVER_INTERFACE / 100 * 100)..(FOREVER_INTERFACE / 100 * 100 + 99)
 
+/**
+ * Which game version an addon file is for, relative to the selected [AddonTarget]: [MAIN] is made for
+ * it, [FALLBACK] for its fallback (Classic Era, for WoW Forever only). Stored under the names v0.3.0
+ * used, when WoW Forever was the only target.
+ */
 @Serializable
-enum class AddonFlavor { FOREVER, CLASSIC, OTHER }
+enum class AddonFlavor {
+    @SerialName("FOREVER")
+    MAIN,
+
+    @SerialName("CLASSIC")
+    FALLBACK,
+    OTHER,
+}
 
 object FlavorRules {
     private val foreverSuffixes = listOf("-Forever", "_Forever", "-Camelot", "_Camelot")
@@ -23,8 +36,8 @@ object FlavorRules {
     fun ofTocFileName(name: String): AddonFlavor? {
         val base = name.removeSuffix(".toc").removeSuffix(".TOC")
         return when {
-            foreverSuffixes.any { base.endsWith(it, ignoreCase = true) } -> AddonFlavor.FOREVER
-            classicSuffixes.any { base.endsWith(it, ignoreCase = true) } -> AddonFlavor.CLASSIC
+            foreverSuffixes.any { base.endsWith(it, ignoreCase = true) } -> AddonFlavor.MAIN
+            classicSuffixes.any { base.endsWith(it, ignoreCase = true) } -> AddonFlavor.FALLBACK
             else -> null
         }
     }
@@ -47,9 +60,9 @@ object FlavorRules {
     fun pickToc(folder: File): Toc? {
         val files = tocFiles(folder)
         val plainName = "${folder.name}.toc"
-        val chosen = files.firstOrNull { ofTocFileName(it.name) == AddonFlavor.FOREVER }
+        val chosen = files.firstOrNull { ofTocFileName(it.name) == AddonFlavor.MAIN }
             ?: files.firstOrNull { it.name.equals(plainName, ignoreCase = true) }
-            ?: files.firstOrNull { ofTocFileName(it.name) == AddonFlavor.CLASSIC }
+            ?: files.firstOrNull { ofTocFileName(it.name) == AddonFlavor.FALLBACK }
             ?: return null
         return runCatching { TocParser.parse(folder.name, chosen.name, chosen.readText()) }.getOrNull()
     }
@@ -63,8 +76,8 @@ object FlavorRules {
         val unsuffixed = tocs.filter { ofTocFileName(it.fileName) == null }
         val interfaces = unsuffixed.flatMap { it.interfaces }
         return when {
-            AddonFlavor.FOREVER in suffixes || interfaces.any { it in FOREVER_INTERFACE_RANGE } -> AddonFlavor.FOREVER
-            AddonFlavor.CLASSIC in suffixes || interfaces.any { it in 10000..15999 } -> AddonFlavor.CLASSIC
+            AddonFlavor.MAIN in suffixes || interfaces.any { it in FOREVER_INTERFACE_RANGE } -> AddonFlavor.MAIN
+            AddonFlavor.FALLBACK in suffixes || interfaces.any { it in 10000..15999 } -> AddonFlavor.FALLBACK
             else -> AddonFlavor.OTHER
         }
     }
