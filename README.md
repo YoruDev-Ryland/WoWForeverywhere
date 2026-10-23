@@ -139,6 +139,12 @@ Because the game needs the password in plain text for those few seconds, any app
 - **Game files** shows where the game is installed and its version. **Install or repair** checks every file and downloads only what's missing or damaged. Once WoW Forever launches, this screen also offers to switch a beta install to the launch version, reusing the game data you already have.
 - **Settings** shows the app version, checks for app updates, and lists which addon sources are available in your build.
 
+### Other WoW versions (experimental)
+
+Foreverywhere is made for WoW Forever, but **Settings → Game version** can switch the app to another official version: Classic Era, Burning Crusade Anniversary, Mists of Pandaria Classic or Retail. The whole app then works with that version, including installing, updating, playing and the addon browser. Each version keeps its own install and addons, and switching back to WoW Forever leaves your Forever setup as it was.
+
+These versions are experimental and get little support. They may run poorly or not start at all, and automatic sign-in may not work on every version.
+
 ## Troubleshooting
 
 | Problem | What to do |
