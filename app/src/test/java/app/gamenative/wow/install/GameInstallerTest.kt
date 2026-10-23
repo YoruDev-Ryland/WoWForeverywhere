@@ -247,6 +247,20 @@ class GameInstallerTest {
     }
 
     @Test
+    fun installerKeepsOtherProductRows() = runBlocking {
+        files["/wow_classic_era/versions"] = files["/wowf/versions"]!!
+        files["/wow_classic_era/cdns"] = files["/wowf/cdns"]!!
+        installer().run(req) {}
+        val foreverRow = BuildInfo.read(root)!!.active(WowProduct.FOREVER)!!
+        installer().run(InstallRequest(root, WowProduct.CLASSIC_ERA)) {}
+        val info = BuildInfo.read(root)!!
+        assertEquals(foreverRow, info.active(WowProduct.FOREVER))
+        assertEquals("wow_classic_era", info.active(WowProduct.CLASSIC_ERA)!!["Product"])
+        assertEquals("Product Flavor!STRING:0\nwow_classic_era\n", File(root, "_classic_era_/.flavor.info").readText())
+        assertEquals("Product Flavor!STRING:0\nwowf\n", File(root, "_forever_/.flavor.info").readText())
+    }
+
+    @Test
     fun reportsProgressToCompletion() = runBlocking {
         val seen = mutableListOf<InstallProgress>()
         installer().run(req) { seen += it }

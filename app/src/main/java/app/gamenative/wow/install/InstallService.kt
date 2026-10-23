@@ -156,7 +156,7 @@ class InstallService : Service() {
                 val install = GameInstall(req.root.absolutePath, product, version)
                 InstallRegistry(applicationContext).apply {
                     add(install)
-                    setActive(install.root)
+                    setActive(install.root, app.gamenative.wow.product.GameVersion.of(product))
                 }
                 InstallController.update(InstallUiState.Done(install))
                 finish()

@@ -6,48 +6,68 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * The installs this app knows about and which one is active. On first use it adopts the single path
- * that upstream's launcher stored (`wow_forever/game_path`), so existing users keep their install.
+ * The installs this app knows about and which one is active, per [GameVersion]: [all] and [active] only
+ * see the selected version's installs, and every version remembers its own active install. On first use
+ * it adopts the single path that upstream's launcher stored (`wow_forever/game_path`), so existing users
+ * keep their install.
  */
 class InstallRegistry(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val legacyPrefs = context.getSharedPreferences(LEGACY_PREFS, Context.MODE_PRIVATE)
 
-    fun all(): List<GameInstall> {
+    /** The selected version's installs. */
+    fun all(): List<GameInstall> = stored().filter { GameVersion.of(it.product) == GameVersions.selected }
+
+    fun active(): GameInstall? {
+        val installs = all()
+        val root = prefs.getString(activeKey(GameVersions.selected), null)
+        return installs.firstOrNull { it.root == root } ?: installs.firstOrNull()
+    }
+
+    fun setActive(root: String, version: GameVersion = GameVersions.selected) = saveActive(version, root)
+
+    /**
+     * Adds or replaces [install]; it becomes its version's active install if that version had none.
+     * One folder can hold several versions (they share `Data/`), so installs are keyed by root and version.
+     */
+    fun add(install: GameInstall) {
+        val version = GameVersion.of(install.product)
+        saveInstalls(stored().filterNot { it.root == install.root && GameVersion.of(it.product) == version } + install)
+        if (prefs.getString(activeKey(version), null) == null) saveActive(version, install.root)
+    }
+
+    /** Forgets the selected version's install at [root]; other versions in the same folder stay. */
+    fun remove(root: String) {
+        val version = GameVersions.selected
+        val installs = stored().filterNot { it.root == root && GameVersion.of(it.product) == version }
+        saveInstalls(installs)
+        if (prefs.getString(activeKey(version), null) == root) {
+            saveActive(version, installs.firstOrNull { GameVersion.of(it.product) == version }?.root)
+        }
+    }
+
+    /** Every version's installs. */
+    private fun stored(): List<GameInstall> {
         val stored = prefs.getString(KEY_INSTALLS, null)
         if (stored != null) return runCatching { json.decodeFromString<List<GameInstall>>(stored) }.getOrDefault(emptyList())
         val legacy = legacyPrefs.getString(LEGACY_KEY_PATH, null)?.let(::File)
         val migrated = legacy?.let { InstallScanner.scan(listOf(it), maxDepth = 0) }.orEmpty()
-        save(migrated, migrated.firstOrNull()?.root)
+        saveInstalls(migrated)
+        migrated.firstOrNull()?.let { saveActive(GameVersion.FOREVER, it.root) }
         return migrated
     }
 
-    fun active(): GameInstall? {
-        val installs = all()
-        val root = prefs.getString(KEY_ACTIVE, null)
-        return installs.firstOrNull { it.root == root } ?: installs.firstOrNull()
+    private fun saveInstalls(installs: List<GameInstall>) {
+        prefs.edit().putString(KEY_INSTALLS, json.encodeToString(installs)).apply()
     }
 
-    fun setActive(root: String) {
-        prefs.edit().putString(KEY_ACTIVE, root).apply()
-        legacyPrefs.edit().putString(LEGACY_KEY_PATH, root).apply()
+    /** Forever keeps the original keys, including upstream's legacy path, so older builds still find it. */
+    private fun saveActive(version: GameVersion, root: String?) {
+        prefs.edit().putString(activeKey(version), root).apply()
+        if (version == GameVersion.FOREVER && root != null) legacyPrefs.edit().putString(LEGACY_KEY_PATH, root).apply()
     }
 
-    fun add(install: GameInstall) {
-        val installs = all().filterNot { it.root == install.root } + install
-        save(installs, prefs.getString(KEY_ACTIVE, null) ?: install.root)
-    }
-
-    fun remove(root: String) {
-        val installs = all().filterNot { it.root == root }
-        val active = prefs.getString(KEY_ACTIVE, null).takeIf { it != root } ?: installs.firstOrNull()?.root
-        save(installs, active)
-    }
-
-    private fun save(installs: List<GameInstall>, active: String?) {
-        prefs.edit().putString(KEY_INSTALLS, json.encodeToString(installs)).putString(KEY_ACTIVE, active).apply()
-        active?.let { legacyPrefs.edit().putString(LEGACY_KEY_PATH, it).apply() }
-    }
+    private fun activeKey(version: GameVersion) = if (version == GameVersion.FOREVER) KEY_ACTIVE else "${KEY_ACTIVE}_${version.key}"
 
     private companion object {
         const val PREFS = "wow_installs"

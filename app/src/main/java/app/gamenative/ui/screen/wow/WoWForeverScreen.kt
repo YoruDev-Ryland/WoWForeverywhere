@@ -48,6 +48,8 @@ import app.gamenative.utils.AppUpdater
 import app.gamenative.utils.StorageUtils
 import app.gamenative.utils.renderReleaseNotes
 import app.gamenative.wow.product.WowProduct
+import app.gamenative.wow.product.GameVersion
+import app.gamenative.wow.product.GameVersions
 import app.gamenative.wow.product.detectProduct
 import com.winlator.container.Container
 import com.winlator.container.ContainerManager
@@ -779,7 +781,11 @@ object GamePath {
     private const val PREFS = "wow_forever"
     private const val KEY_GAME_PATH = "game_path"
 
-    private val defaultPath = File(Environment.getExternalStorageDirectory(), "WoW Forever")
+    /** Where the selected game version installs by default: `WoW Forever` or `World of Warcraft`. */
+    private val defaultPath get() = File(Environment.getExternalStorageDirectory(), GameVersions.selected.defaultFolder)
+
+    /** WoW Forever keeps upstream's key; other versions each get their own. */
+    private val pathKey get() = GameVersions.selected.let { if (it == GameVersion.FOREVER) KEY_GAME_PATH else "${KEY_GAME_PATH}_${it.key}" }
 
     data class Status(
         val exeExists: Boolean = false,
@@ -807,13 +813,13 @@ object GamePath {
     }
 
     fun load(context: Context): String {
-        val saved = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_GAME_PATH, null)?.let(::File)
+        val saved = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(pathKey, null)?.let(::File)
         val usable = listOfNotNull(saved, defaultPath).firstOrNull { detectProduct(it) != null }
         return (usable ?: saved ?: defaultPath).absolutePath
     }
 
     fun save(context: Context, path: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_GAME_PATH, path).apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(pathKey, path).apply()
     }
 
     fun isReady(context: Context, path: String = load(context)): Boolean =

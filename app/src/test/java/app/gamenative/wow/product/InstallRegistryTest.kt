@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import java.io.File
 import java.nio.file.Files
 import org.junit.Assert.assertEquals
+import org.junit.After
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,6 +15,11 @@ import org.robolectric.RobolectricTestRunner
 class InstallRegistryTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+
+    @After
+    fun resetVersion() {
+        GameVersions.selected = GameVersion.FOREVER
+    }
 
     private fun install(product: String = "wowf"): File {
         val root = Files.createTempDirectory("wow").toFile()
@@ -52,5 +58,58 @@ class InstallRegistryTest {
         registry.remove("/b")
         assertEquals(a, registry.active())
         assertEquals(listOf(a), registry.all())
+    }
+
+    @Test
+    fun foreverRegistryUnchangedAfterUpgrade() {
+        // As v0.3.0 stored it: one install list, one active root, mirrored to the legacy path.
+        val forever = GameInstall("/sdcard/WoW Forever", WowProduct.FOREVER, "1.60.1")
+        context.getSharedPreferences("wow_installs", Context.MODE_PRIVATE).edit()
+            .putString("installs", "[{\"root\":\"/sdcard/WoW Forever\",\"product\":\"FOREVER\",\"version\":\"1.60.1\"}]")
+            .putString("active", "/sdcard/WoW Forever")
+            .commit()
+        val registry = InstallRegistry(context)
+        assertEquals(forever, registry.active())
+        assertEquals(listOf(forever), registry.all())
+    }
+
+    @Test
+    fun versionsKeepSeparateActiveInstalls() {
+        val registry = InstallRegistry(context)
+        val a = GameInstall("/a", WowProduct.FOREVER, "1")
+        val b = GameInstall("/b", WowProduct.CLASSIC_ERA, "2")
+        registry.add(a)
+        GameVersions.selected = GameVersion.CLASSIC_ERA
+        assertNull(registry.active())
+        registry.add(b)
+        assertEquals(b, registry.active())
+        assertEquals(listOf(b), registry.all())
+        GameVersions.selected = GameVersion.FOREVER
+        assertEquals(a, registry.active())
+        assertEquals(listOf(a), registry.all())
+        assertEquals("/a", context.getSharedPreferences("wow_forever", Context.MODE_PRIVATE).getString("game_path", null))
+    }
+
+    @Test
+    fun removeKeepsOtherVersions() {
+        val registry = InstallRegistry(context)
+        registry.add(GameInstall("/a", WowProduct.FOREVER, "1"))
+        registry.add(GameInstall("/b", WowProduct.RETAIL, "2"))
+        registry.remove("/a")
+        GameVersions.selected = GameVersion.RETAIL
+        assertEquals(listOf(GameInstall("/b", WowProduct.RETAIL, "2")), registry.all())
+    }
+
+    @Test
+    fun sharedFolderHoldsOneInstallPerVersion() {
+        val registry = InstallRegistry(context)
+        registry.add(GameInstall("/wow", WowProduct.FOREVER, "1"))
+        registry.add(GameInstall("/wow", WowProduct.CLASSIC_ERA, "2"))
+        assertEquals(listOf(GameInstall("/wow", WowProduct.FOREVER, "1")), registry.all())
+        GameVersions.selected = GameVersion.CLASSIC_ERA
+        assertEquals(GameInstall("/wow", WowProduct.CLASSIC_ERA, "2"), registry.active())
+        registry.remove("/wow")
+        GameVersions.selected = GameVersion.FOREVER
+        assertEquals(GameInstall("/wow", WowProduct.FOREVER, "1"), registry.active())
     }
 }
