@@ -76,7 +76,7 @@ fun AccountScreen(launcher: LauncherController, onBack: () -> Unit, onEditLogin:
 }
 
 @Composable
-fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit) {
+fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionChanged: () -> Unit = {}) {
     FwPage("Settings", onBack) {
         FwSection("App") {
             Text("WoW Foreverywhere v${BuildConfig.VERSION_NAME}", style = Fw.Text)

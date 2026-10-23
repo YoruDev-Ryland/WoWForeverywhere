@@ -55,6 +55,11 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
         if (launcher.registry.active() == null && launcher.filesMissing) Routes.FIRST_RUN else Routes.HOME
     }
     var appUpdateDismissed by remember { mutableStateOf(false) }
+    // After a game version switch: that version's Home, or its first run when it has no install yet.
+    val onVersionChanged = {
+        val route = if (launcher.registry.active() == null && launcher.filesMissing) Routes.FIRST_RUN else Routes.HOME
+        nav.navigate(route) { popUpTo(nav.graph.id) { inclusive = true } }
+    }
 
     LaunchedEffect(Unit) { launcher.start() }
     LifecycleResumeEffect(launcher.gamePath) {
@@ -89,7 +94,7 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 composable(Routes.ACCOUNT) {
                     AccountScreen(launcher, onBack = { nav.popBackStack() }, onEditLogin = { showLoginDialog = true })
                 }
-                composable(Routes.SETTINGS) { SettingsScreen(launcher, onBack = { nav.popBackStack() }) }
+                composable(Routes.SETTINGS) { SettingsScreen(launcher, onBack = { nav.popBackStack() }, onVersionChanged = onVersionChanged) }
                 composable(Routes.ADDONS) { AddonsRoute(launcher, addonsState.value, onBack = { nav.popBackStack() }) }
                 composable(Routes.INSTALL) {
                     val back = { nav.popBackStack(); Unit }
@@ -105,6 +110,7 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                         launcher = launcher,
                         onEditLogin = { showLoginDialog = true },
                         onDone = { nav.navigate(Routes.HOME) { popUpTo(Routes.FIRST_RUN) { inclusive = true } } },
+                        onOpenSettings = { nav.navigate(Routes.SETTINGS) },
                     )
                 }
             }

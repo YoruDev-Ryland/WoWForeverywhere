@@ -16,13 +16,17 @@ import app.gamenative.ui.screen.wow.WowClientDownloader
 import app.gamenative.ui.screen.wow.fitScreenSizeToWindow
 import app.gamenative.ui.screen.wow.installLocale
 import app.gamenative.wow.install.GameInstaller
+import app.gamenative.wow.install.InstallController
 import app.gamenative.wow.install.InstallProgress
 import app.gamenative.wow.install.InstallRequest
+import app.gamenative.wow.install.InstallUiState
 import app.gamenative.ui.screen.wow.isPermissionDenied
 import app.gamenative.ui.screen.wow.prepareLaunch
 import app.gamenative.utils.AppUpdater
 import app.gamenative.utils.StorageUtils
 import app.gamenative.wow.product.GameInstall
+import app.gamenative.wow.product.GameVersion
+import app.gamenative.wow.product.GameVersions
 import app.gamenative.wow.product.InstallRegistry
 import app.gamenative.wow.product.ProductConverter
 import app.gamenative.wow.product.WowProduct
@@ -48,7 +52,11 @@ class LauncherController(
     private val onLaunch: (appId: String) -> Unit,
 ) {
     val registry = InstallRegistry(context)
-    internal val gpu = GpuProfile.detect(context)
+    internal val gpu by lazy { GpuProfile.detect(context) }
+
+    /** The game version the whole app works with (Settings, Game version). */
+    var version by mutableStateOf(GameVersions.selected)
+        private set
 
     var gamePath by mutableStateOf(registry.active()?.root ?: GamePath.load(context))
         private set
@@ -107,8 +115,29 @@ class LauncherController(
 
     fun checkFiles(): Boolean {
         files = GamePath.status(context, gamePath)
-        if (files.isWrongGame) errorMessage = "This folder holds ${files.productCode}, not WoW Forever."
+        if (files.isWrongGame) errorMessage = "This folder holds ${files.productCode}, not ${version.displayName}."
         return files.isReady
+    }
+
+    /** True while a game download is running or paused; switching versions waits for it. */
+    val installInProgress get() = InstallController.state.value.let { it is InstallUiState.Running || it is InstallUiState.Paused }
+
+    /**
+     * Switches the whole app to [to] and points it at that version's install. Refused (false) while a
+     * download, update or launch is under way.
+     */
+    fun switchVersion(to: GameVersion): Boolean {
+        if (to == version) return true
+        if (busy || installInProgress) return false
+        GameVersions.save(context, to)
+        version = to
+        errorMessage = null
+        versionStatus = null
+        versionChecked = false
+        canConvertToLaunch = false
+        gamePath = registry.active()?.root ?: GamePath.load(context)
+        if (checkFiles()) checkVersionStatus()
+        return true
     }
 
     fun refresh() {

@@ -34,6 +34,7 @@ import app.gamenative.wow.install.InstallController
 import app.gamenative.wow.install.InstallRequest
 import app.gamenative.wow.install.InstallUiState
 import app.gamenative.wow.product.GameInstall
+import app.gamenative.wow.product.GameVersion
 import app.gamenative.wow.product.InstallScanner
 import app.gamenative.wow.product.WowProduct
 import app.gamenative.wow.ui.components.FwButton
@@ -52,7 +53,13 @@ private enum class Step(val label: String) { WELCOME("Welcome"), FIND("Find game
 
 /** First launch: Welcome → find an existing copy → install → sign in → home (spec §5.4). */
 @Composable
-fun FirstRunScreen(launcher: LauncherController, onEditLogin: () -> Unit, onDone: () -> Unit, startAtInstall: Boolean = false) {
+fun FirstRunScreen(
+    launcher: LauncherController,
+    onEditLogin: () -> Unit,
+    onDone: () -> Unit,
+    startAtInstall: Boolean = false,
+    onOpenSettings: () -> Unit = {},
+) {
     var step by remember { mutableStateOf(if (startAtInstall) Step.INSTALL else Step.WELCOME) }
     var installedFresh by remember { mutableStateOf(false) }
 
@@ -69,7 +76,7 @@ fun FirstRunScreen(launcher: LauncherController, onEditLogin: () -> Unit, onDone
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             when (step) {
-                Step.WELCOME -> Welcome { step = Step.FIND }
+                Step.WELCOME -> Welcome(launcher.version, onNext = { step = Step.FIND }, onOpenSettings = onOpenSettings)
                 Step.FIND -> FindGame(
                     launcher,
                     onUse = { step = Step.SIGN_IN },
@@ -95,12 +102,16 @@ private fun FwStepPill(label: String, current: Boolean) {
 }
 
 @Composable
-private fun Welcome(onNext: () -> Unit) {
+private fun Welcome(version: GameVersion, onNext: () -> Unit, onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val check = remember { DeviceCheck.run(context) }
-    Text("WoW Forever, on this device", style = Fw.Hero.copy(fontSize = 40.sp, lineHeight = 44.sp))
+    Text("${version.displayName}, on this device", style = Fw.Hero.copy(fontSize = 40.sp, lineHeight = 44.sp))
     Text(
-        "This app installs Blizzard's WoW Forever client, keeps it updated, manages your addons and starts the game. You need a Battle.net account with WoW Forever. Nothing here comes from Blizzard: it's an unofficial community app.",
+        if (version == GameVersion.FOREVER) {
+            "This app installs Blizzard's WoW Forever client, keeps it updated, manages your addons and starts the game. You need a Battle.net account with WoW Forever. Nothing here comes from Blizzard: it's an unofficial community app."
+        } else {
+            "This app installs Blizzard's ${version.displayName} client, keeps it updated, manages your addons and starts the game. Versions other than WoW Forever are experimental. Nothing here comes from Blizzard: it's an unofficial community app."
+        },
         style = Fw.Text,
     )
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -112,6 +123,7 @@ private fun Welcome(onNext: () -> Unit) {
         Text("The game may not run well on this device. You can still continue.", style = Fw.Secondary)
     }
     FwButton("Get started", onNext)
+    FwButton("Playing another version of WoW?", onOpenSettings, kind = FwButtonKind.Ghost)
 }
 
 object DeviceCheck {
@@ -141,7 +153,7 @@ private fun FindGame(launcher: LauncherController, onUse: () -> Unit, onInstall:
         val path = StorageUtils.getPathFromTreeUri(context, uri) ?: return@rememberLauncherForActivityResult
         val root = GamePath.findGameRoot(File(path))
         if (root == null) {
-            launcher.errorMessage = "No WoW Forever install in $path."
+            launcher.errorMessage = "No ${launcher.version.displayName} install in $path."
         } else {
             launcher.useGameRoot(root.absolutePath)
             onUse()
@@ -157,7 +169,7 @@ private fun FindGame(launcher: LauncherController, onUse: () -> Unit, onInstall:
         null -> Text("Looking on internal storage and SD cards…", style = Fw.Secondary)
         else -> {
             if (installs.isEmpty()) {
-                Text("No copy of WoW Forever found on this device.", style = Fw.Text)
+                Text("No copy of ${launcher.version.displayName} found on this device.", style = Fw.Text)
             } else {
                 Text("Found ${installs.size} install${if (installs.size > 1) "s" else ""}. Pick one to use it as it is, without downloading again.", style = Fw.Text)
                 Column {
@@ -201,7 +213,7 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
     }
 
     LaunchedEffect(Unit) {
-        product = withContext(Dispatchers.IO) {
+        product = launcher.version.products.singleOrNull() ?: withContext(Dispatchers.IO) {
             if (runCatching { WowClientDownloader.isProductLive(WowProduct.FOREVER) }.getOrDefault(false)) WowProduct.FOREVER else WowProduct.BETA
         }
     }
@@ -213,7 +225,7 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
         }
     }
 
-    Text("Install WoW Forever", style = Fw.Title)
+    Text("Install ${launcher.version.displayName}", style = Fw.Title)
     when (val s = state) {
         is InstallUiState.Running -> {
             Text("Downloading from Blizzard's servers to ${s.request.root}. You can leave the app: the download keeps going and shows progress in your notifications.", style = Fw.Text)
@@ -258,7 +270,7 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
                     FwRow(selected = i == rootIndex, onClick = { rootIndex = i }) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(if (i == 0) "Internal storage" else "SD card / external storage", style = Fw.Text)
-                            Text("${File(root, "WoW Forever")}", style = Fw.Data)
+                            Text("${File(root, launcher.version.defaultFolder)}", style = Fw.Data)
                         }
                         Text("%.0f GB free".format(free / 1e9), style = Fw.Data.copy(color = if (free > 80e9) Fw.Ok else Fw.Warn))
                         if (i == rootIndex) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
@@ -271,7 +283,7 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
                     "Download and install",
                     {
                         val p = product ?: return@FwButton
-                        start(InstallRequest(File(roots[rootIndex], "WoW Forever"), p, locale))
+                        start(InstallRequest(File(roots[rootIndex], launcher.version.defaultFolder), p, locale))
                     },
                     enabled = product != null && roots.isNotEmpty(),
                 )

@@ -153,7 +153,7 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
         },
     ) {
         Text(
-            files.product?.let { listOfNotNull(it.displayName, version?.localVersion).joinToString(" · ") } ?: "Set up WoW Forever to start",
+            files.product?.let { listOfNotNull(it.displayName, version?.localVersion).joinToString(" · ") } ?: "Set up ${launcher.version.displayName} to start",
             style = Fw.Data,
         )
         when {

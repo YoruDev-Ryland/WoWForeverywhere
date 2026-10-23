@@ -38,7 +38,7 @@ fun GameFilesScreen(launcher: LauncherController, onBack: () -> Unit, onInstall:
         val path = StorageUtils.getPathFromTreeUri(context, uri) ?: return@rememberLauncherForActivityResult
         val root = GamePath.findGameRoot(File(path))
         if (root == null) {
-            launcher.errorMessage = "No WoW Forever install in $path. Pick the folder that holds .build.info and Data."
+            launcher.errorMessage = "No ${launcher.version.displayName} install in $path. Pick the folder that holds .build.info and Data."
         } else {
             launcher.useGameRoot(root.absolutePath)
         }
@@ -71,10 +71,10 @@ fun GameFilesScreen(launcher: LauncherController, onBack: () -> Unit, onInstall:
 
         FwSection("Install or repair") {
             Text(
-                "Downloads WoW Forever from Blizzard's servers. Repair checks every file and only downloads what's missing or damaged.",
+                "Downloads ${launcher.version.displayName} from Blizzard's servers. Repair checks every file and only downloads what's missing or damaged.",
                 style = Fw.Secondary,
             )
-            FwButton(if (launcher.filesMissing) "Install WoW Forever" else "Install or repair", onInstall, enabled = !launcher.busy)
+            FwButton(if (launcher.filesMissing) "Install ${launcher.version.displayName}" else "Install or repair", onInstall, enabled = !launcher.busy)
         }
 
         FwSection("Find an existing copy") {
