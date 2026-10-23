@@ -23,12 +23,12 @@ data class BuildInfo(val header: List<String>, val rows: List<Map<String, String
     }
 
     /**
-     * Supported products present in this file, most preferred first. A shared install can hold several.
+     * Products of [version] present in this file, most preferred first. A shared install can hold several.
      * Products that have opened ([WowProduct.releaseDate] passed) come first, launch product before beta;
      * so before launch day a beta install that Battle.net pre-loaded the launch build into stays on the beta.
      */
-    fun products(today: LocalDate = LocalDate.now()): List<WowProduct> =
-        WowProduct.entries.filter { p -> rows.any { it["Product"] == p.code } }
+    fun products(today: LocalDate = LocalDate.now(), version: GameVersion = GameVersions.selected): List<WowProduct> =
+        version.products.filter { p -> rows.any { it["Product"] == p.code } }
             .sortedBy { p -> if (p.releaseDate?.let { today < it } == true) 1 else 0 }
 
     /**

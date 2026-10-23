@@ -19,6 +19,12 @@ enum class WowProduct(
 ) {
     FOREVER("wowf", "_forever_", "Wow-arm64.exe", "Wow.exe", "US", "WoW Forever", LocalDate.of(2026, 11, 4)),
     BETA("wow_classic_beta", "_classic_beta_", "WowB-ARM64.exe", "WowB.exe", "test", "WoW Forever Beta"),
+
+    // Other official versions, selectable in Settings (see GameVersion). Experimental.
+    CLASSIC_ERA("wow_classic_era", "_classic_era_", "WowClassic-arm64.exe", "WowClassic.exe", "US", "Classic Era"),
+    ANNIVERSARY("wow_anniversary", "_anniversary_", "WowClassic-arm64.exe", "WowClassic.exe", "US", "Burning Crusade Anniversary"),
+    MISTS("wow_classic", "_classic_", "WowClassic-arm64.exe", "WowClassic.exe", "US", "Mists of Pandaria Classic"),
+    RETAIL("wow", "_retail_", "Wow-ARM64.exe", "Wow.exe", "US", "Retail"),
     ;
 
     companion object {
@@ -26,5 +32,8 @@ enum class WowProduct(
     }
 }
 
-/** The preferred supported product installed in [root] (see [BuildInfo.products]), or null if none. */
+/**
+ * The preferred product of the selected [GameVersion] installed in [root] (see [BuildInfo.products]),
+ * or null if none.
+ */
 fun detectProduct(root: File, today: LocalDate = LocalDate.now()): WowProduct? = BuildInfo.read(root)?.products(today)?.firstOrNull()
