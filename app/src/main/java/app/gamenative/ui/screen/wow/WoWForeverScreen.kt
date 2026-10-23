@@ -881,15 +881,21 @@ internal fun Throwable.isPermissionDenied() =
 
 private const val DEFAULT_DRIVER = "Turnip-WoW-scheduler-test"
 private const val ADRENO_8XX_DRIVER = "Turnip-V32-RP6sched"
+
+// K11MCH1's Turnip v26.0.0 R7. The default driver fails to start on the Meta Quest 3 with
+// VK_ERROR_OUT_OF_DEVICE_MEMORY; this build boots there (issue #2).
+private const val QUEST_DRIVER = "Turnip-v26.0.0-R7"
 private const val PROTON_VERSION = "proton-11.0-90624-arm64ec"
 private const val DXVK_VERSION = "2.4.1-wow-aarch64-test"
 
 internal data class GpuProfile(val driver: String, val tuDebug: String, val screenSize: String, val label: String, val edition: String) {
     companion object {
-        fun detect(context: Context) = if (isAdreno8xxDevice(context)) {
-            GpuProfile(ADRENO_8XX_DRIVER, "noconform,sysmem", "1280x720", "Adreno 8xx", "Snapdragon 8 Elite / Adreno 8xx")
-        } else {
-            GpuProfile(DEFAULT_DRIVER, "noconform", "1920x1080", "Adreno 740", "Snapdragon 8 Series / Adreno 740")
+        fun detect(context: Context) = when {
+            isMetaQuest3(Build.MANUFACTURER, Build.MODEL, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else "") ->
+                GpuProfile(QUEST_DRIVER, "noconform", "1920x1080", "Meta Quest 3", "Meta Quest 3 / XR2 Gen 2")
+            isAdreno8xxDevice(context) ->
+                GpuProfile(ADRENO_8XX_DRIVER, "noconform,sysmem", "1280x720", "Adreno 8xx", "Snapdragon 8 Elite / Adreno 8xx")
+            else -> GpuProfile(DEFAULT_DRIVER, "noconform", "1920x1080", "Adreno 740", "Snapdragon 8 Series / Adreno 740")
         }
 
         private fun isAdreno8xxDevice(context: Context): Boolean {
@@ -908,6 +914,11 @@ internal data class GpuProfile(val driver: String, val tuDebug: String, val scre
  * non-16:9 screens (e.g. a foldable's near-square inner display) instead of being letterboxed.
  * The pixel count stays the same as [baseSize], so GPU cost matches the 16:9 default.
  */
+/** Meta Quest 3 or 3S: Oculus hardware with the Snapdragon XR2 Gen 2 (SXR2230P). */
+internal fun isMetaQuest3(manufacturer: String, model: String, socModel: String): Boolean =
+    manufacturer.equals("Oculus", ignoreCase = true) &&
+        (model.startsWith("Quest 3", ignoreCase = true) || socModel.equals("SXR2230P", ignoreCase = true))
+
 internal fun fitScreenSizeToWindow(context: Context, baseSize: String): String {
     val (windowWidth, windowHeight) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         context.getSystemService(WindowManager::class.java).currentWindowMetrics.bounds.let { it.width() to it.height() }
@@ -1117,6 +1128,7 @@ internal fun fitsScreen(resolution: String, screenSize: String): Boolean {
 private fun installBundledComponents(context: Context, onStatus: (String) -> Unit) {
     installDriver(context, DEFAULT_DRIVER, "turnip-wow-scheduler-test.zip", onStatus)
     installDriver(context, ADRENO_8XX_DRIVER, "turnip-V32-RP6sched.zip", onStatus)
+    installDriver(context, QUEST_DRIVER, "Turnip_v26.0.0_R7.zip", onStatus)
 
     val protonDir = File(ImageFs.getSharedProtonDir(context), PROTON_VERSION)
     if (!File(protonDir, "profile.json").exists() || !File(protonDir, "bin/wine").exists()) {

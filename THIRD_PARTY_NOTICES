@@ -471,3 +471,10 @@ License text: https://openfontlicense.org/open-font-license-official-text/
 
 `com.caverock:androidsvg-aar` 1.4, (c) Paul LeBeau, Cave Rock Software Ltd. Used to draw the game-version icons.
 License text: https://www.apache.org/licenses/LICENSE-2.0
+
+## Mesa Turnip Vulkan driver, v26.0.0 R7 (MIT)
+
+`Turnip_v26.0.0_R7.zip`, built from Mesa by K11MCH1 and published at
+https://github.com/K11MCH1/AdrenoToolsDrivers/releases/tag/v26.0.0-rc07 (Mesa base commit 68fb3a601c63).
+Downloaded unmodified at build time and used on the Meta Quest 3. Mesa is (c) its contributors, MIT License:
+https://docs.mesa3d.org/license.html

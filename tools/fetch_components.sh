@@ -9,6 +9,7 @@ FILES=(
     dxvk-2.4.1-wow-aarch64-test.wcp
     turnip-wow-scheduler-test.zip
     turnip-V32-RP6sched.zip
+    Turnip_v26.0.0_R7.zip
 )
 
 mkdir -p "$DEST"
@@ -21,6 +22,8 @@ for f in "${FILES[@]}"; do
     else
         if [ "$f" = "turnip-V32-RP6sched.zip" ]; then
             curl -fL --retry 3 -o "$DEST/$f.part" "https://raw.githubusercontent.com/arusiasotto/wow-forever-a840/main/driver/turnip-V32-RP6sched.zip"
+        elif [ "$f" = "Turnip_v26.0.0_R7.zip" ]; then
+            curl -fL --retry 3 -o "$DEST/$f.part" "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v26.0.0-rc07/Turnip_v26.0.0_R7.zip"
         else
             curl -fL --retry 3 -o "$DEST/$f.part" "$RELEASE_URL/$f"
         fi
