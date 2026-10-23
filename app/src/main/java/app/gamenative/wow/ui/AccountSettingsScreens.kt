@@ -16,6 +16,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import app.gamenative.wow.install.InstallController
+import app.gamenative.wow.install.InstallUiState
+import app.gamenative.wow.product.GameVersion
+import app.gamenative.wow.ui.components.FwDialog
+import app.gamenative.wow.ui.components.FwRow
+import app.gamenative.wow.ui.components.GameIconImage
+import app.gamenative.wow.ui.components.icon
 import app.gamenative.BuildConfig
 import app.gamenative.utils.renderReleaseNotes
 import androidx.compose.material.icons.Icons
@@ -95,17 +109,18 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
                 }
             }
         }
+        GameVersionSection(launcher, onVersionChanged)
         FwSection("Support Foreverywhere") {
             val context = LocalContext.current
             Text("Foreverywhere is free and open source. If it saves you some time, you can support its development on Ko-fi.", style = Fw.Text)
             FwButton("Support on Ko-fi", { Links.open(context, Links.KOFI) }, kind = FwButtonKind.Ghost, icon = Icons.Filled.LocalCafe)
         }
         FwSection("Addon sources") {
-            ProviderLine("CurseForge", BuildConfig.CURSEFORGE_API_KEY.isNotBlank())
+            ProviderLine("CurseForge", true)
             ProviderLine("Wago Addons", BuildConfig.WAGO_API_KEY.isNotBlank())
             ProviderLine("WoWInterface", true)
             ProviderLine("GitHub (addon catalog and links)", true)
-            Text("CurseForge and Wago need an API key built into the app. Builds without one still use the other sources.", style = Fw.Secondary)
+            Text("Wago needs an API key built into the app. Builds without one still use the other sources.", style = Fw.Secondary)
         }
         FwSection("Device") {
             Text("${launcher.gpu.edition} profile · render size ${launcher.gpu.screenSize}", style = Fw.Data)
@@ -118,6 +133,51 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
             val context = LocalContext.current
             FwButton("Source code on GitHub", { Links.open(context, Links.REPO) }, kind = FwButtonKind.Ghost, icon = Icons.AutoMirrored.Filled.OpenInNew)
         }
+    }
+}
+
+/** Settings, Game version: WoW Forever or one of the experimental official versions. */
+@Composable
+private fun GameVersionSection(launcher: LauncherController, onVersionChanged: () -> Unit) {
+    val install by InstallController.state.collectAsState()
+    val downloading = install is InstallUiState.Running || install is InstallUiState.Paused
+    var pending by remember { mutableStateOf<GameVersion?>(null) }
+    fun switch(to: GameVersion) {
+        pending = null
+        if (launcher.switchVersion(to)) onVersionChanged()
+    }
+    FwSection("Game version") {
+        Text("Foreverywhere is made for WoW Forever. You can also try other official versions of WoW, which are experimental.", style = Fw.Secondary)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            GameVersion.entries.forEach { v ->
+                val current = v == launcher.version
+                FwRow(
+                    selected = current,
+                    onClick = {
+                        when {
+                            current || downloading || launcher.busy -> Unit
+                            v.isExperimental -> pending = v
+                            else -> switch(v)
+                        }
+                    },
+                ) {
+                    GameIconImage(v.icon, 24.dp) { Box(Modifier.size(24.dp)) }
+                    Text(v.displayName, style = Fw.Text, modifier = Modifier.weight(1f))
+                    if (v.isExperimental) Text("Experimental", style = Fw.Data.copy(color = Fw.Ash))
+                    if (current) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                }
+            }
+        }
+        if (downloading) Text("Finish or cancel the current download before switching.", style = Fw.Secondary.copy(color = Fw.Warn))
+    }
+    pending?.let { v ->
+        FwDialog(
+            title = "Other WoW versions are experimental",
+            message = "Foreverywhere is made for WoW Forever. Other versions may run poorly or not start at all, and they get little support. Your WoW Forever install and addons stay as they are, and you can switch back any time.",
+            confirm = "Switch to ${v.displayName}",
+            onConfirm = { switch(v) },
+            onDismiss = { pending = null },
+        )
     }
 }
 

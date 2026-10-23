@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.gamenative.wow.addons.AddonFlavor
+import app.gamenative.wow.product.GameVersion
 import app.gamenative.wow.addons.AddonListing
 import app.gamenative.wow.ui.FwPage
 import app.gamenative.wow.ui.LauncherController
@@ -56,6 +57,7 @@ import androidx.compose.ui.platform.LocalDensity
 import app.gamenative.wow.ui.components.ArtCache
 import app.gamenative.wow.ui.components.ArtImage
 import app.gamenative.wow.ui.components.GameIcon
+import app.gamenative.wow.ui.components.icon
 import app.gamenative.wow.ui.components.Links
 import app.gamenative.wow.ui.components.ForeverArt
 import app.gamenative.wow.ui.components.FwButton
@@ -70,7 +72,7 @@ import java.io.File
 fun AddonsRoute(launcher: LauncherController, addons: AddonsController?, onBack: () -> Unit) {
     if (addons == null) {
         FwPage("Addons", onBack) {
-            Text("Install or find WoW Forever first. Addons go into the game's folder.", style = Fw.Text)
+            Text("Install or find ${launcher.version.displayName} first. Addons go into the game's folder.", style = Fw.Text)
         }
         return
     }
@@ -92,18 +94,19 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit) {
             FwButton("Back", onBack, kind = FwButtonKind.Ghost)
             FwChip("Installed ${c.installed?.size ?: "…"}", c.mode == AddonsController.Mode.INSTALLED, { c.switchMode(AddonsController.Mode.INSTALLED) })
             FwChip("Browse", c.mode == AddonsController.Mode.BROWSE, { c.switchMode(AddonsController.Mode.BROWSE) })
-            if (wideBar) SearchField(c.query, c::search, Modifier.weight(1f)) else Box(Modifier.weight(1f))
+            if (wideBar) SearchField(c.query, c::search, searchHint(c.version), Modifier.weight(1f)) else Box(Modifier.weight(1f))
             c.updates?.takeIf { it > 0 }?.let { FwButton("Update all ($it)", c::updateAll, enabled = c.working == null) }
             if (wideBar) FwButton("From link", { showUrlDialog = true }, kind = FwButtonKind.Ghost)
         }
-        if (!wideBar) SearchField(c.query, c::search, Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp))
+        if (!wideBar) SearchField(c.query, c::search, searchHint(c.version), Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp))
         // One scrolling row of filters: game version, source, then categories.
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(vertical = 10.dp),
         ) {
-            item { FwChip(if (c.includeClassic) "Forever + Classic" else "Forever only", false, c::toggleClassic) }
+            // Only WoW Forever has a fallback version (Classic Era) to include or leave out.
+            if (c.version == GameVersion.FOREVER) item { FwChip(if (c.includeClassic) "Forever + Classic" else "Forever only", false, c::toggleClassic) }
             item { FwChip(c.source?.let(::sourceName) ?: "All sources", false, c::cycleSource) }
             item { Box(Modifier.width(1.dp).height(42.dp).background(Fw.Rule)) }
             item { FwChip("All categories", c.category == null, { c.selectCategory(null) }) }
@@ -160,7 +163,8 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
             c.listings.isEmpty() -> Text(
                 when (c.mode) {
                     AddonsController.Mode.INSTALLED -> if (c.installed == null) "Reading your AddOns folder…" else "No addons installed yet. Switch to Browse to find some."
-                    AddonsController.Mode.BROWSE -> "Nothing found. Try another name, or include Classic addons."
+                    AddonsController.Mode.BROWSE ->
+                        if (c.version == GameVersion.FOREVER) "Nothing found. Try another name, or include Classic addons." else "Nothing found. Try another name."
                 },
                 style = Fw.Secondary,
                 modifier = Modifier.padding(20.dp),
@@ -175,11 +179,11 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
                         },
                         onFocus = { if (c.selected != listing) c.selected = listing },
                     ) {
-                        AddonIcon(listing, 44)
+                        AddonIcon(listing, 44, c.version)
                         Column(Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(listing.remote.name, style = Fw.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                                FlavorMark(listing.bestFlavor, size = 20)
+                                FlavorMark(listing.bestFlavor, c.version, size = 20)
                             }
                             Text(
                                 listOfNotNull(
@@ -221,15 +225,15 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
         }
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                AddonIcon(listing, 56)
+                AddonIcon(listing, 56, c.version)
                 Column(Modifier.weight(1f)) {
                     Text(remote.name, style = Fw.Title)
                     if (remote.author.isNotBlank()) Text("by ${remote.author}", style = Fw.Secondary)
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FlavorMark(listing.bestFlavor, size = 22)
-                Text(flavorLabel(listing.bestFlavor), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.MAIN) Fw.Gem else Fw.Ash))
+                FlavorMark(listing.bestFlavor, c.version, size = 22)
+                Text(flavorLabel(listing.bestFlavor, c.version), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.MAIN) Fw.Gem else Fw.Ash))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 val idle = c.working == null
@@ -301,10 +305,10 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
 
 /** The addon's own icon from its source; falls back to the Forever/Classic mark. */
 @Composable
-private fun AddonIcon(listing: AddonListing, size: Int) {
+private fun AddonIcon(listing: AddonListing, size: Int, version: GameVersion) {
     val url = listing.remote.iconUrl
     Box(Modifier.size(size.dp).clip(Fw.Shape).background(Fw.Stone2), contentAlignment = Alignment.Center) {
-        if (url == null) FlavorMark(listing.bestFlavor, size = (size * 0.6f).toInt()) else ArtImage(url, Modifier.fillMaxSize(), keepOnDisk = false)
+        if (url == null) FlavorMark(listing.bestFlavor, version, size = (size * 0.6f).toInt()) else ArtImage(url, Modifier.fillMaxSize(), keepOnDisk = false)
     }
 }
 
@@ -321,21 +325,24 @@ private fun Facts(rows: List<Pair<String, String>>) {
 }
 
 @Composable
-private fun SearchField(value: String, onChange: (String) -> Unit, modifier: Modifier) {
+private fun SearchField(value: String, onChange: (String) -> Unit, hint: String, modifier: Modifier) {
     Box(modifier.widthIn(min = 160.dp).background(Fw.Stone, Fw.Pill).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        if (value.isEmpty()) Text("Search Forever addons…", style = Fw.Text.copy(color = Fw.Ash), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (value.isEmpty()) Text(hint, style = Fw.Text.copy(color = Fw.Ash), maxLines = 1, overflow = TextOverflow.Ellipsis)
         BasicTextField(value, onChange, singleLine = true, textStyle = Fw.Text, cursorBrush = SolidColor(Fw.Brass), modifier = Modifier.fillMaxWidth())
     }
 }
 
+private fun searchHint(version: GameVersion) = if (version == GameVersion.FOREVER) "Search Forever addons…" else "Search ${version.displayName} addons…"
+
 /**
- * Forever vs Classic marker: Blizzard's round icon for that game version. Until it loads (or offline) a
- * simple stand-in shows: a teal square for Forever, an outlined circle for Classic.
+ * Game version marker: Blizzard's round icon for the version an addon is made for ([version]'s own, or
+ * Classic for Forever's fallback). Until it loads (or offline) a simple stand-in shows: a teal square for
+ * the selected version, an outlined circle otherwise.
  */
 @Composable
-fun FlavorMark(flavor: AddonFlavor, size: Int = 28) {
+fun FlavorMark(flavor: AddonFlavor, version: GameVersion = GameVersion.FOREVER, size: Int = 28) {
     val icon = when (flavor) {
-        AddonFlavor.MAIN -> GameIcon.FOREVER
+        AddonFlavor.MAIN -> version.icon
         AddonFlavor.FALLBACK -> GameIcon.CLASSIC
         AddonFlavor.OTHER -> null
     }
@@ -344,7 +351,7 @@ fun FlavorMark(flavor: AddonFlavor, size: Int = 28) {
     val image by produceState<ImageBitmap?>(null, icon, px) { value = icon?.let { ArtCache.loadSvg(context, it, px) } }
     val base = Modifier.size(size.dp)
     image?.let {
-        Image(it, contentDescription = flavorLabel(flavor), modifier = base)
+        Image(it, contentDescription = flavorLabel(flavor, version), modifier = base)
         return
     }
     when (flavor) {
@@ -353,10 +360,14 @@ fun FlavorMark(flavor: AddonFlavor, size: Int = 28) {
     }
 }
 
-fun flavorLabel(flavor: AddonFlavor) = when (flavor) {
-    AddonFlavor.MAIN -> "Made for WoW Forever"
-    AddonFlavor.FALLBACK -> "Made for Classic. It may not work in Forever."
-    AddonFlavor.OTHER -> "No game version listed. It may not work in Forever."
+fun flavorLabel(flavor: AddonFlavor, version: GameVersion = GameVersion.FOREVER) = when {
+    version == GameVersion.FOREVER -> when (flavor) {
+        AddonFlavor.MAIN -> "Made for WoW Forever"
+        AddonFlavor.FALLBACK -> "Made for Classic. It may not work in Forever."
+        AddonFlavor.OTHER -> "No game version listed. It may not work in Forever."
+    }
+    flavor == AddonFlavor.OTHER -> "No game version listed. It may not work in ${version.displayName}."
+    else -> "Made for ${version.displayName}"
 }
 
 private fun sourceName(id: String) = when (id) {

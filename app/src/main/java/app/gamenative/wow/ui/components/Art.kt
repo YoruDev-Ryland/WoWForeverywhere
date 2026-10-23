@@ -1,5 +1,6 @@
 package app.gamenative.wow.ui.components
 
+import app.gamenative.wow.product.GameVersion
 import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
@@ -44,6 +45,30 @@ enum class ForeverArt(val path: String, val zoom: Float = 1f) {
 enum class GameIcon(val url: String, val viewBox: String? = null) {
     FOREVER("https://forge.akamaized.net/icons/world-of-warcraft-forever.svg"),
     CLASSIC("https://forge.akamaized.net/icons/world-of-warcraft-classic.svg", viewBox = "6 2 36 36"),
+    RETAIL("https://forge.akamaized.net/icons/world-of-warcraft.svg"),
+}
+
+/** The round icon for a game version: Retail's own, the Classic one for every Classic version. */
+val GameVersion.icon: GameIcon
+    get() = when (this) {
+        GameVersion.FOREVER -> GameIcon.FOREVER
+        GameVersion.RETAIL -> GameIcon.RETAIL
+        GameVersion.CLASSIC_ERA, GameVersion.ANNIVERSARY, GameVersion.MISTS -> GameIcon.CLASSIC
+    }
+
+/**
+ * Returns [file], filling it first through [write] when it's missing. Each caller writes its own temp
+ * file, so several screens loading one image at once can't trip over each other's half-written copy.
+ */
+internal fun cacheOnce(file: File, write: (File) -> Boolean): File? {
+    if (file.isFile && file.length() > 0L) return file
+    val temp = File.createTempFile(file.name, ".part", file.parentFile)
+    try {
+        if (!write(temp)) return null
+        return file.takeIf { temp.renameTo(it) || (it.isFile && it.length() > 0L) }
+    } finally {
+        temp.delete()
+    }
 }
 
 object ArtCache {
@@ -73,15 +98,15 @@ object ArtCache {
     /** Downloads [url] into the disk cache once and returns the cached file. */
     private fun fetch(context: Context, url: String): File? {
         val dir = File(context.cacheDir, "art").apply { mkdirs() }
-        val file = File(dir, sha1(url) + ".img")
-        if (file.isFile && file.length() > 0L) return file
-        val temp = File(dir, file.name + ".part")
-        Net.http.newCall(Request.Builder().url(url).build()).execute().use { response ->
-            if (!response.isSuccessful) return null
-            temp.outputStream().use { response.body!!.byteStream().copyTo(it) }
-        }
-        return file.takeIf { temp.renameTo(it) }
+        return cacheOnce(File(dir, sha1(url) + ".img")) { temp -> download(url, temp) }
     }
+
+    private fun download(url: String, to: File): Boolean =
+        Net.http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            if (!response.isSuccessful) return false
+            to.outputStream().use { response.body!!.byteStream().copyTo(it) }
+            true
+        }
 
     /**
      * Loads [url], from memory, then the disk cache, then the network. Addon icons and screenshots
@@ -99,16 +124,7 @@ object ArtCache {
                     }
                     return@runCatching decode(bytes)?.asImageBitmap()?.also { memory.put(url, it) }
                 }
-                val dir = File(context.cacheDir, "art").apply { mkdirs() }
-                val file = File(dir, sha1(url) + ".img")
-                if (!file.isFile || file.length() == 0L) {
-                    val temp = File(dir, file.name + ".part")
-                    Net.http.newCall(Request.Builder().url(url).build()).execute().use { response ->
-                        if (!response.isSuccessful) return@runCatching null
-                        temp.outputStream().use { response.body!!.byteStream().copyTo(it) }
-                    }
-                    temp.renameTo(file)
-                }
+                val file = fetch(context, url) ?: return@runCatching null
                 decode(file.readBytes())?.asImageBitmap()?.also { memory.put(url, it) }
             }.onFailure { Timber.w(it, "Art load failed: $url") }.getOrNull()
         }

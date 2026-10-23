@@ -122,8 +122,10 @@ private fun Welcome(version: GameVersion, onNext: () -> Unit, onOpenSettings: ()
     if (check.any { !it.second }) {
         Text("The game may not run well on this device. You can still continue.", style = Fw.Secondary)
     }
-    FwButton("Get started", onNext)
-    FwButton("Playing another version of WoW?", onOpenSettings, kind = FwButtonKind.Ghost)
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        FwButton("Get started", onNext)
+        FwButton("Playing another version of WoW?", onOpenSettings, kind = FwButtonKind.Ghost)
+    }
 }
 
 object DeviceCheck {
