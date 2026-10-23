@@ -1,23 +1,25 @@
-# CurseForge is here
+# Other WoW versions (experimental)
 
-The addon browser now includes **CurseForge**, the largest WoW addon catalog, alongside WoWInterface and the GitHub catalog.
+Foreverywhere is made for WoW Forever, but you can now try other official versions of WoW with it. Go to **Settings → Game version** and choose:
 
-- **Search and browse CurseForge** right on your handheld, by name or by category.
-- **Install and update in one tap.** CurseForge addons update with everything else through **Update all**.
-- **Forever versions first.** Each addon shows whether it has a WoW Forever release, and the app picks the Forever file when there is one.
-- **Descriptions and screenshots** from CurseForge appear on each addon's page.
-- **One listing per addon.** An addon published on CurseForge and other sites shows up once, with a link to each.
-- **No account or key needed.** It works out of the box.
+- Classic Era
+- Burning Crusade Anniversary
+- Mists of Pandaria Classic
+- Retail
 
-Some authors choose not to allow downloads through other apps. For those addons, the app shows **Open on website** instead of Install.
+The whole app then works with that version: it installs and updates the game, starts it, and the addon browser shows addons made for it. Each version keeps its own install and addons, and you can switch back to WoW Forever at any time without losing anything.
 
-## Also in this release
+These versions are experimental and get little support. They may run poorly or not start at all, and signing in automatically may not work on every version. If you never change the setting, the app works exactly as before.
 
-- Addons are sorted into the right categories more reliably. Raid frame addons now appear under Unit frames, and individual professions such as Tailoring and Mining appear under Professions.
-- If the app ever stops responding, it now saves details about what it was doing, to help track down reports.
+## Fixes
+
+- **Settings now shows CurseForge as on.** CurseForge has worked since 0.3.0, but Settings still listed it as off.
+- Game icons no longer go missing when several load at once.
 
 ## Install
 
-Download **WoW-Foreverywhere.apk** below. If you have an earlier version, it installs as an update and keeps your settings, saved login and addons.
+Download **WoW-Foreverywhere.apk** below. If you installed an earlier version from this page, it installs as an update and keeps your settings, saved login and addons.
+
+If Android says the app "conflicts with an existing package", your current copy came from somewhere other than this page. Uninstall it first, then install this one. Your game files and addons stay on your storage.
 
 New to the app? See the [README](https://github.com/YoruDev-Ryland/WoWForeverywhere#getting-started) for setup.
