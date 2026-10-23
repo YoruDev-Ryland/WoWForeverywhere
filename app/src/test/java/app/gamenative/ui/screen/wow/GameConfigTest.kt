@@ -9,6 +9,24 @@ import org.junit.Test
 class GameConfigTest {
 
     @Test
+    fun retailGetsOnlyWhatItNeedsToStart() {
+        val keys = buildConfigWtf(null, WowProduct.RETAIL, "1920x1080")!!.map { it.split(" ")[1] }
+        assertEquals(
+            listOf(
+                "portal", "agentUID", "gxApi", "textLocale", "audioLocale", "GamePadEnable", "InputDeviceInterfaceStyle",
+                "gxFullscreenResolution", "gxWindowedResolution",
+            ),
+            keys,
+        )
+    }
+
+    @Test
+    fun classicVersionsKeepTheHandheldPreset() {
+        val keys = buildConfigWtf(null, WowProduct.CLASSIC_ERA, "1920x1080")!!.map { it.split(" ")[1] }
+        assertTrue("farclip" in keys && "graphicsQuality" in keys)
+    }
+
+    @Test
     fun newForeverConfigUsesLivePortalAndProduct() {
         val lines = buildConfigWtf(null, WowProduct.FOREVER, "1920x1080")!!
         assertTrue("SET portal \"US\"" in lines)

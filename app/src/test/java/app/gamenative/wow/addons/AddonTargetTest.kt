@@ -89,4 +89,17 @@ class AddonTargetTest {
         assertEquals(AddonFlavor.MAIN, FlavorRules.classify(FlavorRules.readTocs(folder), retail))
         assertEquals(AddonFlavor.FALLBACK, FlavorRules.classify(FlavorRules.readTocs(folder)))
     }
+
+    @Test
+    fun classicTocServesAnniversaryAndMists() {
+        val folder = File(Files.createTempDirectory("addon").toFile(), "Bar").apply { mkdirs() }
+        File(folder, "Bar_Mainline.toc").writeText("## Interface: 120105\n## Title: Bar\n")
+        File(folder, "Bar_Classic.toc").writeText("## Interface: 20506\n## Title: Bar\n")
+        for (v in listOf(GameVersion.ANNIVERSARY, GameVersion.MISTS)) {
+            assertEquals("Bar_Classic.toc", FlavorRules.pickToc(folder, v.addonTarget())!!.fileName)
+            assertEquals(AddonFlavor.MAIN, FlavorRules.classify(FlavorRules.readTocs(folder), v.addonTarget()))
+        }
+        File(folder, "Bar_TBC.toc").writeText("## Interface: 20506\n## Title: Bar\n")
+        assertEquals("Bar_TBC.toc", FlavorRules.pickToc(folder, GameVersion.ANNIVERSARY.addonTarget())!!.fileName)
+    }
 }

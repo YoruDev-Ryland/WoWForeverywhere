@@ -143,6 +143,18 @@ class GameInstallerTest {
     }
 
     @Test
+    fun resumeStateOfOneVersionDoesNotVouchForAnother() = runBlocking {
+        files["/wow_classic_era/versions"] = files["/wowf/versions"]!!
+        files["/wow_classic_era/cdns"] = files["/wowf/cdns"]!!
+        failPath = cdnPath("data", archive)
+        runCatching { installer().run(req) {} }
+        failPath = null
+        val eraExe = File(root, "_classic_era_/Wow-arm64.exe").apply { parentFile!!.mkdirs(); writeText("damaged") }
+        installer().run(InstallRequest(root, WowProduct.CLASSIC_ERA)) {}
+        assertArrayEquals(exe, eraExe.readBytes())
+    }
+
+    @Test
     fun missingIndexIsSkipped() = runBlocking {
         val cdnKey = files.keys.first { it.startsWith("/tpr/wow/config/") && String(files.getValue(it)).startsWith("# CDN") }
         val extra = "99".repeat(16)

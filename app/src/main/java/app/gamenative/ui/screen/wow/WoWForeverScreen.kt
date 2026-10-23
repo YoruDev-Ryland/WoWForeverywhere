@@ -1002,6 +1002,9 @@ private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile
 
 private const val GX_API_LINE = "SET gxApi \"D3D11\""
 
+/** Retail only gets what it needs to start and use a controller; the rest is a Classic-era handheld preset. */
+private val RETAIL_DEFAULTS = setOf("portal", "agentUID", "gxApi", "textLocale", "audioLocale", "GamePadEnable", "InputDeviceInterfaceStyle")
+
 private fun configDefaults(product: WowProduct, locale: String, portal: String) = linkedMapOf(
     "portal" to "\"$portal\"",
     "agentUID" to "\"${product.code}\"",
@@ -1030,7 +1033,7 @@ private fun configDefaults(product: WowProduct, locale: String, portal: String) 
     "groundEffectDensity" to "\"16\"",
     "GamePadEnable" to "\"1\"",
     "InputDeviceInterfaceStyle" to "\"1\"",
-)
+).let { all -> if (product == WowProduct.RETAIL) all.filterKeys { it in RETAIL_DEFAULTS } else all }
 
 internal fun flavorInfoText(product: WowProduct) = "Product Flavor!STRING:0\n${product.code}\n"
 

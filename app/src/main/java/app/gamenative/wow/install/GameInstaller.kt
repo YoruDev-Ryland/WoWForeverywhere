@@ -143,7 +143,8 @@ class GameInstaller(
         val ekeys = EncodingLookup(cdn, buildConfig.getValue("encoding")[1]).find(wanted.map { it.ckey }.toSet())
         for (entry in wanted) {
             val ekey = ekeys[entry.ckey] ?: throw IOException("${entry.name} is missing from the encoding table")
-            items += PlanItem("file:${entry.name}", "data", ekey, "${req.product.flavorDir}/${paths.fold(entry.relativePath)}", entry.size, ckey = entry.ckey)
+            // Ids carry the flavor folder: versions sharing one root share the resume state too.
+            items += PlanItem("file:${req.product.flavorDir}/${entry.name}", "data", ekey, "${req.product.flavorDir}/${paths.fold(entry.relativePath)}", entry.size, ckey = entry.ckey)
         }
 
         val plan = InstallPlan(

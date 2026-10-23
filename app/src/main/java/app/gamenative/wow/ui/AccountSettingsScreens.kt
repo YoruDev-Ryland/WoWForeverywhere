@@ -168,7 +168,10 @@ private fun GameVersionSection(launcher: LauncherController, onVersionChanged: (
                 }
             }
         }
-        if (downloading) Text("Finish or cancel the current download before switching.", style = Fw.Secondary.copy(color = Fw.Warn))
+        when {
+            downloading -> Text("Finish or cancel the current download before switching.", style = Fw.Secondary.copy(color = Fw.Warn))
+            launcher.busy -> Text("Wait for the game to start or the update to finish before switching.", style = Fw.Secondary.copy(color = Fw.Warn))
+        }
     }
     pending?.let { v ->
         FwDialog(

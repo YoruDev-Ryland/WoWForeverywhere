@@ -39,10 +39,13 @@ class FlavorSpec(
     val catalogKey: String,
     val names: List<String>,
     val interfaces: IntRange,
+    /** Generic TOC suffixes the client also loads, after its own (`_Classic` on every Classic client but Era, which names it already). */
+    val extraTocNames: List<String> = emptyList(),
     /** Whether a WoWInterface compatibility entry (`12.1.0`, "Curse of Ulatek") is this version. */
     val wowInterface: (major: Int, minor: Int, name: String) -> Boolean,
 ) {
-    fun hasTocSuffix(base: String) = names.any { base.endsWith("-$it", ignoreCase = true) || base.endsWith("_$it", ignoreCase = true) }
+    fun hasTocSuffix(base: String, includeExtra: Boolean = true) =
+        (if (includeExtra) names + extraTocNames else names).any { base.endsWith("-$it", ignoreCase = true) || base.endsWith("_$it", ignoreCase = true) }
 
     companion object {
         private fun isForeverName(name: String) = "forever" in name || "camelot" in name
@@ -53,8 +56,8 @@ class FlavorSpec(
         val CLASSIC_ERA = FlavorSpec(67408, "classic", "classic", listOf("classic", "vanilla"), 10000..15999) { major, minor, name ->
             major == 1 && minor < 60 && !isForeverName(name)
         }
-        val ANNIVERSARY = FlavorSpec(73246, "bc", "bcc", listOf("bcc", "tbc"), 20000..29999) { major, _, _ -> major == 2 }
-        val MISTS = FlavorSpec(79434, "mop", "mists", listOf("mists", "mop"), 50000..59999) { major, _, _ -> major == 5 }
+        val ANNIVERSARY = FlavorSpec(73246, "bc", "bcc", listOf("bcc", "tbc"), 20000..29999, listOf("classic")) { major, _, _ -> major == 2 }
+        val MISTS = FlavorSpec(79434, "mop", "mists", listOf("mists", "mop"), 50000..59999, listOf("classic")) { major, _, _ -> major == 5 }
         val RETAIL = FlavorSpec(517, "retail", "mainline", listOf("mainline", "retail"), 100000..999999) { major, _, _ -> major >= 10 }
     }
 }
@@ -98,11 +101,15 @@ object FlavorRules {
         runCatching { TocParser.parse(folder.name, file.name, file.readText()) }.getOrNull()
     }
 
-    /** The TOC the game would load: one for [target]'s version, else plain `<Folder>.toc`, else a fallback TOC. */
+    /**
+     * The TOC the game would load: one named for [target]'s version, else a generic one it also loads
+     * (`_Classic`), else plain `<Folder>.toc`, else a fallback TOC.
+     */
     fun pickToc(folder: File, target: AddonTarget = AddonTarget.FOREVER): Toc? {
         val files = tocFiles(folder)
         val plainName = "${folder.name}.toc"
-        val chosen = files.firstOrNull { ofTocFileName(it.name, target) == AddonFlavor.MAIN }
+        val chosen = files.firstOrNull { target.main.hasTocSuffix(it.name.removeSuffix(".toc").removeSuffix(".TOC"), includeExtra = false) }
+            ?: files.firstOrNull { ofTocFileName(it.name, target) == AddonFlavor.MAIN }
             ?: files.firstOrNull { it.name.equals(plainName, ignoreCase = true) }
             ?: files.firstOrNull { ofTocFileName(it.name, target) == AddonFlavor.FALLBACK }
             ?: return null

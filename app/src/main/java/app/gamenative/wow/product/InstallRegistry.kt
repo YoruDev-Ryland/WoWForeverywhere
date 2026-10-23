@@ -61,11 +61,16 @@ class InstallRegistry(context: Context) {
         prefs.edit().putString(KEY_INSTALLS, json.encodeToString(installs)).apply()
     }
 
-    /** Forever keeps the original keys, including upstream's legacy path, so older builds still find it. */
+    /**
+     * Also mirrored to the launcher's per-version path (`GamePath`), which app start reads before the
+     * registry. Forever keeps the original keys, including upstream's legacy path, so older builds still find it.
+     */
     private fun saveActive(version: GameVersion, root: String?) {
         prefs.edit().putString(activeKey(version), root).apply()
-        if (version == GameVersion.FOREVER && root != null) legacyPrefs.edit().putString(LEGACY_KEY_PATH, root).apply()
+        if (root != null) legacyPrefs.edit().putString(legacyPathKey(version), root).apply()
     }
+
+    private fun legacyPathKey(version: GameVersion) = if (version == GameVersion.FOREVER) LEGACY_KEY_PATH else "${LEGACY_KEY_PATH}_${version.key}"
 
     private fun activeKey(version: GameVersion) = if (version == GameVersion.FOREVER) KEY_ACTIVE else "${KEY_ACTIVE}_${version.key}"
 

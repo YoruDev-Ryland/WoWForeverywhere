@@ -112,4 +112,13 @@ class InstallRegistryTest {
         GameVersions.selected = GameVersion.FOREVER
         assertEquals(GameInstall("/wow", WowProduct.FOREVER, "1"), registry.active())
     }
+
+    @Test
+    fun activeInstallIsMirroredToEachVersionsGamePath() {
+        GameVersions.selected = GameVersion.CLASSIC_ERA
+        InstallRegistry(context).add(GameInstall("/sd/World of Warcraft", WowProduct.CLASSIC_ERA, "1"))
+        val legacy = context.getSharedPreferences("wow_forever", Context.MODE_PRIVATE)
+        assertEquals("/sd/World of Warcraft", legacy.getString("game_path_classic_era", null))
+        assertNull(legacy.getString("game_path", null))
+    }
 }
