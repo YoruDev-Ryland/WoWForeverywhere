@@ -3,6 +3,7 @@ package app.gamenative.wow.addons.provider
 import app.gamenative.utils.Net
 import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
+import app.gamenative.wow.addons.AddonTarget
 import app.gamenative.wow.addons.ProviderIds
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -19,8 +20,8 @@ import okhttp3.OkHttpClient
 
 /**
  * Wago Addons external API, following WowUp's `WagoAddonProvider`. Needs a bearer key; a blank
- * key disables the provider. Every call is made once per flavor (`game_version=forever` and
- * `classic`) and the results are merged.
+ * key disables the provider. Every call is made once per flavor of the [AddonTarget] (for WoW
+ * Forever, `game_version=forever` and `classic`) and the results are merged.
  *
  * Release ids aren't present in search results, so the release `label` is used as the file id
  * everywhere to keep update checks consistent.
@@ -29,6 +30,7 @@ class WagoProvider(
     private val apiKey: String,
     private val http: OkHttpClient = Net.http,
     private val apiBase: String = "https://addons.wago.io/api/external",
+    private val target: AddonTarget = AddonTarget.FOREVER,
 ) : AddonProvider {
     override val id: String = ProviderIds.WAGO
     override val enabled: Boolean = apiKey.isNotBlank()
@@ -140,9 +142,9 @@ class WagoProvider(
         return merged.values.toList()
     }
 
-    /** Runs [block] for the Forever and Classic game versions in parallel, in that order. */
+    /** Runs [block] for [target]'s game versions (main, then fallback) in parallel. */
     private suspend fun <T> forEachFlavor(block: suspend (String) -> T): Map<AddonFlavor, T> = coroutineScope {
-        FLAVORS.map { (flavor, gameVersion) -> async { flavor to block(gameVersion) } }.awaitAll().toMap()
+        target.flavors.map { (flavor, spec) -> async { flavor to block(spec.wagoGameVersion) } }.awaitAll().toMap()
     }
 
     /** Stable first, then beta, then alpha. */
@@ -216,6 +218,5 @@ class WagoProvider(
     }
 
     companion object {
-        private val FLAVORS = listOf(AddonFlavor.MAIN to "forever", AddonFlavor.FALLBACK to "classic")
     }
 }

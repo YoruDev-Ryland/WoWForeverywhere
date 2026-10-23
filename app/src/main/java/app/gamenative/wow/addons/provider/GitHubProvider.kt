@@ -3,6 +3,7 @@ package app.gamenative.wow.addons.provider
 import app.gamenative.utils.Net
 import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
+import app.gamenative.wow.addons.AddonTarget
 import app.gamenative.wow.addons.ProviderIds
 import app.gamenative.wow.addons.SourceRef
 import kotlinx.coroutines.sync.Mutex
@@ -21,14 +22,15 @@ import okhttp3.OkHttpClient
  * requests an hour per device. Repos outside the catalog (installed from a link) use the API.
  *
  * Asset selection follows WowUp's GitHub provider: when the release has a BigWigs packager
- * `release.json`, its `metadata[].flavor` decides; otherwise zip names ending in
- * `-forever`/`-camelot` or `-classic`/`-vanilla` decide; a lone generic zip maps to OTHER.
+ * `release.json`, its `metadata[].flavor` decides; otherwise zip names ending in one of the
+ * [AddonTarget]'s version names (`-forever`, `-classic`, `-mainline`…) decide; a lone generic zip maps to OTHER.
  */
 class GitHubProvider(
     private val http: OkHttpClient = Net.http,
     private val apiBase: String = "https://api.github.com",
     private val catalogUrl: String = CATALOG_URL,
     private val clock: () -> Long = System::currentTimeMillis,
+    private val target: AddonTarget = AddonTarget.FOREVER,
 ) : AddonProvider {
     override val id: String = ProviderIds.GITHUB
     override val enabled: Boolean = true
@@ -59,18 +61,20 @@ class GitHubProvider(
         catalog?.takeIf { now - catalogAt < CATALOG_TTL_MS }?.let { return@withLock it }
         val parsed = runCatching { http.fetchText(catalogUrl)?.let { ProviderJson.decodeFromString<Catalog>(it) } }.getOrNull()
             ?: return@withLock catalog.orEmpty()
-        parsed.addons.map { it.toRemote() }.also {
+        parsed.addons.mapNotNull { it.toRemote() }.also {
             catalog = it
             catalogAt = now
         }
     }
 
-    private fun CatalogAddon.toRemote(): RemoteAddon {
+    /** Null when the addon has no file for [target]'s versions. */
+    private fun CatalogAddon.toRemote(): RemoteAddon? {
         val deps = requires.map { SourceRef(ProviderIds.GITHUB, it) }
         val latest = LinkedHashMap<AddonFlavor, RemoteFile>()
-        for ((key, flavor) in listOf("forever" to AddonFlavor.MAIN, "classic" to AddonFlavor.FALLBACK)) {
-            files[key]?.let { latest[flavor] = RemoteFile(it.fileId, it.version, it.url, deps) }
+        for ((flavor, spec) in target.flavors) {
+            files[spec.catalogKey]?.let { latest[flavor] = RemoteFile(it.fileId, it.version, it.url, deps) }
         }
+        if (latest.isEmpty()) return null
         return RemoteAddon(
             provider = id,
             projectId = repo,
@@ -114,6 +118,10 @@ class GitHubProvider(
 
     override suspend fun getMany(ids: List<String>): List<RemoteAddon> = ids.mapNotNull { get(it) }
 
+    /** The [target] flavor a release.json `flavor` value ("mainline", "bcc", "classic"…) stands for. */
+    private fun metadataFlavor(flavor: String): AddonFlavor? =
+        target.flavors.firstOrNull { (_, spec) -> spec.names.any { it.equals(flavor, ignoreCase = true) } }?.first
+
     private suspend fun fromMetadata(release: GhRelease): Map<AddonFlavor, GhAsset> {
         val metaAsset = release.assets.firstOrNull { it.name == "release.json" } ?: return emptyMap()
         val meta = runCatching {
@@ -131,8 +139,10 @@ class GitHubProvider(
 
     private fun fromFileNames(zips: List<GhAsset>): Map<AddonFlavor, GhAsset> {
         val result = LinkedHashMap<AddonFlavor, GhAsset>()
-        zips.firstOrNull { foreverName.containsMatchIn(it.name) }?.let { result[AddonFlavor.MAIN] = it }
-        zips.firstOrNull { classicName.containsMatchIn(it.name) }?.let { result[AddonFlavor.FALLBACK] = it }
+        for ((flavor, spec) in target.flavors) {
+            val suffix = Regex("""[-_](${spec.names.joinToString("|")})\.zip$""", RegexOption.IGNORE_CASE)
+            zips.firstOrNull { suffix.containsMatchIn(it.name) }?.let { result[flavor] = it }
+        }
         if (result.isEmpty() && zips.size == 1) result[AddonFlavor.OTHER] = zips.single()
         return result
     }
@@ -194,18 +204,11 @@ class GitHubProvider(
         private const val CATALOG_TTL_MS = 6 * 60 * 60 * 1000L
         private val headers = Headers.headersOf("Accept", "application/vnd.github+json")
         private val zipTypes = setOf("application/zip", "application/x-zip-compressed")
-        private val foreverName = Regex("""[-_](forever|camelot)\.zip$""", RegexOption.IGNORE_CASE)
-        private val classicName = Regex("""[-_](classic|vanilla)\.zip$""", RegexOption.IGNORE_CASE)
         private val repoUrl = Regex(
             """^(?:https?://)?(?:www\.)?github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?(?:[/?#].*)?$""",
             RegexOption.IGNORE_CASE,
         )
 
-        private fun metadataFlavor(flavor: String): AddonFlavor? = when (flavor.lowercase()) {
-            "classic", "vanilla" -> AddonFlavor.FALLBACK
-            "forever", "camelot" -> AddonFlavor.MAIN
-            else -> null
-        }
 
         /** `owner/repo` from a `github.com/owner/repo[...]` URL, or null when it isn't one. */
         fun fromUrl(url: String): String? {

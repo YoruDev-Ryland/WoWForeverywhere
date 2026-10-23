@@ -4,6 +4,7 @@ import app.gamenative.BuildConfig
 import app.gamenative.utils.Net
 import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
+import app.gamenative.wow.addons.AddonTarget
 import app.gamenative.wow.addons.ProviderIds
 import app.gamenative.wow.addons.SourceRef
 import kotlinx.serialization.Serializable
@@ -24,6 +25,7 @@ class CurseForgeProvider(
     private val http: OkHttpClient = Net.http,
     private val apiBase: String = "https://api.curseforge.com",
     proxy: Boolean = false,
+    private val target: AddonTarget = AddonTarget.FOREVER,
 ) : AddonProvider {
     override val id: String = ProviderIds.CURSEFORGE
     override val enabled: Boolean = apiKey.isNotBlank() || proxy
@@ -94,11 +96,11 @@ class CurseForgeProvider(
         return ProviderJson.decodeFromString<CfList>(body).data.mapNotNull { toRemote(it, keepEmpty = true) }
     }
 
-    /** Maps a mod; mods without a Forever or Classic file are dropped unless [keepEmpty]. */
+    /** Maps a mod; mods without a file for [target]'s versions are dropped unless [keepEmpty]. */
     private fun toRemote(mod: CfMod, keepEmpty: Boolean = false): RemoteAddon? {
         val latest = LinkedHashMap<AddonFlavor, RemoteFile>()
-        for ((flavor, typeId) in listOf(AddonFlavor.MAIN to FOREVER_TYPE_ID, AddonFlavor.FALLBACK to CLASSIC_ERA_TYPE_ID)) {
-            pickFile(mod, typeId)?.let { latest[flavor] = it }
+        for ((flavor, spec) in target.flavors) {
+            pickFile(mod, spec.curseForgeTypeId)?.let { latest[flavor] = it }
         }
         if (latest.isEmpty() && !keepEmpty) return null
         return RemoteAddon(
@@ -227,12 +229,6 @@ class CurseForgeProvider(
         private const val SORT_POPULARITY = 2
         private const val RELEASE = 1
         private const val REQUIRED_DEPENDENCY = 3
-
-        /** `wow_classic` (Classic Era) game version type. */
-        const val CLASSIC_ERA_TYPE_ID = 67408
-
-        /** `wow-forever` game version type, as used by WowUp's CurseForge provider. */
-        const val FOREVER_TYPE_ID = 88568
 
         fun forgeCdnUrl(fileId: Long, fileName: String): String =
             "https://edge.forgecdn.net/files/${fileId / 1000}/${fileId % 1000}/$fileName"

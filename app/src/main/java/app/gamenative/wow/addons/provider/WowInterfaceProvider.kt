@@ -3,6 +3,7 @@ package app.gamenative.wow.addons.provider
 import app.gamenative.utils.Net
 import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonFlavor
+import app.gamenative.wow.addons.AddonTarget
 import app.gamenative.wow.addons.ProviderIds
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -14,14 +15,15 @@ import okhttp3.OkHttpClient
  * WoWInterface (MMOUI v3 API, no key). Search and popular use the full `filelist.json`, cached for
  * an hour; [get] adds `filedetails/{id}.json` for the real download link.
  *
- * WoWInterface publishes one file per addon. Its `UICompatibility` decides the flavors: a "Forever"
- * entry (or a 1.60+ version) maps to FOREVER, a 1.x Classic entry to CLASSIC. A file compatible
- * with both is listed under both keys. Addons with neither are not listed.
+ * WoWInterface publishes one file per addon. Its `UICompatibility` decides the flavors through the
+ * [AddonTarget]'s rules (for WoW Forever: a "Forever" entry or a 1.60+ version is MAIN, another 1.x
+ * entry FALLBACK). A file compatible with both is listed under both keys. Addons with neither are not listed.
  */
 class WowInterfaceProvider(
     private val http: OkHttpClient = Net.http,
     private val apiBase: String = "https://api.mmoui.com/v3/game/WOW",
     private val clock: () -> Long = System::currentTimeMillis,
+    private val target: AddonTarget = AddonTarget.FOREVER,
 ) : AddonProvider {
     override val id: String = ProviderIds.WOWINTERFACE
     override val enabled: Boolean = true
@@ -110,14 +112,9 @@ class WowInterfaceProvider(
     private fun flavorOf(compat: WowiCompat): AddonFlavor? {
         val name = compat.name.lowercase()
         val parts = compat.version.split('.').mapNotNull { it.trim().toIntOrNull() }
-        val major = parts.getOrNull(0)
+        val major = parts.getOrNull(0) ?: 0
         val minor = parts.getOrNull(1) ?: 0
-        return when {
-            "forever" in name || "camelot" in name -> AddonFlavor.MAIN
-            major == 1 && minor >= 60 -> AddonFlavor.MAIN
-            major == 1 -> AddonFlavor.FALLBACK
-            else -> null
-        }
+        return target.flavors.firstOrNull { (_, spec) -> spec.wowInterface(major, minor, name) }?.first
     }
 
     @Serializable

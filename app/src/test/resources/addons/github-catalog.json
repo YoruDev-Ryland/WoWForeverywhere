@@ -69,6 +69,12 @@
      "version": "1.14.0",
      "url": "https://github.com/Nevcairiel/Mapster/releases/download/1.14.0/Mapster-1.14.0.zip",
      "interface": 16001
+    },
+    "mainline": {
+     "fileId": "607919619",
+     "version": "1.14.0",
+     "url": "https://github.com/Nevcairiel/Mapster/releases/download/1.14.0/Mapster-1.14.0-mainline.zip",
+     "interface": 120105
     }
    }
   }

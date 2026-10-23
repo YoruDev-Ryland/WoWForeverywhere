@@ -15,7 +15,15 @@ import urllib.error
 import urllib.request
 
 API = "https://api.github.com"
-FLAVORS = {"forever": "forever", "camelot": "forever", "classic": "classic", "vanilla": "classic"}
+# Release flavor names to catalog keys. The app reads "forever"/"classic" for WoW Forever and the
+# others for the experimental game versions.
+FLAVORS = {
+    "forever": "forever", "camelot": "forever",
+    "classic": "classic", "vanilla": "classic",
+    "bcc": "bcc", "tbc": "bcc",
+    "mists": "mists", "mop": "mists",
+    "mainline": "mainline", "retail": "mainline",
+}
 
 
 def get(url, accept="application/vnd.github+json"):
@@ -28,7 +36,7 @@ def get(url, accept="application/vnd.github+json"):
 
 
 def files_for(release):
-    """Maps 'forever'/'classic' to the release asset that serves it."""
+    """Maps each catalog key ('forever', 'classic', 'bcc', 'mists', 'mainline') to the release asset that serves it."""
     assets = {a["name"]: a for a in release.get("assets", [])}
     files = {}
     meta_asset = assets.get("release.json")
@@ -72,7 +80,9 @@ def build(sources):
         except (urllib.error.URLError, ValueError, KeyError) as e:
             print(f"skip {repo}: {e}", file=sys.stderr)
             continue
-        if not files:
+        # Released apps list every catalog entry, so one without a Forever or Classic file would show up
+        # there as an addon nothing can install. Files for the other versions only ride along.
+        if not {"forever", "classic"} & files.keys():
             print(f"skip {repo}: no Forever or Classic files", file=sys.stderr)
             continue
         owner = repo.split("/")[0]

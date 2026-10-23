@@ -14,7 +14,7 @@ object AddonScanner {
      * `X-Wago-ID`, or when one depends on a sibling with the same name prefix (`DBM-Core` +
      * `DBM-StatusBarTimers`).
      */
-    fun scan(addonsDir: File, known: List<InstalledAddon>, now: Long = System.currentTimeMillis()): List<InstalledAddon> {
+    fun scan(addonsDir: File, known: List<InstalledAddon>, now: Long = System.currentTimeMillis(), target: AddonTarget = AddonTarget.FOREVER): List<InstalledAddon> {
         val present = addonsDir.listFiles()
             .orEmpty()
             .filter { it.isDirectory && !it.name.startsWith(".") }
@@ -30,11 +30,11 @@ object AddonScanner {
             .filter { it.name !in claimed }
             .sortedBy { it.name.lowercase() }
             .mapNotNull { dir ->
-                val toc = FlavorRules.pickToc(dir) ?: return@mapNotNull null
+                val toc = FlavorRules.pickToc(dir, target) ?: return@mapNotNull null
                 FolderInfo(dir.name, toc, FlavorRules.readTocs(dir))
             }
 
-        return kept + group(infos).map { toRecord(it, now) }
+        return kept + group(infos).map { toRecord(it, now, target) }
     }
 
     private fun group(infos: List<FolderInfo>): List<List<FolderInfo>> {
@@ -74,7 +74,7 @@ object AddonScanner {
 
     private fun prefix(folder: String): String = folder.split('-', '_').first()
 
-    private fun toRecord(group: List<FolderInfo>, now: Long): InstalledAddon {
+    private fun toRecord(group: List<FolderInfo>, now: Long, target: AddonTarget): InstalledAddon {
         val names = group.map { it.name }.toSet()
         // Main folder: prefer one with no dependencies inside the group, then the shortest name.
         val main = group.minWith(
@@ -88,7 +88,7 @@ object AddonScanner {
             name = main.toc.title ?: main.name,
             folders = group.map { it.name }.sortedWith(compareBy({ it != main.name }, { it })),
             version = main.toc.version,
-            flavor = FlavorRules.classify(group.flatMap { it.tocs }),
+            flavor = FlavorRules.classify(group.flatMap { it.tocs }, target),
             source = source,
             installedAt = now,
         )

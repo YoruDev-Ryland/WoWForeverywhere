@@ -46,6 +46,7 @@ class AddonManager(
     private val db: AddonDb,
     private val providers: List<AddonProvider>,
     private val http: OkHttpClient,
+    private val target: AddonTarget = AddonTarget.FOREVER,
 ) {
     private val lock = Mutex()
 
@@ -127,7 +128,7 @@ class AddonManager(
             "not a URL: $url"
         }
         val folders = downloadAndExtract(trimmed)
-        val main = folders.firstNotNullOfOrNull { FlavorRules.pickToc(File(addonsDir, it)) }
+        val main = folders.firstNotNullOfOrNull { FlavorRules.pickToc(File(addonsDir, it), target) }
         val record = InstalledAddon(
             id = "${ProviderIds.URL}:$trimmed",
             name = main?.title ?: folders.first(),
@@ -311,12 +312,12 @@ class AddonManager(
     }
 
     private fun classifyFolders(folders: List<String>): AddonFlavor =
-        FlavorRules.classify(folders.flatMap { FlavorRules.readTocs(File(addonsDir, it)) })
+        FlavorRules.classify(folders.flatMap { FlavorRules.readTocs(File(addonsDir, it)) }, target)
 
     /** Brings the database in line with the disk and persists it. Call with [lock] held. */
     private fun syncDb(): List<InstalledAddon> {
         val known = db.load()
-        val scanned = AddonScanner.scan(addonsDir, known)
+        val scanned = AddonScanner.scan(addonsDir, known, target = target)
         if (scanned != known) db.save(scanned)
         return scanned
     }

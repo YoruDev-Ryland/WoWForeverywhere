@@ -1,5 +1,6 @@
 package app.gamenative.wow.addons
 
+import app.gamenative.wow.product.GameVersion
 import java.io.File
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -28,18 +29,59 @@ enum class AddonFlavor {
     OTHER,
 }
 
-object FlavorRules {
-    private val foreverSuffixes = listOf("-Forever", "_Forever", "-Camelot", "_Camelot")
-    private val classicSuffixes = listOf("-Classic", "_Classic", "-Vanilla", "_Vanilla")
+/**
+ * How one game version is labelled across addon sources. [names] are the words it goes by in TOC
+ * suffixes (`Foo_Mainline.toc`), release metadata and zip names (`foo-1.0-bcc.zip`).
+ */
+class FlavorSpec(
+    val curseForgeTypeId: Int,
+    val wagoGameVersion: String,
+    val catalogKey: String,
+    val names: List<String>,
+    val interfaces: IntRange,
+    /** Whether a WoWInterface compatibility entry (`12.1.0`, "Curse of Ulatek") is this version. */
+    val wowInterface: (major: Int, minor: Int, name: String) -> Boolean,
+) {
+    fun hasTocSuffix(base: String) = names.any { base.endsWith("-$it", ignoreCase = true) || base.endsWith("_$it", ignoreCase = true) }
 
-    /** Flavor implied by a TOC file name suffix, or null when it has none of the known suffixes. */
-    fun ofTocFileName(name: String): AddonFlavor? {
-        val base = name.removeSuffix(".toc").removeSuffix(".TOC")
-        return when {
-            foreverSuffixes.any { base.endsWith(it, ignoreCase = true) } -> AddonFlavor.MAIN
-            classicSuffixes.any { base.endsWith(it, ignoreCase = true) } -> AddonFlavor.FALLBACK
-            else -> null
+    companion object {
+        private fun isForeverName(name: String) = "forever" in name || "camelot" in name
+
+        val FOREVER = FlavorSpec(88568, "forever", "forever", listOf("forever", "camelot"), FOREVER_INTERFACE_RANGE) { major, minor, name ->
+            isForeverName(name) || (major == 1 && minor >= 60)
         }
+        val CLASSIC_ERA = FlavorSpec(67408, "classic", "classic", listOf("classic", "vanilla"), 10000..15999) { major, minor, name ->
+            major == 1 && minor < 60 && !isForeverName(name)
+        }
+        val ANNIVERSARY = FlavorSpec(73246, "bc", "bcc", listOf("bcc", "tbc"), 20000..29999) { major, _, _ -> major == 2 }
+        val MISTS = FlavorSpec(79434, "mop", "mists", listOf("mists", "mop"), 50000..59999) { major, _, _ -> major == 5 }
+        val RETAIL = FlavorSpec(517, "retail", "mainline", listOf("mainline", "retail"), 100000..999999) { major, _, _ -> major >= 10 }
+    }
+}
+
+/** What the addon browser looks for: the selected version's addons, plus a fallback version's (Forever only). */
+data class AddonTarget(val main: FlavorSpec, val fallback: FlavorSpec?) {
+    /** [AddonFlavor.MAIN] then [AddonFlavor.FALLBACK], each with its spec. */
+    val flavors: List<Pair<AddonFlavor, FlavorSpec>> get() = listOfNotNull(AddonFlavor.MAIN to main, fallback?.let { AddonFlavor.FALLBACK to it })
+
+    companion object {
+        val FOREVER = AddonTarget(FlavorSpec.FOREVER, FlavorSpec.CLASSIC_ERA)
+    }
+}
+
+fun GameVersion.addonTarget(): AddonTarget = when (this) {
+    GameVersion.FOREVER -> AddonTarget.FOREVER
+    GameVersion.CLASSIC_ERA -> AddonTarget(FlavorSpec.CLASSIC_ERA, null)
+    GameVersion.ANNIVERSARY -> AddonTarget(FlavorSpec.ANNIVERSARY, null)
+    GameVersion.MISTS -> AddonTarget(FlavorSpec.MISTS, null)
+    GameVersion.RETAIL -> AddonTarget(FlavorSpec.RETAIL, null)
+}
+
+object FlavorRules {
+    /** Flavor implied by a TOC file name suffix, or null when it has none of [target]'s suffixes. */
+    fun ofTocFileName(name: String, target: AddonTarget = AddonTarget.FOREVER): AddonFlavor? {
+        val base = name.removeSuffix(".toc").removeSuffix(".TOC")
+        return target.flavors.firstOrNull { (_, spec) -> spec.hasTocSuffix(base) }?.first
     }
 
     /** Every `.toc` in [folder] that belongs to the folder (`<Folder>.toc` or `<Folder><suffix>.toc`). */
@@ -56,29 +98,25 @@ object FlavorRules {
         runCatching { TocParser.parse(folder.name, file.name, file.readText()) }.getOrNull()
     }
 
-    /** The TOC the Forever client would load: a Forever TOC, else plain `<Folder>.toc`, else a Classic TOC. */
-    fun pickToc(folder: File): Toc? {
+    /** The TOC the game would load: one for [target]'s version, else plain `<Folder>.toc`, else a fallback TOC. */
+    fun pickToc(folder: File, target: AddonTarget = AddonTarget.FOREVER): Toc? {
         val files = tocFiles(folder)
         val plainName = "${folder.name}.toc"
-        val chosen = files.firstOrNull { ofTocFileName(it.name) == AddonFlavor.MAIN }
+        val chosen = files.firstOrNull { ofTocFileName(it.name, target) == AddonFlavor.MAIN }
             ?: files.firstOrNull { it.name.equals(plainName, ignoreCase = true) }
-            ?: files.firstOrNull { ofTocFileName(it.name) == AddonFlavor.FALLBACK }
+            ?: files.firstOrNull { ofTocFileName(it.name, target) == AddonFlavor.FALLBACK }
             ?: return null
         return runCatching { TocParser.parse(folder.name, chosen.name, chosen.readText()) }.getOrNull()
     }
 
     /**
-     * Flavor of an addon from all of its TOCs. Forever evidence (suffix or interface) wins, then
-     * Classic evidence (suffix or an `11xxx` interface), else [AddonFlavor.OTHER].
+     * Flavor of an addon from all of its TOCs. Evidence for [target]'s version (suffix or interface)
+     * wins, then for its fallback, else [AddonFlavor.OTHER].
      */
-    fun classify(tocs: List<Toc>): AddonFlavor {
-        val suffixes = tocs.map { ofTocFileName(it.fileName) }
-        val unsuffixed = tocs.filter { ofTocFileName(it.fileName) == null }
-        val interfaces = unsuffixed.flatMap { it.interfaces }
-        return when {
-            AddonFlavor.MAIN in suffixes || interfaces.any { it in FOREVER_INTERFACE_RANGE } -> AddonFlavor.MAIN
-            AddonFlavor.FALLBACK in suffixes || interfaces.any { it in 10000..15999 } -> AddonFlavor.FALLBACK
-            else -> AddonFlavor.OTHER
-        }
+    fun classify(tocs: List<Toc>, target: AddonTarget = AddonTarget.FOREVER): AddonFlavor {
+        val suffixes = tocs.map { ofTocFileName(it.fileName, target) }
+        val interfaces = tocs.filter { ofTocFileName(it.fileName, target) == null }.flatMap { it.interfaces }
+        return target.flavors.firstOrNull { (flavor, spec) -> flavor in suffixes || interfaces.any { it in spec.interfaces } }?.first
+            ?: AddonFlavor.OTHER
     }
 }

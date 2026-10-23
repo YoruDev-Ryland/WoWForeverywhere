@@ -10,10 +10,12 @@ import app.gamenative.wow.addons.AddonDb
 import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.AddonListing
 import app.gamenative.wow.addons.AddonManager
+import app.gamenative.wow.addons.addonTarget
 import app.gamenative.wow.addons.provider.CurseForgeProvider
 import app.gamenative.wow.addons.provider.GitHubProvider
 import app.gamenative.wow.addons.provider.WagoProvider
 import app.gamenative.wow.addons.provider.WowInterfaceProvider
+import app.gamenative.wow.product.GameVersion
 import app.gamenative.wow.product.WowProduct
 import java.io.File
 import kotlinx.coroutines.CancellationException
@@ -30,6 +32,8 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
     enum class Mode { INSTALLED, BROWSE }
 
     val addonsDir = File(gameRoot, "${product.flavorDir}/Interface/AddOns")
+    val version = GameVersion.of(product)
+    private val target = version.addonTarget()
     private val manager = AddonManager(
         addonsDir = addonsDir,
         db = AddonDb.forAddonsDir(addonsDir),
@@ -38,12 +42,14 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
                 BuildConfig.CURSEFORGE_API_KEY,
                 apiBase = BuildConfig.CURSEFORGE_API_BASE,
                 proxy = BuildConfig.CURSEFORGE_API_KEY.isBlank(),
+                target = target,
             ),
-            WagoProvider(BuildConfig.WAGO_API_KEY),
-            WowInterfaceProvider(),
-            GitHubProvider(),
+            WagoProvider(BuildConfig.WAGO_API_KEY, target = target),
+            WowInterfaceProvider(target = target),
+            GitHubProvider(target = target),
         ),
         http = Net.http,
+        target = target,
     )
 
     var mode by mutableStateOf(Mode.INSTALLED)
