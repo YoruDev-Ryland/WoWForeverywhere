@@ -55,6 +55,7 @@ The game runs as Blizzard's own Windows ARM64 client under Wine, with DXVK and a
 | AYN Odin 3 / Odin Portal | Snapdragon 8 Elite | Supported through the bundled Adreno 8xx driver |
 | RedMagic 11 Pro | Snapdragon 8 Elite | Reported working in-world |
 | Samsung Galaxy S23, S24, S25, Z Fold | Snapdragon 8 Gen 2 and later | Supported |
+| Meta Quest 3 | Snapdragon XR2 Gen 2 | Reported working, best at minimum graphics settings |
 
 If you try a device that isn't listed, please [open an issue](https://github.com/YoruDev-Ryland/WoWForeverywhere/issues) with the result.
 
