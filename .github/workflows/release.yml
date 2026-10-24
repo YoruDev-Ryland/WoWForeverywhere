@@ -57,6 +57,10 @@ jobs:
             echo "::error::RELEASE_KEYSTORE_BASE64 is not set; releases must be signed with the release key."
             exit 1
           fi
+          if [ -z "$CURSEFORGE_PROXY_TOKEN" ]; then
+            echo "::error::CURSEFORGE_PROXY_TOKEN is not set; without it the release can't use the CurseForge proxy."
+            exit 1
+          fi
           mkdir -p app/keystores
           echo "$KEYSTORE_BASE64" | base64 -d > app/keystores/release.jks
           {
