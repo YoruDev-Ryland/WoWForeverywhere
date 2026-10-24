@@ -881,15 +881,33 @@ internal fun Throwable.isPermissionDenied() =
 
 private const val DEFAULT_DRIVER = "Turnip-WoW-scheduler-test"
 private const val ADRENO_8XX_DRIVER = "Turnip-V32-RP6sched"
+
 private const val PROTON_VERSION = "proton-11.0-90624-arm64ec"
 private const val DXVK_VERSION = "2.4.1-wow-aarch64-test"
 
-internal data class GpuProfile(val driver: String, val tuDebug: String, val screenSize: String, val label: String, val edition: String) {
+internal data class GpuProfile(
+    val driver: String,
+    val tuDebug: String,
+    val screenSize: String,
+    val label: String,
+    val edition: String,
+    /** MB of video memory the game is told it has; 0 leaves it to the driver. */
+    val maxDeviceMemory: Int = 0,
+) {
     companion object {
-        fun detect(context: Context) = if (isAdreno8xxDevice(context)) {
-            GpuProfile(ADRENO_8XX_DRIVER, "noconform,sysmem", "1280x720", "Adreno 8xx", "Snapdragon 8 Elite / Adreno 8xx")
-        } else {
-            GpuProfile(DEFAULT_DRIVER, "noconform", "1920x1080", "Adreno 740", "Snapdragon 8 Series / Adreno 740")
+        val ADRENO_740 = GpuProfile(DEFAULT_DRIVER, "noconform", "1920x1080", "Adreno 740", "Snapdragon 8 Series / Adreno 740")
+        val ADRENO_8XX = GpuProfile(ADRENO_8XX_DRIVER, "noconform,sysmem", "1280x720", "Adreno 8xx", "Snapdragon 8 Elite / Adreno 8xx")
+
+        /**
+         * Meta Quest 3 / 3S: the headset's own driver ("System"), because every Turnip build runs out of
+         * device memory under Horizon OS (issue #2). 720p and a 1.5 GB video memory cap ease the shared memory.
+         */
+        val QUEST = GpuProfile("System", "", "1280x720", "Meta Quest 3", "Meta Quest 3 / XR2 Gen 2", maxDeviceMemory = 1536)
+
+        fun detect(context: Context) = when {
+            isMetaQuest3(Build.MANUFACTURER, Build.MODEL, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else "") -> QUEST
+            isAdreno8xxDevice(context) -> ADRENO_8XX
+            else -> ADRENO_740
         }
 
         private fun isAdreno8xxDevice(context: Context): Boolean {
@@ -908,6 +926,15 @@ internal data class GpuProfile(val driver: String, val tuDebug: String, val scre
  * non-16:9 screens (e.g. a foldable's near-square inner display) instead of being letterboxed.
  * The pixel count stays the same as [baseSize], so GPU cost matches the 16:9 default.
  */
+internal fun graphicsDriverConfig(gpu: GpuProfile): String =
+    "version=${gpu.driver},adrenotoolsTurnip=1,resourceType=buffer,bcnEmulation=auto,quality=high" +
+        (if (gpu.maxDeviceMemory > 0) ",maxDeviceMemory=${gpu.maxDeviceMemory}" else "")
+
+/** Meta Quest 3 or 3S: Oculus hardware with the Snapdragon XR2 Gen 2 (SXR2230P). */
+internal fun isMetaQuest3(manufacturer: String, model: String, socModel: String): Boolean =
+    manufacturer.equals("Oculus", ignoreCase = true) &&
+        (model.startsWith("Quest 3", ignoreCase = true) || socModel.equals("SXR2230P", ignoreCase = true))
+
 internal fun fitScreenSizeToWindow(context: Context, baseSize: String): String {
     val (windowWidth, windowHeight) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         context.getSystemService(WindowManager::class.java).currentWindowMetrics.bounds.let { it.width() to it.height() }
@@ -975,7 +1002,7 @@ internal fun prepareLaunch(
 
 private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile, screenSize: String): JSONObject {
     val samsungEnv = if (Build.MANUFACTURER.equals("samsung", ignoreCase = true)) " FD_DEV_FEATURES=enable_tp_ubwc_flag_hint=1" else ""
-    val envVars = "WRAPPER_MAX_IMAGE_COUNT=0 ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact,deck_emu MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=0 MESA_VK_WSI_PRESENT_MODE=mailbox TU_DEBUG=${gpu.tuDebug} VKD3D_SHADER_MODEL=6_0 PULSE_LATENCY_MSEC=144$samsungEnv"
+    val envVars = "WRAPPER_MAX_IMAGE_COUNT=0 ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact,deck_emu MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=0 MESA_VK_WSI_PRESENT_MODE=mailbox${if (gpu.tuDebug.isNotEmpty()) " TU_DEBUG=${gpu.tuDebug}" else ""} VKD3D_SHADER_MODEL=6_0 PULSE_LATENCY_MSEC=144$samsungEnv"
     return JSONObject().apply {
         put("id", CONTAINER_ID)
         put("name", "WoW Forever")
@@ -983,7 +1010,7 @@ private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile
         put("envVars", envVars)
         put("graphicsDriver", "Wrapper")
         put("graphicsDriverVersion", gpu.driver)
-        put("graphicsDriverConfig", "version=${gpu.driver},adrenotoolsTurnip=1,resourceType=buffer,bcnEmulation=auto,quality=high")
+        put("graphicsDriverConfig", graphicsDriverConfig(gpu))
         put("displayRenderer", "vulkan")
         put("dxwrapper", "dxvk-$DXVK_VERSION-1")
         put("dxwrapperConfig", "version=$DXVK_VERSION-1")
