@@ -9,6 +9,7 @@ services:
     environment:
       PROXY_HOST: ${PROXY_HOST:-cf.yorudev.com}
       CURSEFORGE_API_KEY: ${CURSEFORGE_API_KEY:?Set CURSEFORGE_API_KEY in .env}
+      APP_TOKEN: ${APP_TOKEN:-}
     volumes:
       - caddy_data:/data
       - caddy_config:/config

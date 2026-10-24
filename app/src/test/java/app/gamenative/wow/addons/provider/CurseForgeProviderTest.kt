@@ -128,4 +128,27 @@ class CurseForgeProviderTest {
         assertNull(req.headers["x-api-key"])
         assertTrue(req.headers["User-Agent"]!!.startsWith("WoWForeverywhere/"))
     }
+
+    @Test
+    fun proxyTokenIsSentWhenBuiltIn() = runBlocking {
+        val proxied = CurseForgeProvider("", OkHttpClient(), apiBase = server.base(), proxy = true, proxyToken = "t0ken")
+        proxied.search("questie", 0)
+        assertEquals("t0ken", server.takeRequest().headers["X-Foreverywhere-Token"])
+    }
+
+    @Test
+    fun noProxyTokenHeaderWithoutOne() = runBlocking {
+        CurseForgeProvider("", OkHttpClient(), apiBase = server.base(), proxy = true).search("questie", 0)
+        assertNull(server.takeRequest().headers["X-Foreverywhere-Token"])
+    }
+
+    @Test
+    fun scrambledTokenRoundTrips() {
+        val token = "a3f9c2e1-proxy"
+        val mask = "00ff10203040506070809aabbccd"
+        val masked = token.toByteArray().mapIndexed { i, b -> (b.toInt() xor mask.chunked(2)[i].toInt(16)) and 0xff }
+            .joinToString("") { "%02x".format(it) }
+        assertEquals(token, CurseForgeProvider.unscramble(masked, mask))
+        assertEquals("", CurseForgeProvider.unscramble("", ""))
+    }
 }

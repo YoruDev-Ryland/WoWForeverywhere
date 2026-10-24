@@ -43,6 +43,7 @@ class AddonsController(gameRoot: File, product: WowProduct, private val scope: C
                 apiBase = BuildConfig.CURSEFORGE_API_BASE,
                 proxy = BuildConfig.CURSEFORGE_API_KEY.isBlank(),
                 target = target,
+                proxyToken = CurseForgeProvider.unscramble(BuildConfig.CURSEFORGE_PROXY_TOKEN_A, BuildConfig.CURSEFORGE_PROXY_TOKEN_B),
             ),
             WagoProvider(BuildConfig.WAGO_API_KEY, target = target),
             WowInterfaceProvider(target = target),

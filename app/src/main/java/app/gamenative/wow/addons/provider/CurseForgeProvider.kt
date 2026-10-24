@@ -26,6 +26,8 @@ class CurseForgeProvider(
     private val apiBase: String = "https://api.curseforge.com",
     proxy: Boolean = false,
     private val target: AddonTarget = AddonTarget.FOREVER,
+    /** Release builds carry this so the proxy can tell them from other builds (see server/curseforge-proxy). */
+    private val proxyToken: String = "",
 ) : AddonProvider {
     override val id: String = ProviderIds.CURSEFORGE
     override val enabled: Boolean = apiKey.isNotBlank() || proxy
@@ -35,6 +37,7 @@ class CurseForgeProvider(
             .add("Accept", "application/json")
             .add("User-Agent", "WoWForeverywhere/${BuildConfig.VERSION_NAME}")
             .apply { if (apiKey.isNotBlank()) add("x-api-key", apiKey) }
+            .apply { if (proxyToken.isNotBlank()) add("X-Foreverywhere-Token", proxyToken) }
             .build()
     }
 
@@ -229,6 +232,16 @@ class CurseForgeProvider(
         private const val SORT_POPULARITY = 2
         private const val RELEASE = 1
         private const val REQUIRED_DEPENDENCY = 3
+
+        /**
+         * The proxy token from its two BuildConfig halves: [masked] XOR [mask], both hex. Stored this way
+         * so the token never appears as plain text in the APK.
+         */
+        fun unscramble(masked: String, mask: String): String {
+            val a = masked.chunked(2).map { it.toInt(16) }
+            val b = mask.chunked(2).map { it.toInt(16) }
+            return a.zip(b) { x, y -> (x xor y).toByte() }.toByteArray().decodeToString()
+        }
 
         fun forgeCdnUrl(fileId: Long, fileName: String): String =
             "https://edge.forgecdn.net/files/${fileId / 1000}/${fileId % 1000}/$fileName"

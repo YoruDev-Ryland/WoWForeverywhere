@@ -34,9 +34,14 @@
 		|| (method('POST') && path('/v1/mods'))
 	`
 	handle @allowed {
+		# Only WoW Foreverywhere: its User-Agent always, and the token its release builds carry once
+		# APP_TOKEN is set. Empty means not required yet, so versions from before the token keep working.
+		@stranger not expression `{header.User-Agent}.startsWith('WoWForeverywhere/') && ({env.APP_TOKEN} == '' || {header.X-Foreverywhere-Token} == {env.APP_TOKEN})`
+		respond @stranger 403
 		reverse_proxy https://api.curseforge.com {
 			header_up Host api.curseforge.com
 			header_up x-api-key {env.CURSEFORGE_API_KEY}
+			header_up -X-Foreverywhere-Token
 		}
 	}
 

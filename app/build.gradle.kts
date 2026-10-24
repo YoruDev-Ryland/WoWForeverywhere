@@ -1,3 +1,4 @@
+import java.security.SecureRandom
 import java.util.Properties
 import java.io.FileInputStream
 
@@ -34,6 +35,7 @@ fun apiKey(name: String): String = providers.gradleProperty(name).orNull ?: loca
 secrets {
     ignoreList.add("CURSEFORGE_API_KEY")
     ignoreList.add("CURSEFORGE_PROXY")
+    ignoreList.add("CURSEFORGE_PROXY_TOKEN")
     ignoreList.add("WAGO_API_KEY")
 }
 
@@ -73,6 +75,13 @@ android {
         val curseForgeBase = if (curseForgeKey.isNotBlank()) "https://api.curseforge.com" else apiKey("CURSEFORGE_PROXY").ifBlank { "https://cf.yorudev.com" }
         buildConfigField("String", "CURSEFORGE_API_KEY", "\"${javaString(curseForgeKey)}\"")
         buildConfigField("String", "CURSEFORGE_API_BASE", "\"${javaString(curseForgeBase)}\"")
+        // The release build's proxy token (a GitHub secret), split into a random mask and the token XOR that
+        // mask so it isn't a plain string in the APK. Builds without it can't use the proxy once it requires one.
+        val proxyToken = apiKey("CURSEFORGE_PROXY_TOKEN").toByteArray()
+        val proxyMask = ByteArray(proxyToken.size).also { SecureRandom().nextBytes(it) }
+        fun hex(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(it) }
+        buildConfigField("String", "CURSEFORGE_PROXY_TOKEN_A", "\"${hex(ByteArray(proxyToken.size) { (proxyToken[it].toInt() xor proxyMask[it].toInt()).toByte() })}\"")
+        buildConfigField("String", "CURSEFORGE_PROXY_TOKEN_B", "\"${hex(proxyMask)}\"")
         buildConfigField("String", "WAGO_API_KEY", "\"${javaString(apiKey("WAGO_API_KEY"))}\"")
         val iconValue = "@mipmap/ic_launcher"
         val iconRoundValue = "@mipmap/ic_launcher_round"
