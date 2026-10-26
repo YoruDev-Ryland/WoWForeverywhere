@@ -25,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import app.gamenative.wow.install.InstallController
 import app.gamenative.wow.install.InstallUiState
+import app.gamenative.wow.product.GameRegion
+import app.gamenative.wow.product.GameRegions
 import app.gamenative.wow.product.GameVersion
 import app.gamenative.wow.ui.components.FwDialog
 import app.gamenative.wow.ui.components.FwRow
@@ -110,6 +112,7 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
             }
         }
         GameVersionSection(launcher, onVersionChanged)
+        RegionSection(launcher)
         FwSection("Support Foreverywhere") {
             val context = LocalContext.current
             Text("Foreverywhere is free and open source. If it saves you some time, you can support its development on Ko-fi.", style = Fw.Text)
@@ -132,6 +135,31 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
             )
             val context = LocalContext.current
             FwButton("Source code on GitHub", { Links.open(context, Links.REPO) }, kind = FwButtonKind.Ghost, icon = Icons.AutoMirrored.Filled.OpenInNew)
+        }
+    }
+}
+
+/** Settings, Region: the Battle.net region the game plays in, written as its portal at the next launch. */
+@Composable
+private fun RegionSection(launcher: LauncherController) {
+    val context = LocalContext.current
+    val branch = remember(launcher.gamePath, launcher.files.product) {
+        app.gamenative.wow.product.BuildInfo.read(java.io.File(launcher.gamePath))?.active(launcher.files.product)?.get("Branch")
+    }
+    var current by remember(branch) { mutableStateOf(GameRegions.effective(branch)) }
+    FwSection("Region") {
+        Text("The Battle.net region you play in. A change applies the next time you start the game.", style = Fw.Secondary)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            GameRegion.entries.forEach { r ->
+                FwRow(selected = r == current, onClick = {
+                    GameRegions.save(context, r)
+                    current = r
+                }) {
+                    Text(r.label, style = Fw.Text, modifier = Modifier.weight(1f))
+                    Text(r.portal, style = Fw.Data.copy(color = Fw.Ash))
+                    if (r == current) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                }
+            }
         }
     }
 }

@@ -48,6 +48,7 @@ import app.gamenative.utils.AppUpdater
 import app.gamenative.utils.StorageUtils
 import app.gamenative.utils.renderReleaseNotes
 import app.gamenative.wow.product.WowProduct
+import app.gamenative.wow.product.GameRegions
 import app.gamenative.wow.product.GameVersion
 import app.gamenative.wow.product.GameVersions
 import app.gamenative.wow.product.detectProduct
@@ -1078,6 +1079,7 @@ private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String
         screenSize,
         installLocale(root, product),
         installPortal(root, product),
+        forcePortal = GameRegions.chosen != null,
     ) ?: return
     configWtf.parentFile?.mkdirs()
     configWtf.writeText(updated.joinToString("\n") + "\n")
@@ -1096,6 +1098,7 @@ internal fun buildConfigWtf(
     screenSize: String,
     locale: String = "enUS",
     portal: String = product.portal,
+    forcePortal: Boolean = false,
 ): List<String>? {
     if (existing == null) {
         val defaults = configDefaults(product, locale, portal) + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
@@ -1106,17 +1109,21 @@ internal fun buildConfigWtf(
         line == null || !fitsScreen(line.substringAfter(" ").substringAfter(" ").trim('"'), screenSize)
     }
     // A config carried over from another product (e.g. beta to launch) gets this product's portal and agent.
+    // Once the player has picked a region ([forcePortal]) the portal follows it; before that a hand-edited one stays.
+    val portalLine = "SET portal \"$portal\""
     val missingPortal = existing.none { it.startsWith("SET portal ", ignoreCase = true) }
+    val wrongPortal = forcePortal && existing.any { it.startsWith("SET portal ", ignoreCase = true) && it != portalLine }
     val agentLine = "SET agentUID \"${product.code}\""
     val wrongAgent = existing.any { it.startsWith("SET agentUID ", ignoreCase = true) && it != agentLine }
-    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongAgent) return null
+    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongPortal && !wrongAgent) return null
     return existing.filterNot { line ->
         line.startsWith("SET gxApi ", ignoreCase = true) ||
+            (wrongPortal && line.startsWith("SET portal ", ignoreCase = true)) ||
             (wrongAgent && line.startsWith("SET agentUID ", ignoreCase = true)) ||
             staleResolutionKeys.any { line.startsWith("SET $it ", ignoreCase = true) }
     } + listOfNotNull(
         GX_API_LINE,
-        "SET portal \"$portal\"".takeIf { missingPortal },
+        portalLine.takeIf { missingPortal || wrongPortal },
         agentLine.takeIf { wrongAgent },
     ) + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
 }
@@ -1126,11 +1133,14 @@ internal fun installLocale(root: File, product: WowProduct): String =
     app.gamenative.wow.product.BuildInfo.read(root)?.active(product)?.get("Tags")
         ?.split(" ", ":")?.firstOrNull { Regex("[a-z]{2}[A-Z]{2}").matches(it) } ?: "enUS"
 
-/** Live products use the install's region (its `.build.info` Branch: us, eu, kr, tw) as the portal. */
+/**
+ * Live products use the region the player picked, else the install's own (its `.build.info` Branch:
+ * us, eu, kr, tw), as the portal. The beta always uses its "test" portal.
+ */
 internal fun installPortal(root: File, product: WowProduct): String {
     if (product == WowProduct.BETA) return product.portal
-    val branch = app.gamenative.wow.product.BuildInfo.read(root)?.active(product)?.get("Branch").orEmpty()
-    return branch.takeIf { it.length == 2 }?.uppercase() ?: product.portal
+    val branch = app.gamenative.wow.product.BuildInfo.read(root)?.active(product)?.get("Branch")
+    return GameRegions.chosen?.portal ?: branch?.takeIf { it.length == 2 }?.uppercase() ?: product.portal
 }
 
 private val RESOLUTION_KEYS = listOf("gxFullscreenResolution", "gxWindowedResolution")

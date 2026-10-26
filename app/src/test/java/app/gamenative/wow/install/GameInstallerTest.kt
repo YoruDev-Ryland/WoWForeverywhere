@@ -273,6 +273,14 @@ class GameInstallerTest {
     }
 
     @Test
+    fun freshInstallRecordsTheChosenRegion() = runBlocking {
+        installer().run(InstallRequest(root, WowProduct.FOREVER, region = "eu")) {}
+        val row = BuildInfo.read(root)!!.active(WowProduct.FOREVER)!!
+        assertEquals("eu", row["Branch"])
+        assertTrue(row["Tags"]!!.contains("EU?"))
+    }
+
+    @Test
     fun reportsProgressToCompletion() = runBlocking {
         val seen = mutableListOf<InstallProgress>()
         installer().run(req) { seen += it }
