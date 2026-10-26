@@ -64,7 +64,7 @@ If you try a device that isn't listed, please [open an issue](https://github.com
 1. Download **WoW-Foreverywhere.apk** from the [latest release](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/latest) and open it on your device. Android asks you to allow installs from your browser or file manager the first time.
 2. Open **Foreverywhere** and tap **Get started**. The app checks your device and asks for file access, which it needs to install the game in a folder you can reach.
 3. **Find game.** The app looks for an existing install on internal storage and SD cards. Pick one to use it as it is, or choose **Install fresh**.
-4. **Install.** Choose internal storage or the SD card and start the download. You can leave the app while it runs; progress shows in your notifications.
+4. **Install.** Choose internal storage or the SD card, pick your region (Americas, Europe, Korea or Taiwan), and start the download. You can leave the app while it runs; progress shows in your notifications.
 5. **Sign in.** Optionally save your Battle.net email and password so the game logs you in automatically.
 6. Press **Play**.
 
@@ -138,7 +138,7 @@ Because the game needs the password in plain text for those few seconds, any app
 </p>
 
 - **Game files** shows where the game is installed and its version. **Install or repair** checks every file and downloads only what's missing or damaged. Once WoW Forever launches, this screen also offers to switch a beta install to the launch version, reusing the game data you already have.
-- **Settings** shows the app version, checks for app updates, and lists which addon sources are available in your build.
+- **Settings** shows the app version and checks for app updates. It's also where you change your **region** and the game's **resolution**, which is set for your device by default; a higher resolution looks sharper but is harder on the device. Both apply the next time you start the game.
 
 ### Other WoW versions (experimental)
 

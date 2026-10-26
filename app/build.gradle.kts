@@ -65,8 +65,8 @@ android {
         manifestPlaceholders["screenOrientation"] = "unspecified"
         buildConfigField("boolean", "XR_BUILD", "false")
 
-        versionCode = 7
-        versionName = "0.4.2"
+        versionCode = 8
+        versionName = "0.5.0"
 
         buildConfigField("boolean", "GOLD", "false")
         // With a key the app calls CurseForge directly; without one (release builds) it goes through the

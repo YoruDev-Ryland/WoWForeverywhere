@@ -1,12 +1,20 @@
-# Meta Quest 3 support
+# Region and resolution settings
 
-WoW Forever now runs on the **Meta Quest 3**, as an app in the headset's 2D window.
+## Choose your region
 
-- The game used to crash at startup with an out-of-memory error, because the bundled graphics driver doesn't work under the Quest's system. On a Quest 3 the app now uses the headset's own graphics driver instead.
-- The Quest 3 also gets lighter defaults out of the box: a 1280x720 render size and a 1.5 GB video memory limit, which keep the game stable on the headset's shared memory.
-- The game runs best at minimum graphics settings on the Quest.
+Players outside the Americas no longer need to edit the game's `Config.wtf` by hand.
 
-Every other device is unchanged. Thanks to lopinister for tracking down the cause and testing the fix.
+- When you install the game, pick your region: **Americas**, **Europe**, **Korea** or **Taiwan**. Americas is the default.
+- You can change it later under **Settings → Region**. The app then sets the game to that region every time it starts it.
+- If you never pick one, nothing changes: the app keeps using your install's own region and leaves any setting you made by hand alone.
+
+## Choose your resolution
+
+**Settings → Resolution** sets the size the game runs at: **Automatic** (the size chosen for your device, as before), **720p**, **900p**, **1080p** or **Native** (your screen's own size). Each option shows the exact size it gives on your screen. Higher looks sharper but is harder on the device. Once you raise it, the game's own resolution options go up to that size too.
+
+## Fixes
+
+- On narrow or portrait screens, the welcome screen's buttons no longer get cut off, and the setup steps at the top no longer squash together.
 
 ## Install
 
