@@ -49,6 +49,8 @@ import app.gamenative.utils.StorageUtils
 import app.gamenative.utils.renderReleaseNotes
 import app.gamenative.wow.product.WowProduct
 import app.gamenative.wow.product.GameRegions
+import app.gamenative.wow.product.RenderSize
+import app.gamenative.wow.product.RenderSizes
 import app.gamenative.wow.product.GameVersion
 import app.gamenative.wow.product.GameVersions
 import app.gamenative.wow.product.detectProduct
@@ -936,13 +938,24 @@ internal fun isMetaQuest3(manufacturer: String, model: String, socModel: String)
     manufacturer.equals("Oculus", ignoreCase = true) &&
         (model.startsWith("Quest 3", ignoreCase = true) || socModel.equals("SXR2230P", ignoreCase = true))
 
-internal fun fitScreenSizeToWindow(context: Context, baseSize: String): String {
+internal fun fitScreenSizeToWindow(context: Context, baseSize: String, choice: RenderSize = RenderSizes.selected): String {
     val (windowWidth, windowHeight) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         context.getSystemService(WindowManager::class.java).currentWindowMetrics.bounds.let { it.width() to it.height() }
     } else {
         context.resources.displayMetrics.let { it.widthPixels to it.heightPixels }
     }
-    return fitScreenSize(baseSize, windowWidth, windowHeight)
+    return renderSize(choice, baseSize, windowWidth, windowHeight)
+}
+
+/**
+ * The game's screen size for [choice]: the device profile's [profileSize] (Automatic) or a fixed size,
+ * reshaped to the window's aspect ratio, or the window's own size (Native), always landscape.
+ */
+internal fun renderSize(choice: RenderSize, profileSize: String, windowWidth: Int, windowHeight: Int): String {
+    if (choice == RenderSize.NATIVE && windowWidth > 0 && windowHeight > 0) {
+        return "${maxOf(windowWidth, windowHeight) / 2 * 2}x${minOf(windowWidth, windowHeight) / 2 * 2}"
+    }
+    return fitScreenSize(choice.size ?: profileSize, windowWidth, windowHeight)
 }
 
 internal fun fitScreenSize(baseSize: String, windowWidth: Int, windowHeight: Int): String {

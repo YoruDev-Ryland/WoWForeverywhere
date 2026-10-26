@@ -28,6 +28,9 @@ import app.gamenative.wow.install.InstallUiState
 import app.gamenative.wow.product.GameRegion
 import app.gamenative.wow.product.GameRegions
 import app.gamenative.wow.product.GameVersion
+import app.gamenative.wow.product.RenderSize
+import app.gamenative.wow.product.RenderSizes
+import app.gamenative.ui.screen.wow.fitScreenSizeToWindow
 import app.gamenative.wow.ui.components.FwDialog
 import app.gamenative.wow.ui.components.FwRow
 import app.gamenative.wow.ui.components.GameIconImage
@@ -126,8 +129,9 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
             Text("Wago needs an API key built into the app. Builds without one still use the other sources.", style = Fw.Secondary)
         }
         FwSection("Device") {
-            Text("${launcher.gpu.edition} profile · render size ${launcher.gpu.screenSize}", style = Fw.Data)
+            Text("${launcher.gpu.edition} profile", style = Fw.Data)
         }
+        ResolutionSection(launcher)
         FwSection("About") {
             Text(
                 "Unofficial community project, not affiliated with Blizzard Entertainment. The game is downloaded from Blizzard's own servers and needs your own Battle.net account. Based on jaredgei/wow-forever-android (GPL-3.0).",
@@ -135,6 +139,29 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
             )
             val context = LocalContext.current
             FwButton("Source code on GitHub", { Links.open(context, Links.REPO) }, kind = FwButtonKind.Ghost, icon = Icons.AutoMirrored.Filled.OpenInNew)
+        }
+    }
+}
+
+/** Settings, Resolution: the game's screen size, from the device profile or picked here. */
+@Composable
+private fun ResolutionSection(launcher: LauncherController) {
+    val context = LocalContext.current
+    var current by remember { mutableStateOf(RenderSizes.selected) }
+    FwSection("Resolution") {
+        Text("The size the game runs at. Higher looks sharper but is harder on the device. A change applies the next time you start the game.", style = Fw.Secondary)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            RenderSize.entries.forEach { r ->
+                val result = remember(r) { fitScreenSizeToWindow(context, launcher.gpu.screenSize, r) }
+                FwRow(selected = r == current, onClick = {
+                    RenderSizes.save(context, r)
+                    current = r
+                }) {
+                    Text(if (r == RenderSize.AUTO) "Automatic, for this device" else r.label, style = Fw.Text, modifier = Modifier.weight(1f))
+                    Text(result, style = Fw.Data.copy(color = Fw.Ash))
+                    if (r == current) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                }
+            }
         }
     }
 }
