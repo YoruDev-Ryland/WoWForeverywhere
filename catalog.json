@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-26T06:54:36+00:00",
+ "generated": "2026-10-27T06:43:54+00:00",
  "addons": [
   {
    "repo": "Questie/Questie",
@@ -9,33 +9,33 @@
    "author": "Questie",
    "icon": "https://avatars.githubusercontent.com/u/75445548?v=4",
    "website": "https://github.com/Questie/Questie",
-   "stars": 1115,
-   "downloads": 6418,
-   "updated": "2026-10-23T22:41:45Z",
+   "stars": 1117,
+   "downloads": 2431,
+   "updated": "2026-10-26T16:11:07Z",
    "requires": [],
    "files": {
     "classic": {
-     "fileId": "670616045",
-     "version": "bundle/v12.2.0+v1.0.7",
-     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.2.0%2Bv1.0.7/Questie-v12.2.0%2Bv1.0.7.zip",
+     "fileId": "678700875",
+     "version": "bundle/v12.3.1+v1.0.9",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.3.1%2Bv1.0.9/Questie-v12.3.1%2Bv1.0.9.zip",
      "interface": 11508
     },
     "bcc": {
-     "fileId": "670616045",
-     "version": "bundle/v12.2.0+v1.0.7",
-     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.2.0%2Bv1.0.7/Questie-v12.2.0%2Bv1.0.7.zip",
+     "fileId": "678700875",
+     "version": "bundle/v12.3.1+v1.0.9",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.3.1%2Bv1.0.9/Questie-v12.3.1%2Bv1.0.9.zip",
      "interface": 20506
     },
     "mists": {
-     "fileId": "670616045",
-     "version": "bundle/v12.2.0+v1.0.7",
-     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.2.0%2Bv1.0.7/Questie-v12.2.0%2Bv1.0.7.zip",
+     "fileId": "678700875",
+     "version": "bundle/v12.3.1+v1.0.9",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.3.1%2Bv1.0.9/Questie-v12.3.1%2Bv1.0.9.zip",
      "interface": 50503
     },
     "forever": {
-     "fileId": "670616045",
-     "version": "bundle/v12.2.0+v1.0.7",
-     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.2.0%2Bv1.0.7/Questie-v12.2.0%2Bv1.0.7.zip",
+     "fileId": "678700875",
+     "version": "bundle/v12.3.1+v1.0.9",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.3.1%2Bv1.0.9/Questie-v12.3.1%2Bv1.0.9.zip",
      "interface": 16001
     }
    }
@@ -49,7 +49,7 @@
    "icon": "https://avatars.githubusercontent.com/u/84252897?v=4",
    "website": "https://github.com/RestedXP/RXPGuides",
    "stars": 167,
-   "downloads": 4057,
+   "downloads": 4884,
    "updated": "2026-10-21T19:44:38Z",
    "requires": [],
    "files": {
@@ -94,38 +94,38 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DeadlyBossMods",
    "stars": 281,
-   "downloads": 1902,
-   "updated": "2026-10-22T03:27:18Z",
+   "downloads": 271,
+   "updated": "2026-10-26T17:30:39Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "664555198",
-     "version": "12.1.17",
-     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.17/DBM-Core-12.1.17.zip",
+     "fileId": "678930975",
+     "version": "12.1.18",
+     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.18/DBM-Core-12.1.18.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "664555198",
-     "version": "12.1.17",
-     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.17/DBM-Core-12.1.17.zip",
-     "interface": 120100
+     "fileId": "678930975",
+     "version": "12.1.18",
+     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.18/DBM-Core-12.1.18.zip",
+     "interface": 120105
     },
     "classic": {
-     "fileId": "664555198",
-     "version": "12.1.17",
-     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.17/DBM-Core-12.1.17.zip",
+     "fileId": "678930975",
+     "version": "12.1.18",
+     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.18/DBM-Core-12.1.18.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "664555198",
-     "version": "12.1.17",
-     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.17/DBM-Core-12.1.17.zip",
+     "fileId": "678930975",
+     "version": "12.1.18",
+     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.18/DBM-Core-12.1.18.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "664555198",
-     "version": "12.1.17",
-     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.17/DBM-Core-12.1.17.zip",
+     "fileId": "678930975",
+     "version": "12.1.18",
+     "url": "https://github.com/DeadlyBossMods/DeadlyBossMods/releases/download/12.1.18/DBM-Core-12.1.18.zip",
      "interface": 16001
     }
    }
@@ -139,40 +139,40 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DBM-Dungeons",
    "stars": 32,
-   "downloads": 2070,
-   "updated": "2026-10-19T22:46:43Z",
+   "downloads": 200,
+   "updated": "2026-10-26T17:33:16Z",
    "requires": [
     "DeadlyBossMods/DeadlyBossMods"
    ],
    "files": {
     "mists": {
-     "fileId": "657658347",
-     "version": "r268",
-     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r268/DBM-Dungeons-r268.zip",
+     "fileId": "678949135",
+     "version": "r269",
+     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r269/DBM-Dungeons-r269.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "657658347",
-     "version": "r268",
-     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r268/DBM-Dungeons-r268.zip",
-     "interface": 120100
+     "fileId": "678949135",
+     "version": "r269",
+     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r269/DBM-Dungeons-r269.zip",
+     "interface": 120105
     },
     "classic": {
-     "fileId": "657658347",
-     "version": "r268",
-     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r268/DBM-Dungeons-r268.zip",
+     "fileId": "678949135",
+     "version": "r269",
+     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r269/DBM-Dungeons-r269.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "657658347",
-     "version": "r268",
-     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r268/DBM-Dungeons-r268.zip",
+     "fileId": "678949135",
+     "version": "r269",
+     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r269/DBM-Dungeons-r269.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "657658347",
-     "version": "r268",
-     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r268/DBM-Dungeons-r268.zip",
+     "fileId": "678949135",
+     "version": "r269",
+     "url": "https://github.com/DeadlyBossMods/DBM-Dungeons/releases/download/r269/DBM-Dungeons-r269.zip",
      "interface": 16001
     }
    }
@@ -186,7 +186,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/BigWigs",
    "stars": 275,
-   "downloads": 1199,
+   "downloads": 1635,
    "updated": "2026-10-23T16:33:18Z",
    "requires": [],
    "files": {
@@ -231,7 +231,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/LittleWigs",
    "stars": 114,
-   "downloads": 882,
+   "downloads": 1215,
    "updated": "2026-10-23T18:57:13Z",
    "requires": [
     "BigWigsMods/BigWigs"
@@ -272,7 +272,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9000280?v=4",
    "website": "https://github.com/Tercioo/Plater-Nameplates",
    "stars": 106,
-   "downloads": 2448,
+   "downloads": 2719,
    "updated": "2026-10-15T11:38:52Z",
    "requires": [],
    "files": {
@@ -317,7 +317,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/ShadowedUnitFrames",
    "stars": 59,
-   "downloads": 22388,
+   "downloads": 22529,
    "updated": "2026-01-18T18:37:26Z",
    "requires": [],
    "files": {
@@ -350,7 +350,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/Dominos",
    "stars": 83,
-   "downloads": 62,
+   "downloads": 193,
    "updated": "2026-10-25T20:42:42Z",
    "requires": [],
    "files": {
@@ -395,7 +395,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Bartender4",
    "stars": 76,
-   "downloads": 2326,
+   "downloads": 2502,
    "updated": "2026-10-02T18:55:43Z",
    "requires": [],
    "files": {
@@ -440,7 +440,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/OmniCC",
    "stars": 107,
-   "downloads": 20120,
+   "downloads": 20256,
    "updated": "2025-12-14T21:07:04Z",
    "requires": [],
    "files": {
@@ -478,8 +478,8 @@
    "author": "WeakAuras",
    "icon": "https://avatars.githubusercontent.com/u/9121773?v=4",
    "website": "https://github.com/WeakAuras/WeakAuras2",
-   "stars": 1445,
-   "downloads": 6948,
+   "stars": 1446,
+   "downloads": 7238,
    "updated": "2026-10-10T17:21:31Z",
    "requires": [],
    "files": {
@@ -512,7 +512,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Mapster",
    "stars": 21,
-   "downloads": 1154,
+   "downloads": 1279,
    "updated": "2026-10-03T14:08:46Z",
    "requires": [],
    "files": {
@@ -539,7 +539,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/HandyNotes",
    "stars": 20,
-   "downloads": 8123,
+   "downloads": 8371,
    "updated": "2026-08-12T05:56:20Z",
    "requires": [],
    "files": {
@@ -578,7 +578,7 @@
    "icon": "https://avatars.githubusercontent.com/u/2187?v=4",
    "website": "https://github.com/kemayo/wow-silverdragon",
    "stars": 28,
-   "downloads": 258,
+   "downloads": 407,
    "updated": "2026-10-24T16:50:54Z",
    "requires": [],
    "files": {
@@ -623,7 +623,7 @@
    "icon": "https://avatars.githubusercontent.com/u/45636893?v=4",
    "website": "https://github.com/Hoizame/AtlasLootClassic",
    "stars": 90,
-   "downloads": 127823,
+   "downloads": 127872,
    "updated": "2023-10-22T14:37:24Z",
    "requires": [],
    "files": {
@@ -650,7 +650,7 @@
    "icon": "https://avatars.githubusercontent.com/u/19425199?v=4",
    "website": "https://github.com/AdiAddons/AdiBags",
    "stars": 153,
-   "downloads": 97937,
+   "downloads": 98049,
    "updated": "2024-09-08T02:20:23Z",
    "requires": [],
    "files": {
@@ -683,38 +683,38 @@
    "icon": "https://avatars.githubusercontent.com/u/69928556?v=4",
    "website": "https://github.com/SFX-WoW/Masque",
    "stars": 54,
-   "downloads": 1353,
-   "updated": "2026-10-24T00:49:26Z",
+   "downloads": 264,
+   "updated": "2026-10-26T22:14:23Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "670857387",
-     "version": "12.1.5",
-     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.5/Masque-12.1.5.zip",
+     "fileId": "679642032",
+     "version": "12.1.6",
+     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.6/Masque-12.1.6.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "670857387",
-     "version": "12.1.5",
-     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.5/Masque-12.1.5.zip",
+     "fileId": "679642032",
+     "version": "12.1.6",
+     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.6/Masque-12.1.6.zip",
      "interface": 120105
     },
     "classic": {
-     "fileId": "670857387",
-     "version": "12.1.5",
-     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.5/Masque-12.1.5.zip",
+     "fileId": "679642032",
+     "version": "12.1.6",
+     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.6/Masque-12.1.6.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "670857387",
-     "version": "12.1.5",
-     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.5/Masque-12.1.5.zip",
+     "fileId": "679642032",
+     "version": "12.1.6",
+     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.6/Masque-12.1.6.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "670857387",
-     "version": "12.1.5",
-     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.5/Masque-12.1.5.zip",
+     "fileId": "679642032",
+     "version": "12.1.6",
+     "url": "https://github.com/SFX-WoW/Masque/releases/download/12.1.6/Masque-12.1.6.zip",
      "interface": 16001
     }
    }
