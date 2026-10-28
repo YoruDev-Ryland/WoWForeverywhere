@@ -28,6 +28,7 @@
     <application
         android:name=".PluviaApp"
         android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="true"
         android:allowBackup="false"
         android:extractNativeLibs="true"
         android:icon="${icon}"

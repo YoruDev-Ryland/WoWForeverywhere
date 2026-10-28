@@ -9,20 +9,38 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.security.DigestOutputStream
 import java.security.MessageDigest
+import java.util.Locale
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.Inflater
 import timber.log.Timber
 
 object WowClientDownloader {
-    const val FLAVOR_DIR = "_classic_beta_"
-    const val EXE_NAME = "WowB-ARM64.exe"
-    const val TARGET_PRODUCT = "wow_classic_beta"
+    const val FLAVOR_DIR = "_forever_"
+    const val EXE_NAME = "Wow-ARM64.exe"
+    const val TARGET_PRODUCT = "wowf"
     const val BUILD_INFO = ".build.info"
+
+    // The pre-release beta. Its Data/ archives are shared with the full release, so beta installs upgrade in place.
+    const val LEGACY_FLAVOR_DIR = "_classic_beta_"
+    const val LEGACY_PRODUCT = "wow_classic_beta"
     private const val PLATFORM_ARCH = "arm64"
     private const val EXCLUDED_ARCH = "x86_64"
     private const val PATCH_URL = "http://us.patch.battle.net:1119/$TARGET_PRODUCT"
     private const val DEFAULT_CDN_PATH = "tpr/wow"
     private val DEFAULT_CDN_HOSTS = listOf("level3.blizzard.com", "us.cdn.blizzard.com")
+    private const val INDEX_DOWNLOAD_THREADS = 8
+    private val BUILD_INFO_HEADER = listOf(
+        "Branch!STRING:0", "Active!DEC:1", "Build Key!HEX:16", "CDN Key!HEX:16", "Install Key!HEX:16", "IM Size!DEC:4",
+        "CDN Path!STRING:0", "CDN Hosts!STRING:0", "CDN Servers!STRING:0", "Tags!STRING:0", "Armadillo!STRING:0",
+        "Last Activated!STRING:0", "Version!STRING:0", "KeyRing!HEX:16", "Product!STRING:0",
+    ).joinToString("|")
+    private val EU_COUNTRIES = setOf(
+        "AT", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS", "IT",
+        "LT", "LU", "LV", "MT", "NL", "NO", "PL", "PT", "RO", "RU", "SE", "SI", "SK", "UA", "TR",
+    )
 
     private val patchHttp by lazy {
         Net.http.newBuilder()
@@ -40,10 +58,14 @@ object WowClientDownloader {
         val remoteCdnConfig: String = "",
         val remoteCdnHosts: List<String> = emptyList(),
         val remoteCdnPath: String = DEFAULT_CDN_PATH,
+        val remoteCdnServers: List<String> = emptyList(),
     )
 
     fun readBuildInfo(buildInfo: File): Map<String, String>? =
         runCatching { activeBuild(buildInfo) }.getOrNull()
+
+    fun installedProducts(buildInfo: File): Set<String> =
+        runCatching { parsePsv(buildInfo.readText()).mapNotNull { it["Product"] }.toSet() }.getOrDefault(emptySet())
 
     fun checkVersion(gameRoot: File): VersionCheckResult? {
         val row = runCatching { activeBuild(File(gameRoot, BUILD_INFO)) }.getOrElse {
@@ -64,39 +86,69 @@ object WowClientDownloader {
             return null
         }
 
+        val remote = fetchRemote(row) ?: return null
+        val isOutdated = localVersion != remote.remoteVersion ||
+            (remote.remoteBuildConfig.isNotBlank() && localBuildKey != remote.remoteBuildConfig)
+        Timber.i("checkVersion: localVersion=$localVersion, remoteVersion=${remote.remoteVersion}, isOutdated=$isOutdated")
+        return remote.copy(localVersion = localVersion, isOutdated = isOutdated)
+    }
+
+    private fun fetchRemote(localRow: Map<String, String>? = null): VersionCheckResult? {
         val versions = runCatching { fetchText("$PATCH_URL/versions") }.getOrElse {
-            Timber.w(it, "checkVersion: http call failed")
+            Timber.w(it, "fetchRemote: http call failed")
             return null
         } ?: run {
-            Timber.w("checkVersion: response body is null or unsuccessful")
+            Timber.w("fetchRemote: response body is null or unsuccessful")
             return null
         }
         val remoteRow = parsePsv(versions).firstOrNull()
             ?: run {
-                Timber.w("checkVersion: no remote row in $versions")
+                Timber.w("fetchRemote: no remote row in $versions")
                 return null
             }
         val remoteVersion = remoteRow["VersionsName"] ?: remoteRow["VersionName"] ?: remoteRow["Version"]
             ?: run {
-                Timber.w("checkVersion: no remoteVersion in $remoteRow")
+                Timber.w("fetchRemote: no remoteVersion in $remoteRow")
                 return null
             }
-        val remoteBuildKey = remoteRow["BuildConfig"].orEmpty()
 
         val cdns = runCatching { fetchText("$PATCH_URL/cdns") }.getOrNull()?.let(::parsePsv).orEmpty()
         val cdnsRow = cdns.firstOrNull { it["Name"] == "us" } ?: cdns.firstOrNull()
 
-        val isOutdated = localVersion != remoteVersion || (remoteBuildKey.isNotBlank() && localBuildKey != remoteBuildKey)
-        Timber.i("checkVersion: localVersion=$localVersion, remoteVersion=$remoteVersion, isOutdated=$isOutdated")
         return VersionCheckResult(
-            localVersion = localVersion,
+            localVersion = "",
             remoteVersion = remoteVersion,
-            isOutdated = isOutdated,
-            remoteBuildConfig = remoteBuildKey,
+            isOutdated = true,
+            remoteBuildConfig = remoteRow["BuildConfig"].orEmpty(),
             remoteCdnConfig = remoteRow["CDNConfig"].orEmpty(),
-            remoteCdnHosts = (cdnsRow?.get("Hosts") ?: row["CDN Hosts"])?.let(::splitHosts) ?: DEFAULT_CDN_HOSTS,
-            remoteCdnPath = cdnsRow?.get("Path") ?: row["CDN Path"] ?: DEFAULT_CDN_PATH,
+            remoteCdnHosts = (cdnsRow?.get("Hosts") ?: localRow?.get("CDN Hosts"))?.let(::splitHosts) ?: DEFAULT_CDN_HOSTS,
+            remoteCdnPath = cdnsRow?.get("Path") ?: localRow?.get("CDN Path") ?: DEFAULT_CDN_PATH,
+            remoteCdnServers = (cdnsRow?.get("Servers") ?: localRow?.get("CDN Servers"))?.let(::splitHosts).orEmpty(),
         )
+    }
+
+    /**
+     * Sets up the full-release client in [gameRoot]: an empty folder for a new install, or a beta install that is upgraded
+     * in place. Downloads the build configs, archive indexes and ARM64 client, then adds the [TARGET_PRODUCT] row to
+     * [BUILD_INFO] last, so an interrupted install is simply resumed the next time. Game assets that aren't on disk yet
+     * are streamed from the CDN by the game client while playing.
+     */
+    fun install(gameRoot: File, onStatus: (String) -> Unit) {
+        onStatus("Checking the latest World of Warcraft build...")
+        val target = fetchRemote() ?: throw IOException("Couldn't reach Blizzard's patch server. Check your connection.")
+        check(target.remoteBuildConfig.isNotBlank()) { "Blizzard's patch server returned no build" }
+        listOf("Data/data", "Data/indices", "Data/config").forEach { File(gameRoot, it).mkdirs() }
+        seedResidency(gameRoot)
+        updateGame(gameRoot, target, onStatus)
+    }
+
+    // The Battle.net app tracks which shared archives each product uses in Data/<product>/. A beta install has the same
+    // archives as the full release, so its record is a better starting point than none.
+    private fun seedResidency(gameRoot: File) {
+        val residency = File(gameRoot, "Data/$TARGET_PRODUCT")
+        val legacy = File(gameRoot, "Data/$LEGACY_PRODUCT")
+        if (residency.exists() || !legacy.isDirectory) return
+        runCatching { legacy.copyRecursively(residency) }.onFailure { Timber.w(it, "Couldn't copy the beta residency data") }
     }
 
     fun updateGame(gameRoot: File, target: VersionCheckResult, onStatus: (String) -> Unit) {
@@ -112,6 +164,7 @@ object WowClientDownloader {
         cdnConfigRaw?.let { saveConfig(gameRoot, target.remoteCdnConfig, it) }
 
         val cdnConfig = cdnConfigRaw?.let { parseConfig(String(it)) }
+        cdnConfig?.let { syncIndices(gameRoot, cdn, it, onStatus) }
         syncClient(
             gameRoot = gameRoot,
             cdn = cdn,
@@ -119,10 +172,9 @@ object WowClientDownloader {
             archives = lazy { cdnConfig?.let { ArchiveLocator(cdn, gameRoot, it.getValue("archives")) } },
             onStatus = onStatus,
         )
-        cdnConfig?.let { syncIndices(gameRoot, cdn, it, onStatus) }
 
         onStatus("Updating build information...")
-        updateBuildInfo(gameRoot, target)
+        upsertBuildInfo(File(gameRoot, BUILD_INFO), target)
     }
 
     fun download(gameRoot: File, onStatus: (String) -> Unit) {
@@ -181,49 +233,77 @@ object WowClientDownloader {
         check(temp.renameTo(dest)) { "Could not write ${dest.path}" }
     }
 
-    private fun saveConfig(gameRoot: File, key: String, bytes: ByteArray) {
-        val dir = File(gameRoot, "Data/config/${key.substring(0, 2)}/${key.substring(2, 4)}")
-        dir.mkdirs()
-        File(dir, key).writeBytes(bytes)
-    }
+    private fun saveConfig(gameRoot: File, key: String, bytes: ByteArray) =
+        writeAtomically(File(gameRoot, "Data/config/${key.substring(0, 2)}/${key.substring(2, 4)}/$key"), bytes)
 
+    // Patch archives and archive groups aren't needed to play: the former live under patch/, and the client builds the latter.
     private fun syncIndices(gameRoot: File, cdn: Cdn, cdnConfig: Map<String, List<String>>, onStatus: (String) -> Unit) {
-        val indicesDir = File(gameRoot, "Data/indices")
-        indicesDir.mkdirs()
-        val required = listOf("archives", "patch-archives").flatMap { cdnConfig[it].orEmpty() } +
-            listOf("file-index", "patch-file-index", "archive-group", "patch-archive-group").mapNotNull { cdnConfig[it]?.firstOrNull() }
-        val missing = required.distinct().filter { !File(indicesDir, "$it.index").isFile }
-        missing.forEachIndexed { index, hash ->
-            onStatus("Syncing index archive (${index + 1}/${missing.size})...")
-            cdn.fetch("data", "$hash.index")?.let { File(indicesDir, "$hash.index").writeBytes(it) }
+        val required = cdnConfig["archives"].orEmpty() + cdnConfig["file-index"].orEmpty()
+        val missing = required.distinct().filter { !File(gameRoot, "Data/indices/$it.index").isFile }
+        if (missing.isEmpty()) return
+        val done = AtomicInteger()
+        val pool = Executors.newFixedThreadPool(INDEX_DOWNLOAD_THREADS)
+        try {
+            missing.map { hash ->
+                pool.submit {
+                    cdn.fetch("data", "$hash.index")?.let { writeAtomically(File(gameRoot, "Data/indices/$hash.index"), it) }
+                    onStatus("Syncing archive indexes (${done.incrementAndGet()}/${missing.size})...")
+                }
+            }.forEach { it.get() }
+        } catch (e: ExecutionException) {
+            throw e.cause ?: e
+        } finally {
+            pool.shutdownNow()
         }
     }
 
-    private fun updateBuildInfo(gameRoot: File, target: VersionCheckResult) {
-        val buildInfo = File(gameRoot, BUILD_INFO)
-        if (!buildInfo.isFile) return
-        val lines = buildInfo.readLines()
-        if (lines.isEmpty()) return
+    private fun writeAtomically(dest: File, bytes: ByteArray) {
+        dest.parentFile?.mkdirs()
+        val temp = File(dest.parentFile, "${dest.name}.download")
+        temp.writeBytes(bytes)
+        dest.delete()
+        check(temp.renameTo(dest)) { "Could not write ${dest.path}" }
+    }
+
+    /**
+     * Points the [TARGET_PRODUCT] row of [buildInfo] at [target], adding the row (and the file) when it's missing.
+     * A new row copies the region of an existing beta row so an upgraded install keeps its region. The game streams
+     * missing assets from the "CDN Servers" URLs and crashes on startup when there are none.
+     */
+    internal fun upsertBuildInfo(buildInfo: File, target: VersionCheckResult) {
+        val lines = buildInfo.takeIf { it.isFile }?.readLines()?.filter { it.isNotBlank() }?.ifEmpty { null } ?: listOf(BUILD_INFO_HEADER)
         val header = psvHeader(lines.first())
-        val productIdx = header.indexOf("Product")
-        val activeIdx = header.indexOf("Active")
         val updates = mapOf(
+            "Active" to "1",
             "Version" to target.remoteVersion,
             "Build Key" to target.remoteBuildConfig,
             "CDN Key" to target.remoteCdnConfig,
             "CDN Hosts" to target.remoteCdnHosts.joinToString(" "),
             "CDN Path" to target.remoteCdnPath,
-        ).mapNotNull { (column, value) -> header.indexOf(column).takeIf { it >= 0 && value.isNotBlank() }?.to(value) }
+            "CDN Servers" to target.remoteCdnServers.joinToString(" "),
+            "Product" to TARGET_PRODUCT,
+        ).filterValues { it.isNotBlank() }
 
-        val updated = lines.mapIndexed { idx, line ->
-            if (idx == 0 || line.isBlank()) return@mapIndexed line
-            val cols = line.split("|").toMutableList()
-            val matchesProduct = productIdx < 0 || cols.getOrNull(productIdx) == TARGET_PRODUCT
-            val isActive = activeIdx < 0 || cols.getOrNull(activeIdx) == "1"
-            if (matchesProduct && isActive) updates.forEach { (i, value) -> if (i in cols.indices) cols[i] = value }
-            cols.joinToString("|")
+        val rows = lines.drop(1).map { line -> header.zip(line.split("|")).toMap() }
+        val existing = rows.indexOfFirst { it["Product"] == TARGET_PRODUCT }
+        val updated = if (existing >= 0) {
+            rows.mapIndexed { idx, row -> if (idx == existing) row + updates else row }
+        } else {
+            val branch = rows.firstOrNull { it["Product"] == LEGACY_PRODUCT }?.get("Branch")?.takeIf { it.isNotBlank() } ?: defaultBranch()
+            val region = branch.uppercase(Locale.ROOT)
+            val tags = listOf("speech", "text").joinToString(":") { "Windows $PLATFORM_ARCH $region? enUS $it?" }
+            rows + (mapOf("Branch" to branch, "Tags" to tags) + updates)
         }
-        buildInfo.writeText(updated.joinToString("\n") + "\n")
+        val text = (listOf(lines.first()) + updated.map { row -> header.joinToString("|") { row[it].orEmpty() } }).joinToString("\n") + "\n"
+        writeAtomically(buildInfo, text.toByteArray())
+    }
+
+    // Best guess at the region the Battle.net app would record, for installs that have no beta row to copy it from.
+    private fun defaultBranch() = when (Locale.getDefault().country.uppercase(Locale.ROOT)) {
+        "KR" -> "kr"
+        "TW", "HK" -> "tw"
+        in EU_COUNTRIES -> "eu"
+        else -> "us"
     }
 
     private data class InstallEntry(val name: String, val ckey: String, val tags: Set<String>) {
@@ -355,10 +435,7 @@ object WowClientDownloader {
                 val index = if (local.isFile) {
                     local.readBytes()
                 } else {
-                    val fetched = cdn.fetch("data", "$archive.index") ?: continue
-                    local.parentFile?.mkdirs()
-                    local.writeBytes(fetched)
-                    fetched
+                    cdn.fetch("data", "$archive.index")?.also { writeAtomically(local, it) } ?: continue
                 }
                 val buffer = ByteBuffer.wrap(index)
                 for (block in 0 until index.size / 4096 * 4096 step 4096) {

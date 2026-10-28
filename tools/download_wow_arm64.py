@@ -10,6 +10,7 @@ from pathlib import Path
 CDN = "http://level3.blizzard.com/tpr/wow"
 INSTALL_DIR = Path(os.environ.get("WOW_DIR", "/Applications/World of Warcraft"))
 PLATFORM_TAGS = {"Windows", "arm64"}
+PRODUCT = "wowf"
 
 
 def fetch(kind, key, byte_range=None):
@@ -75,9 +76,9 @@ def active_row():
     header = [h.split("!")[0] for h in lines[0].split("|")]
     for line in lines[1:]:
         row = dict(zip(header, line.split("|")))
-        if row.get("Active") == "1":
+        if row.get("Active") == "1" and row.get("Product") == PRODUCT:
             return row
-    raise SystemExit("no active build in .build.info")
+    raise SystemExit(f"no active {PRODUCT} build in .build.info")
 
 
 def active_build_config():
@@ -138,7 +139,7 @@ def ckeys_to_ekeys(data, wanted):
 
 
 def main():
-    out_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "WowB-ARM64")
+    out_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "Wow-ARM64")
     build_key, version = active_build_config()
     print(f"build {version} ({build_key})")
     build = read_config(fetch("config", build_key).decode())

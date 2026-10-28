@@ -43,13 +43,13 @@ done < "$WORK/push.txt"
 local_build="$(cat "$SRC_ROOT/.build.info")"
 device_build="$(adb shell cat "'$DST_ROOT/.build.info'" 2>/dev/null | tr -d '\r' || true)"
 adb push "$SRC_ROOT/.build.info" "$DST_ROOT/.build.info" > /dev/null
-adb push "$SRC_ROOT/_classic_beta_/.flavor.info" "$DST_ROOT/_classic_beta_/.flavor.info" > /dev/null
+adb push "$SRC_ROOT/_forever_/.flavor.info" "$DST_ROOT/_forever_/.flavor.info" > /dev/null
 
 if [ "$local_build" != "$device_build" ] || [ "${FORCE_EXE:-0}" = "1" ]; then
     WOW_DIR="$SRC_ROOT" python3 "$REPO_DIR/tools/download_wow_arm64.py" "$WORK/exe"
-    adb push "$WORK/exe/WowB-ARM64.exe" "$DST_ROOT/_classic_beta_/WowB-ARM64.exe" > /dev/null
+    adb push "$WORK/exe/Wow-ARM64.exe" "$DST_ROOT/_forever_/Wow-ARM64.exe" > /dev/null
 else
-    echo "Build unchanged, keeping WowB-ARM64.exe"
+    echo "Build unchanged, keeping Wow-ARM64.exe"
 fi
 
 list_device > "$WORK/device.txt"
