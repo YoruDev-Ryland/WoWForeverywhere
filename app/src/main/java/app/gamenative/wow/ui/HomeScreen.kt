@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -110,10 +111,10 @@ private fun SupportLink() {
 
 @Composable
 private fun Header(launcher: LauncherController) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             GameIconImage(launcher.version.icon, 34.dp) { Box(Modifier.size(34.dp)) }
-            Text("Foreverywhere", style = Fw.Title.copy(fontSize = 21.sp))
+            Text("Foreverywhere", style = Fw.Title.copy(fontSize = 21.sp), maxLines = 1, softWrap = false)
             if (launcher.version.isExperimental) {
                 Text(launcher.version.displayName, style = Fw.Data, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                 Text("Experimental", style = Fw.Data.copy(color = Fw.Warn), modifier = Modifier.background(Fw.Stone, Fw.Pill).padding(horizontal = 10.dp, vertical = 4.dp))
@@ -128,7 +129,15 @@ private fun Header(launcher: LauncherController) {
             version.isOutdated -> "Game update ${version.remoteVersion} available" to Fw.Warn
             else -> "Game up to date" to Fw.Ok
         }
-        Text(text, style = Fw.Data.copy(color = color), modifier = Modifier.background(Fw.Stone, Fw.Pill).padding(horizontal = 14.dp, vertical = 6.dp))
+        // The title is measured first and keeps its line; a long status wraps inside the pill instead.
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            Text(
+                text,
+                style = Fw.Data.copy(color = color),
+                textAlign = TextAlign.End,
+                modifier = Modifier.background(Fw.Stone, Fw.Pill).padding(horizontal = 14.dp, vertical = 6.dp),
+            )
+        }
     }
     launcher.errorMessage?.let { Text(it, style = Fw.Secondary.copy(color = Fw.Warn)) }
 }

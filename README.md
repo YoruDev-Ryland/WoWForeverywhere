@@ -142,6 +142,14 @@ Because the game needs the password in plain text for those few seconds, any app
 - **Game files** shows where the game is installed and its version. **Install or repair** checks every file and downloads only what's missing or damaged. Once WoW Forever launches, this screen also offers to switch a beta install to the launch version, reusing the game data you already have.
 - **Settings** shows the app version and checks for app updates. It's also where you change your **region** and the game's **resolution**, which is set for your device by default; a higher resolution looks sharper but is harder on the device. Both apply the next time you start the game.
 
+### Frame generation
+
+Foreverywhere can generate extra frames with [lsfg-vk](https://github.com/PancakeTAS/lsfg-vk), the Linux port of Lossless Scaling's frame generation, to make the game look smoother. It needs `Lossless.dll` from your own copy of [Lossless Scaling](https://store.steampowered.com/app/993090/Lossless_Scaling/) on Steam, which the app can't include.
+
+1. On your PC, find `Lossless.dll` in `Steam/steamapps/common/Lossless Scaling`, and copy it to your device.
+2. In **Settings → Frame generation**, choose the file. Frame generation is then on, and you can turn it off there.
+3. In the game, press Back and open the **LSFG** tab to set the multiplier, flow scale and performance mode.
+
 ### Other WoW versions (experimental)
 
 Foreverywhere is made for WoW Forever, but **Settings → Game version** can switch the app to another official version: Classic Era, Burning Crusade Anniversary, Mists of Pandaria Classic or Retail. The whole app then works with that version, including installing, updating, playing and the addon browser. Each version keeps its own install and addons, and switching back to WoW Forever leaves your Forever setup as it was.
@@ -184,6 +192,7 @@ Foreverywhere is a fork of [**wow-forever-android**](https://github.com/jaredgei
 
 - [**GameNative**](https://github.com/utkarshdalal/GameNative), [**Pluvia**](https://github.com/oxters168/Pluvia), [**Winlator**](https://github.com/brunodev85/winlator) and the [**Bionic Vulkan wrapper**](https://github.com/leegao/bionic-vulkan-wrapper) for the Android app, Wine container management and X server.
 - The **WoW Forever RP6 community bundle** and [**arusiasotto**](https://github.com/arusiasotto/wow-forever-a840) for the tuned Proton 11 ARM64EC, DXVK and Turnip builds.
+- [**lsfg-vk**](https://github.com/PancakeTAS/lsfg-vk) for frame generation, which uses the player's own copy of [Lossless Scaling](https://store.steampowered.com/app/993090/Lossless_Scaling/).
 - [**Wine**](https://www.winehq.org/), [**Proton**](https://github.com/ValveSoftware/Proton), [**DXVK**](https://github.com/doitsujin/dxvk), [**Mesa**](https://mesa3d.org/), [**FEX-Emu**](https://github.com/FEX-Emu/FEX), [**box64**](https://github.com/ptitSeb/box64) and [**PulseAudio**](https://www.freedesktop.org/wiki/Software/PulseAudio/).
 
 World of Warcraft, WoW Forever and the artwork shown in the app are owned by Blizzard Entertainment. The app loads that artwork from Blizzard's own servers. Full third-party license details are in [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES).

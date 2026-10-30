@@ -1,14 +1,17 @@
-A small update for newer Snapdragon devices.
+Frame generation arrives in Foreverywhere.
+
+## New
+
+- **Frame generation.** The app can now generate extra frames with lsfg-vk, the Linux port of Lossless Scaling's frame generation, so the game looks smoother. It uses `Lossless.dll` from your own copy of [Lossless Scaling](https://store.steampowered.com/app/993090/Lossless_Scaling/) on Steam:
+  1. On your PC, copy `Lossless.dll` from `Steam/steamapps/common/Lossless Scaling` to your device.
+  2. In **Settings → Frame generation**, choose the file. Frame generation is then on, and you can turn it off there.
+  3. In the game, press Back and open the **LSFG** tab to set the multiplier (2x to 4x), flow scale and performance mode. Your choices are kept between sessions.
+
+  Without the file, nothing changes.
 
 ## Fixes
 
-- **The game starts on the Snapdragon 8s Gen 4.** On these devices the game stopped with "Your 3D accelerator card is not supported by World of Warcraft", because the app gave their Adreno 825 GPU the graphics driver made for Adreno 7xx GPUs. Every Adreno 8xx GPU now gets the Adreno 8xx driver. Other devices are unchanged.
-
-Thanks to 6opiii for the report and for testing the fix.
-
-## Devices
-
-- A **Xiaomi tablet with the Snapdragon 8s Gen 4** (model 25097RP43G) is reported working.
+- On portrait screens, the "Foreverywhere" title on the home screen stays on one line. A long status message now wraps inside its pill instead.
 
 ## Install
 
