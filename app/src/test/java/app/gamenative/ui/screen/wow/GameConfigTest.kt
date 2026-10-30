@@ -14,7 +14,7 @@ class GameConfigTest {
         assertEquals(
             listOf(
                 "portal", "agentUID", "gxApi", "textLocale", "audioLocale", "GamePadEnable", "InputDeviceInterfaceStyle",
-                "gxFullscreenResolution", "gxWindowedResolution",
+                "showScreenNarrationDialog", "accessibilityScreenNarrationEnabled", "gxFullscreenResolution", "gxWindowedResolution",
             ),
             keys,
         )
@@ -76,12 +76,28 @@ class GameConfigTest {
 
     @Test
     fun forcedPortalReplacesAnExistingOne() {
-        val existing = listOf("SET gxApi \"D3D11\"", "SET portal \"US\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"", "SET gxWindowedResolution \"1920x1080\"")
+        val existing = listOf(
+            "SET gxApi \"D3D11\"", "SET portal \"US\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"",
+            "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
+        )
         assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", portal = "EU"))
         val forced = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", portal = "EU", forcePortal = true)!!
         assertTrue("SET portal \"EU\"" in forced)
         assertTrue(forced.none { it == "SET portal \"US\"" })
         assertNull(buildConfigWtf(forced, WowProduct.FOREVER, "1920x1080", portal = "EU", forcePortal = true))
+    }
+
+    @Test
+    fun screenNarratorPromptIsAnsweredSoAutoLoginWorks() {
+        val fresh = buildConfigWtf(null, WowProduct.FOREVER, "1920x1080")!!
+        assertTrue("SET showScreenNarrationDialog \"0\"" in fresh)
+        assertTrue("SET accessibilityScreenNarrationEnabled \"0\"" in fresh)
+        // A config from before (or from the beta) gets them added once; a player's own choice stays.
+        val old = listOf("SET gxApi \"D3D11\"", "SET portal \"US\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"", "SET gxWindowedResolution \"1920x1080\"")
+        val updated = buildConfigWtf(old, WowProduct.FOREVER, "1920x1080")!!
+        assertTrue("SET showScreenNarrationDialog \"0\"" in updated)
+        val chosen = updated.map { if (it.startsWith("SET accessibilityScreenNarrationEnabled")) "SET accessibilityScreenNarrationEnabled \"1\"" else it }
+        assertNull(buildConfigWtf(chosen, WowProduct.FOREVER, "1920x1080"))
     }
 
     @Test
@@ -148,6 +164,8 @@ class GameConfigTest {
             "SET gxApi \"D3D11\"",
             "SET gxFullscreenResolution \"1920x1080\"",
             "SET gxWindowedResolution \"1920x1080\"",
+            "SET showScreenNarrationDialog \"0\"",
+            "SET accessibilityScreenNarrationEnabled \"0\"",
         )
         assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080"))
     }

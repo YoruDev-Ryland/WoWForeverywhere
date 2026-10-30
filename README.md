@@ -127,7 +127,7 @@ Saving your login is optional, and you can remove it any time under **Account**.
 - The email and password are sealed together with AES-256-GCM using a key held by the Android Keystore. The key can't be exported, and it stays in the device's secure hardware where the device has it.
 - The saved login is excluded from cloud backups and from phone-to-phone transfers.
 - Screenshots and screen recordings of the login form are blocked.
-- To sign in, the game reads your login from a short-lived `login.txt` file in its own folder. This is how the WoW client accepts a login without the Battle.net app. Foreverywhere writes the file when you press Play and wipes it about 20 seconds after the game reads it, or within three minutes at most. It is also wiped when you leave or close the game.
+- To sign in, the game reads your login from a short-lived `login.txt` file in its own folder. This is how the WoW client accepts a login without the Battle.net app. Foreverywhere writes the file when you press Play and wipes it about 20 seconds after the game reads it, or within ten minutes at most (a first start can take several minutes to reach the login screen). It is also wiped when you leave or close the game.
 
 Because the game needs the password in plain text for those few seconds, any app with full storage access could read it in that window. If that is a concern, skip saving your login and sign in inside the game instead.
 

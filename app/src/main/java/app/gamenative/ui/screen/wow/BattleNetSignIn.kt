@@ -148,7 +148,9 @@ object BattleNetSignIn {
     private const val KEY_EMAIL = "email"
     private const val KEY_PASSWORD = "password"
     private const val AFTER_READ_MS = 20_000L
-    private const val MAX_LIFETIME_MS = 180_000L
+    // A fresh install's first start streams game data and plays the intro before the login screen, which
+    // can take over three minutes (found on device by upstream). The file is still wiped 20 s after it's read.
+    private const val MAX_LIFETIME_MS = 600_000L
 }
 
 @Composable

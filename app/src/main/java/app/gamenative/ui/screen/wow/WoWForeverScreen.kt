@@ -1043,8 +1043,14 @@ private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile
 
 private const val GX_API_LINE = "SET gxApi \"D3D11\""
 
+/**
+ * Answers the game's first-start Screen Narrator prompt, which otherwise sits in front of the login
+ * screen and stops login.txt auto-login (found on device by upstream). Added once; a player's own choice stays.
+ */
+private val NARRATOR_KEYS = setOf("showScreenNarrationDialog", "accessibilityScreenNarrationEnabled")
+
 /** Retail only gets what it needs to start and use a controller; the rest is a Classic-era handheld preset. */
-private val RETAIL_DEFAULTS = setOf("portal", "agentUID", "gxApi", "textLocale", "audioLocale", "GamePadEnable", "InputDeviceInterfaceStyle")
+private val RETAIL_DEFAULTS = setOf("portal", "agentUID", "gxApi", "textLocale", "audioLocale", "GamePadEnable", "InputDeviceInterfaceStyle") + NARRATOR_KEYS
 
 private fun configDefaults(product: WowProduct, locale: String, portal: String) = linkedMapOf(
     "portal" to "\"$portal\"",
@@ -1074,6 +1080,8 @@ private fun configDefaults(product: WowProduct, locale: String, portal: String) 
     "groundEffectDensity" to "\"16\"",
     "GamePadEnable" to "\"1\"",
     "InputDeviceInterfaceStyle" to "\"1\"",
+    "showScreenNarrationDialog" to "\"0\"",
+    "accessibilityScreenNarrationEnabled" to "\"0\"",
 ).let { all -> if (product == WowProduct.RETAIL) all.filterKeys { it in RETAIL_DEFAULTS } else all }
 
 internal fun flavorInfoText(product: WowProduct) = "Product Flavor!STRING:0\n${product.code}\n"
@@ -1128,7 +1136,8 @@ internal fun buildConfigWtf(
     val wrongPortal = forcePortal && existing.any { it.startsWith("SET portal ", ignoreCase = true) && it != portalLine }
     val agentLine = "SET agentUID \"${product.code}\""
     val wrongAgent = existing.any { it.startsWith("SET agentUID ", ignoreCase = true) && it != agentLine }
-    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongPortal && !wrongAgent) return null
+    val missingNarrator = NARRATOR_KEYS.filter { key -> existing.none { it.startsWith("SET $key ", ignoreCase = true) } }
+    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongPortal && !wrongAgent && missingNarrator.isEmpty()) return null
     return existing.filterNot { line ->
         line.startsWith("SET gxApi ", ignoreCase = true) ||
             (wrongPortal && line.startsWith("SET portal ", ignoreCase = true)) ||
@@ -1138,7 +1147,7 @@ internal fun buildConfigWtf(
         GX_API_LINE,
         portalLine.takeIf { missingPortal || wrongPortal },
         agentLine.takeIf { wrongAgent },
-    ) + staleResolutionKeys.map { "SET $it \"$screenSize\"" }
+    ) + staleResolutionKeys.map { "SET $it \"$screenSize\"" } + missingNarrator.map { "SET $it \"0\"" }
 }
 
 /** The language the install was made for, from the locale tag in `.build.info` (e.g. `deDE`); English if none. */
