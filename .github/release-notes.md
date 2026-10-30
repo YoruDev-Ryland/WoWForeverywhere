@@ -1,20 +1,21 @@
-# Region and resolution settings
+# Ready for WoW Forever
 
-## Choose your region
+Blizzard has opened WoW Forever for name reservation, and the beta has ended. This update moves the app from the beta to the real game.
 
-Players outside the Americas no longer need to edit the game's `Config.wtf` by hand.
+## Switch from the beta
 
-- When you install the game, pick your region: **Americas**, **Europe**, **Korea** or **Taiwan**. Americas is the default.
-- You can change it later under **Settings → Region**. The app then sets the game to that region every time it starts it.
-- If you never pick one, nothing changes: the app keeps using your install's own region and leaves any setting you made by hand alone.
+- **The app now uses WoW Forever itself** instead of the beta. New installs get WoW Forever.
+- **If your install is still on the beta**, the app asks you to switch each time it opens, and no longer starts the beta by itself. **Switch now** keeps your game data, settings and addons, and only downloads the new game program. **Later** leaves it for now.
+- **The download shows its progress**: how much is done out of the total and the download speed. A fresh install also shows the time left.
+- **Region now applies to WoW Forever.** If you picked a region in 0.5.0, it now sets the game's region too. The beta always used a fixed test region.
 
-## Choose your resolution
+## Beta, if you need it
 
-**Settings → Resolution** sets the size the game runs at: **Automatic** (the size chosen for your device, as before), **720p**, **900p**, **1080p** or **Native** (your screen's own size). Each option shows the exact size it gives on your screen. Higher looks sharper but is harder on the device. Once you raise it, the game's own resolution options go up to that size too.
+**Settings → Game version → WoW Forever build** chooses between **WoW Forever** (the default) and **Beta**, in case Blizzard opens another test phase.
 
-## Fixes
+## Devices
 
-- On narrow or portrait screens, the welcome screen's buttons no longer get cut off, and the setup steps at the top no longer squash together.
+- The **Lenovo Legion Y700 Gen 3** is reported working. Thanks to qoatzelcoat for the report.
 
 ## Install
 
