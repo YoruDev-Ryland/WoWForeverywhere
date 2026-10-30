@@ -16,6 +16,7 @@ import app.gamenative.ui.screen.wow.WowClientDownloader
 import app.gamenative.ui.screen.wow.fitScreenSizeToWindow
 import app.gamenative.ui.screen.wow.installLocale
 import app.gamenative.wow.install.GameInstaller
+import app.gamenative.wow.install.DownloadSpeed
 import app.gamenative.wow.install.InstallController
 import app.gamenative.wow.install.InstallProgress
 import app.gamenative.wow.install.InstallRequest
@@ -107,6 +108,14 @@ class LauncherController(
      */
     var unsupportedDeviceWarning by mutableStateOf(false)
     private val supportedGpu = runCatching { com.winlator.core.GPUInformation.isAdrenoGPU(context) }.getOrDefault(true)
+
+    /** The switch to the launch version is running; [convertProgress] and [convertSpeed] follow it. */
+    var isConverting by mutableStateOf(false)
+        private set
+    var convertProgress by mutableStateOf<InstallProgress?>(null)
+        private set
+    var convertSpeed by mutableStateOf<Long?>(null)
+        private set
 
     /** Launch-version product is live and this install only has the beta. */
     var canConvertToLaunch by mutableStateOf(false)
@@ -307,6 +316,10 @@ class LauncherController(
         isUpdating = true
         updateStatusText = "Switching to the launch version..."
         errorMessage = null
+        isConverting = true
+        convertProgress = null
+        convertSpeed = null
+        val speed = DownloadSpeed()
         scope.launch {
             try {
                 withContext(Dispatchers.IO) {
@@ -315,19 +328,25 @@ class LauncherController(
                     // The installer always asks the patch service for the launch build (and its KeyRing), so
                     // offline it fails cleanly instead of reusing the beta build keys cloned into the new row.
                     GameInstaller().run(InstallRequest(root, WowProduct.FOREVER, installLocale(root, WowProduct.BETA))) { p ->
+                        val bytesPerSecond = speed.add(p.fetchedBytes, System.nanoTime() / 1_000_000)
                         scope.launch(Dispatchers.Main) {
-                            updateStatusText = p.fraction?.let { "Downloading the launch version ${(it * 100).toInt()}%" } ?: "Preparing the launch version..."
+                            convertProgress = p
+                            if (bytesPerSecond != null) convertSpeed = bytesPerSecond
                         }
                     }
                 }
                 canConvertToLaunch = false
                 isUpdating = false
+                isConverting = false
+                convertProgress = null
                 useGameRoot(gamePath)
             } catch (e: Exception) {
                 Timber.e(e, "Error converting to launch product")
                 if (e.isPermissionDenied()) needsStoragePermission = true
                 errorMessage = "Couldn't switch to the launch version: ${e.message}"
                 isUpdating = false
+                isConverting = false
+                convertProgress = null
             }
         }
     }

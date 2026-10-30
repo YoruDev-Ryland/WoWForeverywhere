@@ -34,7 +34,11 @@ data class InstallRequest(
     val region: String = "us",
 )
 
-data class InstallProgress(val phase: Phase, val doneBytes: Long, val totalBytes: Long, val currentFile: String?) {
+/**
+ * [doneBytes] counts every file handled, including ones already on disk; [fetchedBytes] only what came
+ * from the network during this run, which is what the download speed is measured on.
+ */
+data class InstallProgress(val phase: Phase, val doneBytes: Long, val totalBytes: Long, val currentFile: String?, val fetchedBytes: Long = 0) {
     enum class Phase { RESOLVING, DOWNLOADING, FINALIZING, DONE }
 
     val fraction get() = if (totalBytes > 0) (doneBytes.toFloat() / totalBytes).coerceIn(0f, 1f) else null
@@ -173,31 +177,52 @@ class GameInstaller(
         val done = readState(stateFile).toMutableSet()
         val archives = ArchiveSource(p, req.root)
         var doneBytes = 0L
-
-        for (item in p.items) {
-            ensureActive()
-            val dest = File(req.root, item.dest)
-            val fresh = item.id in done && dest.isFile
-            if (!fresh && !isValid(item, dest)) {
-                onProgress(InstallProgress(InstallProgress.Phase.DOWNLOADING, doneBytes, p.totalBytes, item.dest))
-                try {
-                    fetch(p.cdn, item, dest, archives)
-                } catch (e: MissingOnCdnException) {
-                    if (!item.optional) throw e
-                }
+        var fetched = 0L
+        var itemFetched = 0L
+        var current: PlanItem? = null
+        var lastReport = 0L
+        // While a large file streams in, report a few times a second instead of only when it finishes.
+        p.cdn.onBytes = { n ->
+            fetched += n
+            itemFetched += n
+            val now = System.nanoTime() / 1_000_000
+            if (now - lastReport >= PROGRESS_INTERVAL_MS) {
+                lastReport = now
+                val partial = current?.let { itemFetched.coerceAtMost(it.size) } ?: 0
+                onProgress(InstallProgress(InstallProgress.Phase.DOWNLOADING, doneBytes + partial, p.totalBytes, current?.dest, fetched))
             }
-            done += item.id
-            writeState(stateFile, done)
-            doneBytes += item.size
-            onProgress(InstallProgress(InstallProgress.Phase.DOWNLOADING, doneBytes, p.totalBytes, item.dest))
+        }
+        try {
+            for (item in p.items) {
+                ensureActive()
+                val dest = File(req.root, item.dest)
+                val fresh = item.id in done && dest.isFile
+                if (!fresh && !isValid(item, dest)) {
+                    current = item
+                    itemFetched = 0
+                    onProgress(InstallProgress(InstallProgress.Phase.DOWNLOADING, doneBytes, p.totalBytes, item.dest, fetched))
+                    try {
+                        fetch(p.cdn, item, dest, archives)
+                    } catch (e: MissingOnCdnException) {
+                        if (!item.optional) throw e
+                    }
+                    current = null
+                }
+                done += item.id
+                writeState(stateFile, done)
+                doneBytes += item.size
+                onProgress(InstallProgress(InstallProgress.Phase.DOWNLOADING, doneBytes, p.totalBytes, item.dest, fetched))
+            }
+        } finally {
+            p.cdn.onBytes = null
         }
 
-        onProgress(InstallProgress(InstallProgress.Phase.FINALIZING, doneBytes, p.totalBytes, null))
+        onProgress(InstallProgress(InstallProgress.Phase.FINALIZING, doneBytes, p.totalBytes, null, fetched))
         val flavor = File(req.root, req.product.flavorDir).apply { mkdirs() }
         File(flavor, ".flavor.info").writeText("Product Flavor!STRING:0\n${req.product.code}\n")
         writeBuildInfo(req, p)
         stateFile.delete()
-        onProgress(InstallProgress(InstallProgress.Phase.DONE, doneBytes, p.totalBytes, null))
+        onProgress(InstallProgress(InstallProgress.Phase.DONE, doneBytes, p.totalBytes, null, fetched))
     }
 
     private fun isValid(item: PlanItem, dest: File): Boolean = when {
@@ -306,6 +331,7 @@ class GameInstaller(
 
     companion object {
         const val STATE_FILE = ".foreverywhere-install.json"
+        private const val PROGRESS_INTERVAL_MS = 250L
         private val KEEP_ON_UPDATE = setOf("Branch", "Tags", "Armadillo")
         private const val SPACE_MARGIN = 1.15
         private val json = Json { ignoreUnknownKeys = true }

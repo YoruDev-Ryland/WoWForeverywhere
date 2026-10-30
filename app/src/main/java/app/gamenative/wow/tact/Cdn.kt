@@ -1,8 +1,11 @@
 package app.gamenative.wow.tact
 
 import app.gamenative.utils.Net
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.ByteBuffer
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -18,20 +21,36 @@ class Cdn(
     private val http: OkHttpClient = Net.http,
     private val scheme: String = "http",
 ) {
+    /** Called with each block of bytes as it arrives from the network, for download speed and progress. */
+    @Volatile
+    var onBytes: ((Long) -> Unit)? = null
+
     fun url(host: String, kind: String, key: String) = "$scheme://$host/$path/$kind/${key.substring(0, 2)}/${key.substring(2, 4)}/$key"
 
     fun require(kind: String, key: String) = fetch(kind, key) ?: throw IOException("CDN is missing $kind/$key")
 
     fun fetch(kind: String, key: String, range: LongRange? = null): ByteArray? =
-        withResponse(kind, key, range) { it.body!!.bytes() }
+        withResponse(kind, key, range) { response ->
+            ByteArrayOutputStream().also { copyCounting(response.body!!.byteStream(), it) }.toByteArray()
+        }
 
     /** Streams a file to [dest] without holding it in memory. Returns false if the CDN doesn't have it. */
     fun download(kind: String, key: String, dest: File, range: LongRange? = null): Boolean =
         withResponse(kind, key, range) { response ->
             dest.parentFile?.mkdirs()
-            dest.outputStream().use { out -> response.body!!.byteStream().copyTo(out, 1024 * 1024) }
+            dest.outputStream().use { out -> copyCounting(response.body!!.byteStream(), out) }
             true
         } ?: false
+
+    private fun copyCounting(input: InputStream, out: OutputStream) {
+        val buffer = ByteArray(256 * 1024)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            out.write(buffer, 0, read)
+            onBytes?.invoke(read.toLong())
+        }
+    }
 
     private fun <T> withResponse(kind: String, key: String, range: LongRange?, read: (Response) -> T): T? {
         var failure: IOException? = null

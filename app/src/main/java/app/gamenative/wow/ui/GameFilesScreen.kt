@@ -19,6 +19,7 @@ import app.gamenative.utils.StorageUtils
 import app.gamenative.wow.product.GameInstall
 import app.gamenative.wow.product.InstallScanner
 import app.gamenative.wow.ui.components.FwButton
+import app.gamenative.wow.ui.components.FwDownloadPanel
 import app.gamenative.wow.ui.components.FwButtonKind
 import app.gamenative.wow.ui.components.FwRow
 import app.gamenative.wow.ui.theme.Fw
@@ -56,7 +57,7 @@ fun GameFilesScreen(launcher: LauncherController, onBack: () -> Unit, onInstall:
                 if (!files.exeExists) Text("The game program downloads when you press Play.", style = Fw.Secondary)
             }
             launcher.errorMessage?.let { Text(it, style = Fw.Secondary.copy(color = Fw.Warn)) }
-            if (launcher.isUpdating) Text(launcher.updateStatusText, style = Fw.Text)
+            if (launcher.isUpdating && !launcher.isConverting) Text(launcher.updateStatusText, style = Fw.Text)
         }
 
         if (launcher.canConvertToLaunch) {
@@ -65,7 +66,11 @@ fun GameFilesScreen(launcher: LauncherController, onBack: () -> Unit, onInstall:
                     "WoW Forever has launched. Switch this beta install to the launch version. Your game data, settings and addons are reused, so only the new game program downloads.",
                     style = Fw.Text,
                 )
-                FwButton("Switch to launch version", launcher::convertToLaunch, enabled = !launcher.busy)
+                if (launcher.isConverting) {
+                    FwDownloadPanel("Downloading WoW Forever", launcher.convertProgress, launcher.convertSpeed)
+                } else {
+                    FwButton("Switch to launch version", launcher::convertToLaunch, enabled = !launcher.busy)
+                }
             }
         }
 

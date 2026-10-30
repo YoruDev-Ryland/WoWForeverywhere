@@ -281,6 +281,17 @@ class GameInstallerTest {
     }
 
     @Test
+    fun fetchedBytesCountOnlyWhatComesFromTheNetwork() = runBlocking {
+        var first: InstallProgress? = null
+        installer().run(req) { first = it }
+        assertTrue("first install fetched ${first!!.fetchedBytes}", first!!.fetchedBytes >= exe.size)
+        var repair: InstallProgress? = null
+        installer().run(req) { repair = it }
+        assertEquals(0L, repair!!.fetchedBytes)
+        assertEquals(repair!!.totalBytes, repair!!.doneBytes)
+    }
+
+    @Test
     fun reportsProgressToCompletion() = runBlocking {
         val seen = mutableListOf<InstallProgress>()
         installer().run(req) { seen += it }
