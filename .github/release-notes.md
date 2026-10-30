@@ -1,12 +1,14 @@
-A small update with fixes for first starts of WoW Forever.
+A small update for newer Snapdragon devices.
 
 ## Fixes
 
-- **Automatic sign-in no longer stops at the Screen Narrator question.** The first time WoW Forever starts, it asks whether to turn on its Screen Narrator, and that question kept the saved login from being used. The app now answers it with "off". If you turn the narrator on later in the game, that choice is kept.
-- **Automatic sign-in works on slow first starts.** The first start of a new install streams game data and plays the intro before reaching the login screen, which can take several minutes. The app now keeps your login ready for up to ten minutes. As before, it's wiped about 20 seconds after the game reads it.
-- **Android 10 can reach the game folder.** Devices on Android 10 now get the storage access the app needs to install and run the game.
+- **The game starts on the Snapdragon 8s Gen 4.** On these devices the game stopped with "Your 3D accelerator card is not supported by World of Warcraft", because the app gave their Adreno 825 GPU the graphics driver made for Adreno 7xx GPUs. Every Adreno 8xx GPU now gets the Adreno 8xx driver. Other devices are unchanged.
 
-Thanks to jaredgei, the original project's author, whose testing found these.
+Thanks to 6opiii for the report and for testing the fix.
+
+## Devices
+
+- A **Xiaomi tablet with the Snapdragon 8s Gen 4** (model 25097RP43G) is reported working.
 
 ## Install
 

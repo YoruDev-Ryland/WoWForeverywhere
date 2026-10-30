@@ -53,6 +53,7 @@ The game runs as Blizzard's own Windows ARM64 client under Wine, with DXVK and a
 | Retroid Pocket 6 | Snapdragon 8 Gen 2 | Reported working |
 | AYN Odin 2 / Odin 2 Mini | Snapdragon 8 Gen 2 | Expected to work |
 | AYN Odin 3 / Odin Portal | Snapdragon 8 Elite | Supported through the bundled Adreno 8xx driver |
+| Xiaomi tablet (model 25097RP43G) | Snapdragon 8s Gen 4 | Reported working |
 | RedMagic 11 Pro | Snapdragon 8 Elite | Reported working in-world |
 | Samsung Galaxy S23, S24, S25, Z Fold | Snapdragon 8 Gen 2 and later | Supported |
 | Lenovo Legion Y700 Gen 3 | Snapdragon 8 Gen 3 | Reported working |
