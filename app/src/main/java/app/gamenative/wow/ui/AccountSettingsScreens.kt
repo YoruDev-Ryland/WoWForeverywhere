@@ -36,6 +36,13 @@ import app.gamenative.wow.ui.components.FwDialog
 import app.gamenative.wow.ui.components.FwRow
 import app.gamenative.wow.ui.components.GameIconImage
 import app.gamenative.wow.ui.components.icon
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.rememberCoroutineScope
+import app.gamenative.wow.FrameGeneration
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import app.gamenative.BuildConfig
 import app.gamenative.utils.renderReleaseNotes
 import androidx.compose.material.icons.Icons
@@ -133,6 +140,7 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
             Text("${launcher.gpu.edition} profile", style = Fw.Data)
         }
         ResolutionSection(launcher)
+        FrameGenerationSection()
         FwSection("About") {
             Text(
                 "Unofficial community project, not affiliated with Blizzard Entertainment. The game is downloaded from Blizzard's own servers and needs your own Battle.net account. Based on jaredgei/wow-forever-android (GPL-3.0).",
@@ -141,6 +149,65 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
             val context = LocalContext.current
             FwButton("Source code on GitHub", { Links.open(context, Links.REPO) }, kind = FwButtonKind.Ghost, icon = Icons.AutoMirrored.Filled.OpenInNew)
         }
+    }
+}
+
+/** Settings, Frame generation: the player's own Lossless.dll, which turns on the in-game LSFG tab. */
+@Composable
+private fun FrameGenerationSection() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var hasDll by remember { mutableStateOf(FrameGeneration.hasDll(context)) }
+    var enabled by remember { mutableStateOf(FrameGeneration.isEnabled(context)) }
+    var message by remember { mutableStateOf<String?>(null) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { context.contentResolver.openInputStream(uri) }.getOrNull()
+                    ?.let { FrameGeneration.import(context, it) } ?: FrameGeneration.ImportResult.FAILED
+            }
+            message = when (result) {
+                FrameGeneration.ImportResult.OK -> null
+                FrameGeneration.ImportResult.NOT_A_DLL -> "That file isn't Lossless.dll. Pick the one from your Lossless Scaling folder."
+                FrameGeneration.ImportResult.FAILED -> "Couldn't read that file. Try copying it to the device again."
+            }
+            hasDll = FrameGeneration.hasDll(context)
+            enabled = FrameGeneration.isEnabled(context)
+        }
+    }
+    FwSection("Frame generation") {
+        Text(
+            "Lossless Scaling's frame generation (LSFG) can raise the frame rate by adding generated frames, at the cost of a little input delay. " +
+                "It needs Lossless.dll from your own copy of Lossless Scaling on Steam: on your PC it's in Steam/steamapps/common/Lossless Scaling. " +
+                "Copy it to this device and choose it here. The in-game menu (Back) then has an LSFG tab to set it up.",
+            style = Fw.Secondary,
+        )
+        if (hasDll) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(true to "On", false to "Off").forEach { (value, label) ->
+                    FwRow(selected = enabled == value, onClick = {
+                        FrameGeneration.setEnabled(context, value)
+                        enabled = value
+                    }) {
+                        Text(label, style = Fw.Text, modifier = Modifier.weight(1f))
+                        if (enabled == value) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                    }
+                }
+            }
+            Text("Lossless.dll added. A change applies the next time you start the game.", style = Fw.Data)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                FwButton("Choose another file", { picker.launch(arrayOf("*/*")) }, kind = FwButtonKind.Ghost)
+                FwButton("Remove", {
+                    FrameGeneration.remove(context)
+                    hasDll = false
+                    enabled = FrameGeneration.isEnabled(context)
+                }, kind = FwButtonKind.Ghost)
+            }
+        } else {
+            FwButton("Choose Lossless.dll", { picker.launch(arrayOf("*/*")) }, kind = FwButtonKind.Ghost)
+        }
+        message?.let { Text(it, style = Fw.Secondary.copy(color = Fw.Warn)) }
     }
 }
 

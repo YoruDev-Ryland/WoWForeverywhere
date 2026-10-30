@@ -39,6 +39,7 @@ class PluviaApp : Application() {
         app.gamenative.wow.product.ForeverTracks.load(this)
         app.gamenative.wow.product.GameRegions.load(this)
         app.gamenative.wow.product.RenderSizes.load(this)
+        app.gamenative.wow.FrameGeneration.init(this)
         android.system.Os.setenv("EVSHIM_BASE_PATH", filesDir.absolutePath, true)
 
         if (BuildConfig.DEBUG) {

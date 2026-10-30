@@ -48,6 +48,8 @@ import app.gamenative.utils.AppUpdater
 import app.gamenative.utils.StorageUtils
 import app.gamenative.utils.renderReleaseNotes
 import app.gamenative.wow.product.WowProduct
+import app.gamenative.utils.LsfgVkManager
+import app.gamenative.wow.FrameGeneration
 import app.gamenative.wow.product.GameRegions
 import app.gamenative.wow.product.RenderSize
 import app.gamenative.wow.product.RenderSizes
@@ -1018,6 +1020,11 @@ internal fun prepareLaunch(
         container.saveData()
     }
     check(containerManager.hasContainer(CONTAINER_ID)) { "Container creation failed. Check system storage and logs." }
+    // Frame generation follows Settings; the in-game menu's own LSFG choices stay in the container.
+    containerManager.getContainerById(CONTAINER_ID)?.apply {
+        putExtra(LsfgVkManager.EXTRA_ARMED, FrameGeneration.isArmed(context).toString())
+        saveData()
+    }
     return CONTAINER_ID
 }
 
