@@ -117,6 +117,9 @@ class LauncherController(
     var convertSpeed by mutableStateOf<Long?>(null)
         private set
 
+    /** The "switch to WoW Forever" prompt was answered with Later; it comes back the next time the app opens. */
+    var switchPromptDismissed by mutableStateOf(false)
+
     /** Launch-version product is live and this install only has the beta. */
     var canConvertToLaunch by mutableStateOf(false)
         private set
@@ -442,9 +445,7 @@ class LauncherController(
                 fetchVersionStatus()
                 val update = updateJob.await()
                 WoWLauncherState.shouldAutoLaunch = false
-                if (versionStatus?.isOutdated == true || update != null) {
-                    PluviaApp.events.emit(AndroidEvent.ClearBootingSplash)
-                } else if (supportedGpu) {
+                if (shouldAutoLaunch(versionStatus?.isOutdated == true, update != null, canConvertToLaunch, supportedGpu)) {
                     launchGame()
                 } else {
                     PluviaApp.events.emit(AndroidEvent.ClearBootingSplash)
@@ -462,3 +463,10 @@ class LauncherController(
         const val READY = "Ready to launch"
     }
 }
+
+/**
+ * Whether the app starts the game by itself on opening: not when the game or the app needs an update,
+ * when a beta install should switch to WoW Forever first, or on a device the game can't run on.
+ */
+internal fun shouldAutoLaunch(gameOutdated: Boolean, appUpdate: Boolean, switchToLaunch: Boolean, supportedGpu: Boolean): Boolean =
+    !gameOutdated && !appUpdate && !switchToLaunch && supportedGpu

@@ -147,6 +147,22 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 dismiss = "Later",
             )
         }
+        // A beta install once WoW Forever is out: asked on every app start until it's switched.
+        val updatePromptShowing = launcher.appUpdate != null && !appUpdateDismissed && !launcher.isDownloadingAppUpdate
+        if (launcher.canConvertToLaunch && !launcher.switchPromptDismissed && !launcher.isConverting && !updatePromptShowing) {
+            FwDialog(
+                title = "WoW Forever is out",
+                message = "This install is still on the beta. Switch it to WoW Forever to keep playing. Your game data, settings and addons are kept, so only the new game program downloads.",
+                confirm = "Switch now",
+                onConfirm = {
+                    launcher.switchPromptDismissed = true
+                    nav.navigate(Routes.GAME) { launchSingleTop = true }
+                    launcher.convertToLaunch()
+                },
+                onDismiss = { launcher.switchPromptDismissed = true },
+                dismiss = "Later",
+            )
+        }
         if (launcher.unsupportedDeviceWarning) {
             FwDialog(
                 title = "This device can't run the game",
