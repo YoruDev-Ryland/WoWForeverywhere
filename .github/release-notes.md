@@ -1,21 +1,12 @@
-# Ready for WoW Forever
+A small update with fixes for first starts of WoW Forever.
 
-Blizzard has opened WoW Forever for name reservation, and the beta has ended. This update moves the app from the beta to the real game.
+## Fixes
 
-## Switch from the beta
+- **Automatic sign-in no longer stops at the Screen Narrator question.** The first time WoW Forever starts, it asks whether to turn on its Screen Narrator, and that question kept the saved login from being used. The app now answers it with "off". If you turn the narrator on later in the game, that choice is kept.
+- **Automatic sign-in works on slow first starts.** The first start of a new install streams game data and plays the intro before reaching the login screen, which can take several minutes. The app now keeps your login ready for up to ten minutes. As before, it's wiped about 20 seconds after the game reads it.
+- **Android 10 can reach the game folder.** Devices on Android 10 now get the storage access the app needs to install and run the game.
 
-- **The app now uses WoW Forever itself** instead of the beta. New installs get WoW Forever.
-- **If your install is still on the beta**, the app asks you to switch each time it opens, and no longer starts the beta by itself. **Switch now** keeps your game data, settings and addons, and only downloads the new game program. **Later** leaves it for now.
-- **The download shows its progress**: how much is done out of the total and the download speed. A fresh install also shows the time left.
-- **Region now applies to WoW Forever.** If you picked a region in 0.5.0, it now sets the game's region too. The beta always used a fixed test region.
-
-## Beta, if you need it
-
-**Settings → Game version → WoW Forever build** chooses between **WoW Forever** (the default) and **Beta**, in case Blizzard opens another test phase.
-
-## Devices
-
-- The **Lenovo Legion Y700 Gen 3** is reported working. Thanks to qoatzelcoat for the report.
+Thanks to jaredgei, the original project's author, whose testing found these.
 
 ## Install
 
