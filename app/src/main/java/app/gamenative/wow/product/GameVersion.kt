@@ -41,3 +41,35 @@ object GameVersions {
         selected = version
     }
 }
+
+/**
+ * Which WoW Forever product the app uses: the launch game (`wowf`) or the beta (`wow_classic_beta`).
+ * Launch is the default; the beta stays available in case Blizzard opens a new test phase.
+ */
+enum class ForeverTrack(val key: String, val label: String, val product: WowProduct) {
+    LAUNCH("launch", "WoW Forever", WowProduct.FOREVER),
+    BETA("beta", "Beta", WowProduct.BETA),
+    ;
+
+    companion object {
+        fun fromKey(key: String?): ForeverTrack = entries.firstOrNull { it.key == key } ?: LAUNCH
+    }
+}
+
+/** The selected [ForeverTrack], saved in SharedPreferences. */
+object ForeverTracks {
+    private const val PREFS = "wow_settings"
+    private const val KEY = "forever_track"
+
+    @Volatile
+    var selected: ForeverTrack = ForeverTrack.LAUNCH
+
+    fun load(context: Context) {
+        selected = ForeverTrack.fromKey(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null))
+    }
+
+    fun save(context: Context, track: ForeverTrack) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, track.key).apply()
+        selected = track
+    }
+}

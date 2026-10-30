@@ -25,6 +25,8 @@ import app.gamenative.ui.screen.wow.prepareLaunch
 import app.gamenative.utils.AppUpdater
 import app.gamenative.utils.StorageUtils
 import app.gamenative.wow.product.GameInstall
+import app.gamenative.wow.product.ForeverTrack
+import app.gamenative.wow.product.ForeverTracks
 import app.gamenative.wow.product.GameVersion
 import app.gamenative.wow.product.GameVersions
 import app.gamenative.wow.product.InstallRegistry
@@ -56,6 +58,10 @@ class LauncherController(
 
     /** The game version the whole app works with (Settings, Game version). */
     var version by mutableStateOf(GameVersions.selected)
+        private set
+
+    /** WoW Forever's launch game or beta (Settings, under Game version). */
+    var foreverTrack by mutableStateOf(ForeverTracks.selected)
         private set
 
     var gamePath by mutableStateOf(registry.active()?.root ?: GamePath.load(context))
@@ -126,6 +132,19 @@ class LauncherController(
      * Switches the whole app to [to] and points it at that version's install. Refused (false) while a
      * download, update or launch is under way.
      */
+    /** Picks WoW Forever's launch game or beta, then re-reads the install for it. Refused while busy. */
+    fun switchForeverTrack(to: ForeverTrack): Boolean {
+        if (to == foreverTrack) return true
+        if (busy || installInProgress) return false
+        ForeverTracks.save(context, to)
+        foreverTrack = to
+        versionStatus = null
+        versionChecked = false
+        canConvertToLaunch = false
+        if (checkFiles()) checkVersionStatus()
+        return true
+    }
+
     fun switchVersion(to: GameVersion): Boolean {
         if (to == version) return true
         if (busy || installInProgress) return false
@@ -182,7 +201,7 @@ class LauncherController(
         isCheckingVersion = true
         val product = files.product
         versionStatus = withContext(Dispatchers.IO) { WowClientDownloader.checkVersion(File(gamePath), product) }
-        canConvertToLaunch = product == WowProduct.BETA &&
+        canConvertToLaunch = product == WowProduct.BETA && ForeverTracks.selected == ForeverTrack.LAUNCH &&
             withContext(Dispatchers.IO) { runCatching { WowClientDownloader.isProductLive(WowProduct.FOREVER) }.getOrDefault(false) }
         isCheckingVersion = false
         versionChecked = true

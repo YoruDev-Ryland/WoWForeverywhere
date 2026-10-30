@@ -24,8 +24,8 @@ class ProductConverterTest {
     @Test
     fun convertsAndKeepsBetaRow() {
         ProductConverter.applyLocal(root, WowProduct.BETA, WowProduct.FOREVER)
-        assertEquals(WowProduct.FOREVER, detectProduct(root, java.time.LocalDate.of(2026, 11, 4)))
-        assertEquals(WowProduct.BETA, detectProduct(root, java.time.LocalDate.of(2026, 11, 3)))
+        assertEquals(WowProduct.FOREVER, detectProduct(root, ForeverTrack.LAUNCH))
+        assertEquals(WowProduct.BETA, detectProduct(root, ForeverTrack.BETA))
         val info = BuildInfo.read(root)!!
         assertEquals("1", info.active(WowProduct.BETA)!!["Active"])
         assertEquals("Product Flavor!STRING:0\nwowf\n", File(root, "_forever_/.flavor.info").readText())

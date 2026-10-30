@@ -27,6 +27,7 @@ import app.gamenative.wow.install.InstallController
 import app.gamenative.wow.install.InstallUiState
 import app.gamenative.wow.product.GameRegion
 import app.gamenative.wow.product.GameRegions
+import app.gamenative.wow.product.ForeverTrack
 import app.gamenative.wow.product.GameVersion
 import app.gamenative.wow.product.RenderSize
 import app.gamenative.wow.product.RenderSizes
@@ -220,6 +221,19 @@ private fun GameVersionSection(launcher: LauncherController, onVersionChanged: (
                     Text(v.displayName, style = Fw.Text, modifier = Modifier.weight(1f))
                     if (v.isExperimental) Text("Experimental", style = Fw.Data.copy(color = Fw.Ash))
                     if (current) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                }
+            }
+        }
+        if (launcher.version == GameVersion.FOREVER) {
+            Text("WoW Forever build", style = Fw.Text)
+            Text("Which of Blizzard's WoW Forever releases to use. Keep WoW Forever unless Blizzard opens a new beta or test phase.", style = Fw.Secondary)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                ForeverTrack.entries.forEach { t ->
+                    FwRow(selected = t == launcher.foreverTrack, onClick = { if (!downloading) launcher.switchForeverTrack(t) }) {
+                        Text(t.label, style = Fw.Text, modifier = Modifier.weight(1f))
+                        Text(t.product.code, style = Fw.Data.copy(color = Fw.Ash))
+                        if (t == launcher.foreverTrack) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                    }
                 }
             }
         }

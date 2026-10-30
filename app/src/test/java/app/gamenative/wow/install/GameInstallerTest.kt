@@ -254,7 +254,7 @@ class GameInstallerTest {
         )
         installer().run(req) {}
         val info = BuildInfo.read(root)!!
-        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), info.products(java.time.LocalDate.of(2026, 12, 1)))
+        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), info.products(app.gamenative.wow.product.ForeverTrack.LAUNCH))
         assertEquals("1.60.1.70450", info.active(WowProduct.BETA)!!["Version"])
     }
 

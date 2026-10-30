@@ -34,6 +34,7 @@ class LauncherControllerVersionTest {
     fun reset() {
         InstallController.update(InstallUiState.Idle)
         GameVersions.selected = GameVersion.FOREVER
+        app.gamenative.wow.product.ForeverTracks.selected = app.gamenative.wow.product.ForeverTrack.LAUNCH
     }
 
     @Test
@@ -62,5 +63,18 @@ class LauncherControllerVersionTest {
 
         assertTrue(launcher.switchVersion(GameVersion.FOREVER))
         assertEquals("/forever", launcher.gamePath)
+    }
+
+    @Test
+    fun foreverTrackSwitchIsSavedAndRefusedWhileInstalling() {
+        val launcher = launcher()
+        assertTrue(launcher.switchForeverTrack(app.gamenative.wow.product.ForeverTrack.BETA))
+        assertEquals(app.gamenative.wow.product.ForeverTrack.BETA, app.gamenative.wow.product.ForeverTracks.selected)
+        assertEquals("beta", context.getSharedPreferences("wow_settings", Context.MODE_PRIVATE).getString("forever_track", null))
+        InstallController.update(
+            InstallUiState.Running(InstallRequest(File("/x"), WowProduct.FOREVER), InstallProgress(InstallProgress.Phase.entries.first(), 0, 1, null)),
+        )
+        assertFalse(launcher.switchForeverTrack(app.gamenative.wow.product.ForeverTrack.LAUNCH))
+        assertEquals(app.gamenative.wow.product.ForeverTrack.BETA, launcher.foreverTrack)
     }
 }

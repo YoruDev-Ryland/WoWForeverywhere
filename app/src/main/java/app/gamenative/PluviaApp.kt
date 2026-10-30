@@ -36,6 +36,7 @@ class PluviaApp : Application() {
         instance = this
         app.gamenative.wow.StallWatchdog.start(this)
         app.gamenative.wow.product.GameVersions.load(this)
+        app.gamenative.wow.product.ForeverTracks.load(this)
         app.gamenative.wow.product.GameRegions.load(this)
         app.gamenative.wow.product.RenderSizes.load(this)
         android.system.Os.setenv("EVSHIM_BASE_PATH", filesDir.absolutePath, true)

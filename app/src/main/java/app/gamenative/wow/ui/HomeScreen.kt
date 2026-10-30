@@ -122,6 +122,7 @@ private fun Header(launcher: LauncherController) {
         val version = launcher.versionStatus
         val (text, color) = when {
             launcher.filesMissing -> "Game not installed" to Fw.Ash
+            launcher.canConvertToLaunch -> "WoW Forever is out: switch in Game files" to Fw.Warn
             launcher.isCheckingVersion || !launcher.versionChecked -> "Checking for game updates…" to Fw.Ash
             version == null -> "Game version unknown (offline?)" to Fw.Ash
             version.isOutdated -> "Game update ${version.remoteVersion} available" to Fw.Warn

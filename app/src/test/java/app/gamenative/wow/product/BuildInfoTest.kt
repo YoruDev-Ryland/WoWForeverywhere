@@ -49,7 +49,7 @@ class BuildInfoTest {
         assertEquals("wowf", converted.active(WowProduct.FOREVER)!!["Product"])
         assertEquals("1", converted.active(WowProduct.FOREVER)!!["Active"])
         assertEquals("1", converted.active(WowProduct.BETA)!!["Active"])
-        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), converted.products(java.time.LocalDate.of(2026, 11, 4)))
+        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), converted.products(ForeverTrack.LAUNCH))
     }
 
     @Test
@@ -61,10 +61,10 @@ class BuildInfoTest {
     }
 
     @Test
-    fun betaPreferredUntilLaunchDay() {
+    fun foreverTrackDecidesBetweenLaunchAndBeta() {
         val both = BuildInfo.parse(text).withProduct(WowProduct.BETA, WowProduct.FOREVER)
-        assertEquals(listOf(WowProduct.BETA, WowProduct.FOREVER), both.products(java.time.LocalDate.of(2026, 11, 3)))
-        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), both.products(java.time.LocalDate.of(2026, 11, 4)))
+        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), both.products(ForeverTrack.LAUNCH))
+        assertEquals(listOf(WowProduct.BETA, WowProduct.FOREVER), both.products(ForeverTrack.BETA))
     }
 
     @Test

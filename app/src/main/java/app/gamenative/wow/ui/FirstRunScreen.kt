@@ -36,6 +36,7 @@ import app.gamenative.utils.StorageUtils
 import app.gamenative.wow.install.InstallController
 import app.gamenative.wow.install.InstallRequest
 import app.gamenative.wow.install.InstallUiState
+import app.gamenative.wow.product.ForeverTracks
 import app.gamenative.wow.product.GameInstall
 import app.gamenative.wow.product.GameRegion
 import app.gamenative.wow.product.GameRegions
@@ -227,9 +228,11 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
     }
 
     LaunchedEffect(Unit) {
-        product = launcher.version.products.singleOrNull() ?: withContext(Dispatchers.IO) {
-            if (runCatching { WowClientDownloader.isProductLive(WowProduct.FOREVER) }.getOrDefault(false)) WowProduct.FOREVER else WowProduct.BETA
-        }
+        // WoW Forever installs the chosen track; the beta only if Blizzard lists no launch build yet.
+        product = launcher.version.products.singleOrNull() ?: ForeverTracks.selected.product.takeIf { it == WowProduct.BETA }
+            ?: withContext(Dispatchers.IO) {
+                if (runCatching { WowClientDownloader.isProductLive(WowProduct.FOREVER) }.getOrDefault(false)) WowProduct.FOREVER else WowProduct.BETA
+            }
     }
     LaunchedEffect(state) {
         (state as? InstallUiState.Done)?.let {

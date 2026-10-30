@@ -1,6 +1,5 @@
 package app.gamenative.wow.product
 
-import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -10,6 +9,13 @@ class GameVersionTest {
 
     private fun info(vararg products: String) =
         BuildInfo.parse((listOf(header) + products.map { "us|1|1.0.0.1|$it" }).joinToString("\n", postfix = "\n"))
+
+    @Test
+    fun foreverTrackDefaultsToLaunch() {
+        assertEquals(ForeverTrack.LAUNCH, ForeverTrack.fromKey(null))
+        assertEquals(ForeverTrack.BETA, ForeverTrack.fromKey("beta"))
+        assertEquals(ForeverTrack.LAUNCH, ForeverTrack.fromKey("nonsense"))
+    }
 
     @Test
     fun fromKeyDefaultsToForever() {
@@ -29,8 +35,8 @@ class GameVersionTest {
     @Test
     fun foreverOrderingUnchanged() {
         val both = info("wowf", "wow_classic_beta")
-        assertEquals(listOf(WowProduct.BETA, WowProduct.FOREVER), both.products(LocalDate.of(2026, 11, 3), GameVersion.FOREVER))
-        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), both.products(LocalDate.of(2026, 11, 4), GameVersion.FOREVER))
+        assertEquals(listOf(WowProduct.BETA, WowProduct.FOREVER), both.products(ForeverTrack.BETA, GameVersion.FOREVER))
+        assertEquals(listOf(WowProduct.FOREVER, WowProduct.BETA), both.products(ForeverTrack.LAUNCH, GameVersion.FOREVER))
     }
 
     @Test
