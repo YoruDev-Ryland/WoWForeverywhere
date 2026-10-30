@@ -913,14 +913,11 @@ internal data class GpuProfile(
             else -> ADRENO_740
         }
 
-        private fun isAdreno8xxDevice(context: Context): Boolean {
-            if (GPUInformation.isAdreno8Elite(context)) return true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val soc = Build.SOC_MODEL
-                if (soc.contains("SM8750", ignoreCase = true) || soc.contains("SM8850", ignoreCase = true)) return true
-            }
-            return Build.HARDWARE.contains("sun", ignoreCase = true)
-        }
+        private fun isAdreno8xxDevice(context: Context): Boolean = isAdreno8xx(
+            runCatching { GPUInformation.getRenderer(context) }.getOrNull().orEmpty(),
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else "",
+            Build.HARDWARE,
+        )
     }
 }
 
@@ -932,6 +929,16 @@ internal data class GpuProfile(
 internal fun graphicsDriverConfig(gpu: GpuProfile): String =
     "version=${gpu.driver},adrenotoolsTurnip=1,resourceType=buffer,bcnEmulation=auto,quality=high" +
         (if (gpu.maxDeviceMemory > 0) ",maxDeviceMemory=${gpu.maxDeviceMemory}" else "")
+
+/**
+ * Any Adreno 8xx GPU: the renderer says "Adreno (TM) 8xx", or the chip is one of the Snapdragon 8xx-GPU
+ * parts (SM8735 8s Gen 4, SM8750 8 Elite, SM8850 8 Elite Gen 5; "sun" is the 8 Elite's board name).
+ * The 7xx driver can't run these, so WoW would see no usable graphics card.
+ */
+internal fun isAdreno8xx(renderer: String, socModel: String, hardware: String): Boolean =
+    Regex("""adreno\D*8\d\d""", RegexOption.IGNORE_CASE).containsMatchIn(renderer) ||
+        listOf("SM8735", "SM8750", "SM8850").any { socModel.contains(it, ignoreCase = true) } ||
+        hardware.contains("sun", ignoreCase = true)
 
 /** Meta Quest 3 or 3S: Oculus hardware with the Snapdragon XR2 Gen 2 (SXR2230P). */
 internal fun isMetaQuest3(manufacturer: String, model: String, socModel: String): Boolean =
