@@ -29,6 +29,9 @@ import app.gamenative.wow.product.GameInstall
 import app.gamenative.wow.product.ForeverTrack
 import app.gamenative.wow.product.ForeverTracks
 import app.gamenative.wow.product.GameVersion
+import app.gamenative.wow.product.GameRegions
+import app.gamenative.wow.product.RenderSizes
+import app.gamenative.wow.FrameGeneration
 import app.gamenative.wow.product.GameVersions
 import app.gamenative.wow.product.InstallRegistry
 import app.gamenative.wow.product.ProductConverter
@@ -459,9 +462,30 @@ class LauncherController(
         checkFiles()
     }
 
+    /** Settings, Share debug report: this launcher's state as "label: value" lines. */
+    fun debugSummary(): List<String> = listOf(
+        "GPU profile: ${gpu.edition}, driver ${gpu.driver}, ${gpu.screenSize}",
+        "GPU renderer: ${runCatching { com.winlator.core.GPUInformation.getRenderer(context) }.getOrNull() ?: "unknown"}",
+        "Game version: ${version.displayName}" + if (version == GameVersion.FOREVER) ", ${foreverTrack.label}" else "",
+        "Region: ${GameRegions.chosen?.label ?: "not chosen (default)"}",
+        "Resolution: ${RenderSizes.selected.label}",
+        "Frame generation: dll ${if (FrameGeneration.hasDll(context)) "added" else "not added"}, ${if (FrameGeneration.isEnabled(context)) "on" else "off"}",
+        "Game folder: $gamePath",
+        "Installed: ${files.product?.displayName ?: "none"} ${versionStatus?.localVersion.orEmpty()}",
+        "Live version: ${versionStatus?.remoteVersion ?: "unknown"}",
+        "Saved login: ${if (hasSavedLogin) "yes" else "no"}",
+    )
+
+    /** The product folder holding the game's own Logs and Errors. */
+    fun gameFolder(): File? = files.product?.let { File(gamePath, it.flavorDir) }
+
+    /** Values the debug report must never contain. */
+    fun debugSecrets(): List<String> = BattleNetSignIn.load(context)?.let { listOf(it.email, it.password) }.orEmpty()
+
     private companion object {
         const val READY = "Ready to launch"
     }
+
 }
 
 /**

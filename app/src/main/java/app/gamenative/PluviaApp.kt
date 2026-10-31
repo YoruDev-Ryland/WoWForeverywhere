@@ -47,6 +47,7 @@ class PluviaApp : Application() {
         } else {
             Timber.plant(ReleaseTree())
         }
+        app.gamenative.wow.debug.DebugLog.apply(this)
 
         CrashHandler.initialize(this)
         PrefManager.init(this)

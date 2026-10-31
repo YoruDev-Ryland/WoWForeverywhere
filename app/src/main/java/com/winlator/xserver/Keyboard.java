@@ -83,6 +83,14 @@ public class Keyboard {
         }
     }
 
+    private static XKeycode[] sharedKeycodeMap;
+
+    /** Whether the game's keyboard path has an X key for this Android key code. */
+    public static synchronized boolean hasKeyMapping(int keyCode) {
+        if (sharedKeycodeMap == null) sharedKeycodeMap = createKeycodeMap();
+        return keyCode >= 0 && keyCode < sharedKeycodeMap.length && sharedKeycodeMap[keyCode] != null;
+    }
+
     public static boolean isKeyboardDevice(InputDevice device) {
         if (device == null) return false;
         return device.supportsSource(InputDevice.SOURCE_KEYBOARD) &&

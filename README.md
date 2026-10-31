@@ -166,6 +166,11 @@ These versions are experimental and get little support. They may run poorly or n
 | The keyboard doesn't appear in the game | Force-stop Gboard under **Settings → Apps → Gboard** and open the keyboard again. |
 | The app returns to the home screen after "Starting World of Warcraft" | Check the files in the game's `Errors` folder (`_forever_/Errors` or `_classic_beta_/Errors`). |
 | "This device can't run the game" | The device has no Adreno GPU. The game needs a Snapdragon chip. |
+| A button does nothing in the game | Open **Settings → Controller test** and press it. The screen shows which device sent the press and whether the game receives it. Add a screenshot of it to your issue. |
+
+### Reporting a problem
+
+Turn on **Settings → Debug logging**, make the problem happen again, then use **Settings → Share debug report** and attach the zip to your [GitHub issue](https://github.com/YoruDev-Ryland/WoWForeverywhere/issues). The report holds your device details, the app's settings and the app's and game's logs. Email addresses and your saved login are removed from it. Turn debug logging off again afterwards.
 
 ## Building from source
 

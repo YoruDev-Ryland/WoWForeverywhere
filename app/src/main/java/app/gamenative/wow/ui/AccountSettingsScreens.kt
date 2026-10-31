@@ -40,6 +40,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.rememberCoroutineScope
 import app.gamenative.wow.FrameGeneration
+import app.gamenative.wow.debug.DebugLog
+import app.gamenative.wow.debug.DebugReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -103,7 +105,12 @@ fun AccountScreen(launcher: LauncherController, onBack: () -> Unit, onEditLogin:
 }
 
 @Composable
-fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionChanged: () -> Unit = {}) {
+fun SettingsScreen(
+    launcher: LauncherController,
+    onBack: () -> Unit,
+    onVersionChanged: () -> Unit = {},
+    onOpenControllerTest: () -> Unit = {},
+) {
     FwPage("Settings", onBack) {
         FwSection("App") {
             Text("WoW Foreverywhere v${BuildConfig.VERSION_NAME}", style = Fw.Text)
@@ -141,6 +148,7 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
         }
         ResolutionSection(launcher)
         FrameGenerationSection()
+        TroubleshootingSection(launcher, onOpenControllerTest)
         FwSection("About") {
             Text(
                 "Unofficial community project, not affiliated with Blizzard Entertainment. The game is downloaded from Blizzard's own servers and needs your own Battle.net account. Based on jaredgei/wow-forever-android (GPL-3.0).",
@@ -149,6 +157,51 @@ fun SettingsScreen(launcher: LauncherController, onBack: () -> Unit, onVersionCh
             val context = LocalContext.current
             FwButton("Source code on GitHub", { Links.open(context, Links.REPO) }, kind = FwButtonKind.Ghost, icon = Icons.AutoMirrored.Filled.OpenInNew)
         }
+    }
+}
+
+/** Settings, Troubleshooting: the controller test, debug logging and a report to attach to an issue. */
+@Composable
+private fun TroubleshootingSection(launcher: LauncherController, onOpenControllerTest: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var logging by remember { mutableStateOf(DebugLog.isEnabled(context)) }
+    var building by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    FwSection("Troubleshooting") {
+        Text(
+            "If a button doesn't work in the game, the controller test shows what each press sends and whether the game receives it.",
+            style = Fw.Secondary,
+        )
+        FwButton("Controller test", onOpenControllerTest, kind = FwButtonKind.Ghost)
+        Text(
+            "For other problems, turn on debug logging, make the problem happen again, then share a debug report on your GitHub issue. " +
+                "The report holds your device details, settings and logs. Email addresses and your saved login are removed from it.",
+            style = Fw.Secondary,
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(false to "Debug logging off", true to "Debug logging on").forEach { (value, label) ->
+                FwRow(selected = logging == value, onClick = {
+                    DebugLog.setEnabled(context, value)
+                    logging = value
+                }) {
+                    Text(label, style = Fw.Text, modifier = Modifier.weight(1f))
+                    if (logging == value) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                }
+            }
+        }
+        FwButton(if (building) "Preparing report…" else "Share debug report", {
+            building = true
+            failed = false
+            scope.launch {
+                val zip = withContext(Dispatchers.IO) {
+                    runCatching { DebugReport.build(context, launcher.debugSummary(), launcher.gameFolder(), launcher.debugSecrets()) }.getOrNull()
+                }
+                building = false
+                if (zip != null) DebugReport.share(context, zip) else failed = true
+            }
+        }, kind = FwButtonKind.Ghost, enabled = !building)
+        if (failed) Text("Couldn't put the report together. Try again.", style = Fw.Secondary.copy(color = Fw.Warn))
     }
 }
 

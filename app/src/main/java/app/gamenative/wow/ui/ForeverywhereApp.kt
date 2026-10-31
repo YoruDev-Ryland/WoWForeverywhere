@@ -35,6 +35,7 @@ object Routes {
     const val SETTINGS = "settings"
     const val FIRST_RUN = "firstrun"
     const val INSTALL = "install"
+    const val CONTROLLER_TEST = "controllertest"
 }
 
 /** The app's own screens. Hosted by upstream's NavHost in place of `WoWForeverScreen`. */
@@ -94,7 +95,15 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 composable(Routes.ACCOUNT) {
                     AccountScreen(launcher, onBack = { nav.popBackStack() }, onEditLogin = { showLoginDialog = true })
                 }
-                composable(Routes.SETTINGS) { SettingsScreen(launcher, onBack = { nav.popBackStack() }, onVersionChanged = onVersionChanged) }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(
+                        launcher,
+                        onBack = { nav.popBackStack() },
+                        onVersionChanged = onVersionChanged,
+                        onOpenControllerTest = { nav.navigate(Routes.CONTROLLER_TEST) },
+                    )
+                }
+                composable(Routes.CONTROLLER_TEST) { ControllerTestScreen(onBack = { nav.popBackStack() }) }
                 composable(Routes.ADDONS) { AddonsRoute(launcher, addonsState.value, onBack = { nav.popBackStack() }) }
                 composable(Routes.INSTALL) {
                     val back = { nav.popBackStack(); Unit }
