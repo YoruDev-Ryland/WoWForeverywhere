@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-31T06:24:54+00:00",
+ "generated": "2026-11-01T06:26:58+00:00",
  "addons": [
   {
    "repo": "Questie/Questie",
@@ -9,8 +9,8 @@
    "author": "Questie",
    "icon": "https://avatars.githubusercontent.com/u/75445548?v=4",
    "website": "https://github.com/Questie/Questie",
-   "stars": 1116,
-   "downloads": 10769,
+   "stars": 1119,
+   "downloads": 12796,
    "updated": "2026-10-26T16:11:07Z",
    "requires": [],
    "files": {
@@ -49,7 +49,7 @@
    "icon": "https://avatars.githubusercontent.com/u/84252897?v=4",
    "website": "https://github.com/RestedXP/RXPGuides",
    "stars": 170,
-   "downloads": 1909,
+   "downloads": 3148,
    "updated": "2026-10-29T15:25:04Z",
    "requires": [],
    "files": {
@@ -94,7 +94,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DeadlyBossMods",
    "stars": 281,
-   "downloads": 2109,
+   "downloads": 2548,
    "updated": "2026-10-26T17:30:39Z",
    "requires": [],
    "files": {
@@ -139,7 +139,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DBM-Dungeons",
    "stars": 32,
-   "downloads": 1514,
+   "downloads": 1775,
    "updated": "2026-10-26T17:33:16Z",
    "requires": [
     "DeadlyBossMods/DeadlyBossMods"
@@ -186,7 +186,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/BigWigs",
    "stars": 275,
-   "downloads": 3442,
+   "downloads": 3979,
    "updated": "2026-10-23T16:33:18Z",
    "requires": [],
    "files": {
@@ -231,7 +231,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/LittleWigs",
    "stars": 114,
-   "downloads": 2434,
+   "downloads": 2761,
    "updated": "2026-10-23T18:57:13Z",
    "requires": [
     "BigWigsMods/BigWigs"
@@ -272,7 +272,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9000280?v=4",
    "website": "https://github.com/Tercioo/Plater-Nameplates",
    "stars": 106,
-   "downloads": 840,
+   "downloads": 1169,
    "updated": "2026-10-28T10:33:44Z",
    "requires": [],
    "files": {
@@ -317,7 +317,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/ShadowedUnitFrames",
    "stars": 58,
-   "downloads": 23102,
+   "downloads": 23247,
    "updated": "2026-01-18T18:37:26Z",
    "requires": [],
    "files": {
@@ -350,38 +350,38 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/Dominos",
    "stars": 83,
-   "downloads": 819,
-   "updated": "2026-10-25T20:42:42Z",
+   "downloads": 61,
+   "updated": "2026-10-31T22:05:38Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "676076436",
-     "version": "11.5.0",
-     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.0/Dominos-11.5.0.zip",
+     "fileId": "696598938",
+     "version": "11.5.1",
+     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.1/Dominos-11.5.1.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "676076436",
-     "version": "11.5.0",
-     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.0/Dominos-11.5.0.zip",
+     "fileId": "696598938",
+     "version": "11.5.1",
+     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.1/Dominos-11.5.1.zip",
      "interface": 120107
     },
     "classic": {
-     "fileId": "676076436",
-     "version": "11.5.0",
-     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.0/Dominos-11.5.0.zip",
+     "fileId": "696598938",
+     "version": "11.5.1",
+     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.1/Dominos-11.5.1.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "676076436",
-     "version": "11.5.0",
-     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.0/Dominos-11.5.0.zip",
+     "fileId": "696598938",
+     "version": "11.5.1",
+     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.1/Dominos-11.5.1.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "676076436",
-     "version": "11.5.0",
-     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.0/Dominos-11.5.0.zip",
+     "fileId": "696598938",
+     "version": "11.5.1",
+     "url": "https://github.com/tullamods/Dominos/releases/download/11.5.1/Dominos-11.5.1.zip",
      "interface": 16001
     }
    }
@@ -395,7 +395,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Bartender4",
    "stars": 76,
-   "downloads": 3310,
+   "downloads": 3585,
    "updated": "2026-10-02T18:55:43Z",
    "requires": [],
    "files": {
@@ -440,7 +440,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/OmniCC",
    "stars": 107,
-   "downloads": 20915,
+   "downloads": 21073,
    "updated": "2025-12-14T21:07:04Z",
    "requires": [],
    "files": {
@@ -479,7 +479,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9121773?v=4",
    "website": "https://github.com/WeakAuras/WeakAuras2",
    "stars": 1446,
-   "downloads": 8443,
+   "downloads": 8744,
    "updated": "2026-10-10T17:21:31Z",
    "requires": [],
    "files": {
@@ -512,7 +512,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Mapster",
    "stars": 21,
-   "downloads": 1780,
+   "downloads": 1888,
    "updated": "2026-10-03T14:08:46Z",
    "requires": [],
    "files": {
@@ -539,7 +539,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/HandyNotes",
    "stars": 20,
-   "downloads": 9228,
+   "downloads": 9433,
    "updated": "2026-08-12T05:56:20Z",
    "requires": [],
    "files": {
@@ -578,7 +578,7 @@
    "icon": "https://avatars.githubusercontent.com/u/2187?v=4",
    "website": "https://github.com/kemayo/wow-silverdragon",
    "stars": 28,
-   "downloads": 950,
+   "downloads": 1082,
    "updated": "2026-10-24T16:50:54Z",
    "requires": [],
    "files": {
@@ -622,8 +622,8 @@
    "author": "Hoizame",
    "icon": "https://avatars.githubusercontent.com/u/45636893?v=4",
    "website": "https://github.com/Hoizame/AtlasLootClassic",
-   "stars": 90,
-   "downloads": 128017,
+   "stars": 91,
+   "downloads": 128041,
    "updated": "2023-10-22T14:37:24Z",
    "requires": [],
    "files": {
@@ -650,7 +650,7 @@
    "icon": "https://avatars.githubusercontent.com/u/19425199?v=4",
    "website": "https://github.com/AdiAddons/AdiBags",
    "stars": 152,
-   "downloads": 98499,
+   "downloads": 98598,
    "updated": "2024-09-08T02:20:23Z",
    "requires": [],
    "files": {
@@ -683,7 +683,7 @@
    "icon": "https://avatars.githubusercontent.com/u/69928556?v=4",
    "website": "https://github.com/SFX-WoW/Masque",
    "stars": 54,
-   "downloads": 1521,
+   "downloads": 1934,
    "updated": "2026-10-28T16:47:14Z",
    "requires": [],
    "files": {
