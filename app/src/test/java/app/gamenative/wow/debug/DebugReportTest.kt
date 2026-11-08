@@ -45,6 +45,27 @@ class DebugReportTest {
     }
 
     @Test
+    fun emptyGameLogsDontCrowdOutOnesWithContent() {
+        val game = File(context.cacheDir, "game_empty_test").apply { deleteRecursively() }
+        val logs = File(game, "Logs").apply { mkdirs() }
+        File(logs, "FrameXML.log").apply {
+            writeText("Couldn't load a UI file\n")
+            setLastModified(1_000_000L)
+        }
+        // More empty files than the report keeps, all newer than the one that matters.
+        repeat(12) { File(logs, "Empty$it.log").apply { createNewFile(); setLastModified(2_000_000L + it) } }
+
+        val zip = DebugReport.build(context, emptyList(), game, emptyList())
+
+        ZipFile(zip).use { z ->
+            val names = z.entries().toList().map { it.name }
+            assertTrue("game/Logs/FrameXML.log" in names)
+            assertFalse(names.any { it.startsWith("game/Logs/Empty") })
+        }
+        game.deleteRecursively()
+    }
+
+    @Test
     fun debugLoggingSettingIsKept() {
         assertFalse(DebugLog.isEnabled(context))
         DebugLog.setEnabled(context, true)

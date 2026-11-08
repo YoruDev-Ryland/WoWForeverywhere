@@ -32,6 +32,31 @@ class GpuProfileTest {
     }
 
     @Test
+    fun adreno6xxIsDetectedFromTheRenderer() {
+        assertTrue(isAdreno6xx("Adreno (TM) 650"))
+        assertTrue(isAdreno6xx("Adreno (TM) 660"))
+        assertFalse(isAdreno6xx("Adreno (TM) 740"))
+        assertFalse(isAdreno6xx("Adreno (TM) 830"))
+        assertFalse(isAdreno6xx(""))
+    }
+
+    @Test
+    fun adreno6xxRendersInSystemMemoryOnTheBundledDriver() {
+        assertEquals("Turnip-WoW-scheduler-test", GpuProfile.ADRENO_6XX.driver)
+        assertEquals("noconform,sysmem", GpuProfile.ADRENO_6XX.tuDebug)
+        assertEquals("1280x720", GpuProfile.ADRENO_6XX.screenSize)
+    }
+
+    @Test
+    fun samsungGetsTheUbwcHintExceptOnAdreno6xx() {
+        val hint = " FD_DEV_FEATURES=enable_tp_ubwc_flag_hint=1"
+        assertEquals(hint, driverFeatureEnv("samsung", GpuProfile.ADRENO_740))
+        assertEquals(hint, driverFeatureEnv("Samsung", GpuProfile.ADRENO_8XX))
+        assertEquals("", driverFeatureEnv("samsung", GpuProfile.ADRENO_6XX))
+        assertEquals("", driverFeatureEnv("AYN", GpuProfile.ADRENO_740))
+    }
+
+    @Test
     fun otherDevicesKeepTheirGraphicsConfig() {
         assertEquals(
             "version=Turnip-WoW-scheduler-test,adrenotoolsTurnip=1,resourceType=buffer,bcnEmulation=auto,quality=high",

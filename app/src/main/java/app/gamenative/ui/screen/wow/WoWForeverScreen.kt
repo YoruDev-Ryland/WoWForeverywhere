@@ -903,6 +903,9 @@ internal data class GpuProfile(
         val ADRENO_740 = GpuProfile(DEFAULT_DRIVER, "noconform", "1920x1080", "Adreno 740", "Snapdragon 8 Series / Adreno 740")
         val ADRENO_8XX = GpuProfile(ADRENO_8XX_DRIVER, "noconform,sysmem", "1280x720", "Adreno 8xx", "Snapdragon 8 Elite / Adreno 8xx")
 
+        /** Below the supported GPUs: on the Adreno 650 the 740 profile draws the login scene but not its UI (issue #24). */
+        val ADRENO_6XX = GpuProfile(DEFAULT_DRIVER, "noconform,sysmem", "1280x720", "Adreno 6xx", "Snapdragon 8 Series / Adreno 6xx")
+
         /**
          * Meta Quest 3 / 3S: the headset's own driver ("System"), because every Turnip build runs out of
          * device memory under Horizon OS (issue #2). 720p and a 1.5 GB video memory cap ease the shared memory.
@@ -912,6 +915,7 @@ internal data class GpuProfile(
         fun detect(context: Context) = when {
             isMetaQuest3(Build.MANUFACTURER, Build.MODEL, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else "") -> QUEST
             isAdreno8xxDevice(context) -> ADRENO_8XX
+            isAdreno6xx(runCatching { GPUInformation.getRenderer(context) }.getOrNull().orEmpty()) -> ADRENO_6XX
             else -> ADRENO_740
         }
 
@@ -941,6 +945,13 @@ internal fun isAdreno8xx(renderer: String, socModel: String, hardware: String): 
     Regex("""adreno\D*8\d\d""", RegexOption.IGNORE_CASE).containsMatchIn(renderer) ||
         listOf("SM8735", "SM8750", "SM8845", "SM8850").any { socModel.contains(it, ignoreCase = true) } ||
         hardware.contains("sun", ignoreCase = true)
+
+/** An Adreno 6xx GPU, going by the renderer name. */
+internal fun isAdreno6xx(renderer: String): Boolean = Regex("""adreno\D*6\d\d""", RegexOption.IGNORE_CASE).containsMatchIn(renderer)
+
+/** Driver feature overrides for the container's environment, with a leading space when there are any. */
+internal fun driverFeatureEnv(manufacturer: String, gpu: GpuProfile): String =
+    if (manufacturer.equals("samsung", ignoreCase = true) && gpu != GpuProfile.ADRENO_6XX) " FD_DEV_FEATURES=enable_tp_ubwc_flag_hint=1" else ""
 
 /** Meta Quest 3 or 3S: Oculus hardware with the Snapdragon XR2 Gen 2 (SXR2230P). */
 internal fun isMetaQuest3(manufacturer: String, model: String, socModel: String): Boolean =
@@ -1037,7 +1048,7 @@ internal fun prepareLaunch(
 }
 
 private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile, screenSize: String): JSONObject {
-    val samsungEnv = if (Build.MANUFACTURER.equals("samsung", ignoreCase = true)) " FD_DEV_FEATURES=enable_tp_ubwc_flag_hint=1" else ""
+    val samsungEnv = driverFeatureEnv(Build.MANUFACTURER, gpu)
     val envVars = "WRAPPER_MAX_IMAGE_COUNT=0 ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact,deck_emu MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=0 MESA_VK_WSI_PRESENT_MODE=mailbox${if (gpu.tuDebug.isNotEmpty()) " TU_DEBUG=${gpu.tuDebug}" else ""} VKD3D_SHADER_MODEL=6_0 PULSE_LATENCY_MSEC=144$samsungEnv"
     return JSONObject().apply {
         put("id", CONTAINER_ID)

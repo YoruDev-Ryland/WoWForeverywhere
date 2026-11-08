@@ -106,7 +106,7 @@ object DebugReport {
     }
 
     private fun newest(dir: File, count: Int): List<File> =
-        dir.listFiles { f -> f.isFile && f.extension.lowercase() in TEXT_FILES }.orEmpty().sortedByDescending { it.lastModified() }.take(count)
+        dir.listFiles { f -> f.isFile && f.length() > 0 && f.extension.lowercase() in TEXT_FILES }.orEmpty().sortedByDescending { it.lastModified() }.take(count)
 
     /** The last [MAX_FILE_BYTES] of a file: the end of a log is where a problem shows. */
     private fun tail(file: File): String = RandomAccessFile(file, "r").use { raf ->
