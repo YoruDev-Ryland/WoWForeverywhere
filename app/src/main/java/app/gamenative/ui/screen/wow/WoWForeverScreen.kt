@@ -903,8 +903,11 @@ internal data class GpuProfile(
         val ADRENO_740 = GpuProfile(DEFAULT_DRIVER, "noconform", "1920x1080", "Adreno 740", "Snapdragon 8 Series / Adreno 740")
         val ADRENO_8XX = GpuProfile(ADRENO_8XX_DRIVER, "noconform,sysmem", "1280x720", "Adreno 8xx", "Snapdragon 8 Elite / Adreno 8xx")
 
-        /** Below the supported GPUs: on the Adreno 650 the 740 profile draws the login scene but not its UI (issue #24). */
-        val ADRENO_6XX = GpuProfile(DEFAULT_DRIVER, "noconform,sysmem", "1280x720", "Adreno 6xx", "Snapdragon 8 Series / Adreno 6xx")
+        /**
+         * Below the supported GPUs: on the Adreno 650, the bundled Turnip draws the login scene but not its UI, with or
+         * without sysmem and the Samsung UBWC hint (issue #24). This tries the device's own driver instead.
+         */
+        val ADRENO_6XX = GpuProfile("System", "", "1280x720", "Adreno 6xx", "Snapdragon 8 Series / Adreno 6xx")
 
         /**
          * Meta Quest 3 / 3S: the headset's own driver ("System"), because every Turnip build runs out of

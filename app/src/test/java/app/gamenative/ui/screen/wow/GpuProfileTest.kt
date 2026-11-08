@@ -41,10 +41,14 @@ class GpuProfileTest {
     }
 
     @Test
-    fun adreno6xxRendersInSystemMemoryOnTheBundledDriver() {
-        assertEquals("Turnip-WoW-scheduler-test", GpuProfile.ADRENO_6XX.driver)
-        assertEquals("noconform,sysmem", GpuProfile.ADRENO_6XX.tuDebug)
+    fun adreno6xxUsesTheDevicesOwnDriver() {
+        assertEquals("System", GpuProfile.ADRENO_6XX.driver)
+        assertEquals("", GpuProfile.ADRENO_6XX.tuDebug)
         assertEquals("1280x720", GpuProfile.ADRENO_6XX.screenSize)
+        assertEquals(
+            "version=System,adrenotoolsTurnip=1,resourceType=buffer,bcnEmulation=auto,quality=high",
+            graphicsDriverConfig(GpuProfile.ADRENO_6XX),
+        )
     }
 
     @Test
