@@ -905,9 +905,10 @@ internal data class GpuProfile(
 
         /**
          * Below the supported GPUs: on the Adreno 650, the bundled Turnip draws the login scene but not its UI, with or
-         * without sysmem and the Samsung UBWC hint (issue #24). This tries the device's own driver instead.
+         * without sysmem and the Samsung UBWC hint, and the device's own driver is too old for the game (issue #24).
+         * This tries the newer Turnip, which also lists the 650.
          */
-        val ADRENO_6XX = GpuProfile("System", "", "1280x720", "Adreno 6xx", "Snapdragon 8 Series / Adreno 6xx")
+        val ADRENO_6XX = GpuProfile(ADRENO_8XX_DRIVER, "noconform", "1280x720", "Adreno 6xx", "Snapdragon 8 Series / Adreno 6xx")
 
         /**
          * Meta Quest 3 / 3S: the headset's own driver ("System"), because every Turnip build runs out of
@@ -951,6 +952,10 @@ internal fun isAdreno8xx(renderer: String, socModel: String, hardware: String): 
 
 /** An Adreno 6xx GPU, going by the renderer name. */
 internal fun isAdreno6xx(renderer: String): Boolean = Regex("""adreno\D*6\d\d""", RegexOption.IGNORE_CASE).containsMatchIn(renderer)
+
+/** Test builds for issue #24: logs DXVK messages to wine_debug.log, to show whether UI shaders fail to build. */
+internal fun dxvkLogEnv(gpu: GpuProfile): String =
+    if (gpu == GpuProfile.ADRENO_6XX) " DXVK_LOG_LEVEL=info DXVK_LOG_PATH=none" else ""
 
 /** Driver feature overrides for the container's environment, with a leading space when there are any. */
 internal fun driverFeatureEnv(manufacturer: String, gpu: GpuProfile): String =
@@ -1052,7 +1057,7 @@ internal fun prepareLaunch(
 
 private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile, screenSize: String): JSONObject {
     val samsungEnv = driverFeatureEnv(Build.MANUFACTURER, gpu)
-    val envVars = "WRAPPER_MAX_IMAGE_COUNT=0 ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact,deck_emu MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=0 MESA_VK_WSI_PRESENT_MODE=mailbox${if (gpu.tuDebug.isNotEmpty()) " TU_DEBUG=${gpu.tuDebug}" else ""} VKD3D_SHADER_MODEL=6_0 PULSE_LATENCY_MSEC=144$samsungEnv"
+    val envVars = "WRAPPER_MAX_IMAGE_COUNT=0 ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact,deck_emu MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=0 MESA_VK_WSI_PRESENT_MODE=mailbox${if (gpu.tuDebug.isNotEmpty()) " TU_DEBUG=${gpu.tuDebug}" else ""} VKD3D_SHADER_MODEL=6_0 PULSE_LATENCY_MSEC=144$samsungEnv${dxvkLogEnv(gpu)}"
     return JSONObject().apply {
         put("id", CONTAINER_ID)
         put("name", "WoW Forever")
