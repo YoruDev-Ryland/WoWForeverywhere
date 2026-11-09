@@ -133,7 +133,7 @@ The app needs **All files access** to change addons in another app's folder. Fol
 - **Controls.** Use the D-pad or stick to move and **A** to select. **B** goes back. In the game, your handheld's controller works through WoW's own gamepad mode.
 - **Back to the launcher.** While the game is starting, hold **Start + Select + L2 + R2**, or tap the back arrow, to cancel and return to the home screen.
 - **In-game menu.** Press Back during play to open the sidebar with the on-screen keyboard, the performance overlay and **Exit**.
-- **More than one WoW account.** If your Battle.net login has several, such as WoW1 and WoW2, choose the one to play under **Account → Game account**.
+- **More than one WoW account.** If your Battle.net login has several, such as WoW1 and WoW2, choose the one to play under **Account → Game account**. If yours has its own name, type it there.
 - **Authenticator codes** are still typed in the game. The game keeps running when you switch apps, so you can get a code from an authenticator app on the same device.
 
 ### How your login is stored

@@ -178,6 +178,7 @@ class GameConfigTest {
         assertEquals("SET accountList \"WoW1|!WoW2|\"", accountListLine("SET accountList \"!WoW1|WoW2|\"", "WoW2"))
         assertEquals("SET accountList \"WoW1|!WoW3|\"", accountListLine("SET accountList \"!WoW1|\"", "WoW3"))
         assertEquals("SET accountList \"!wow2|WoW1|\"", accountListLine("SET accountList \"wow2|!WoW1|\"", "WoW2"))
+        assertEquals("SET accountList \"WoW1|!LELLON|\"", accountListLine("SET accountList \"!WoW1|\"", "LELLON"))
     }
 
     @Test

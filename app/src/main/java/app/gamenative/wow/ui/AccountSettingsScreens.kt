@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import app.gamenative.wow.addons.AddonMode
@@ -46,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import app.gamenative.wow.FrameGeneration
 import app.gamenative.wow.debug.DebugLog
 import app.gamenative.wow.debug.DebugReport
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -99,7 +103,7 @@ fun AccountScreen(launcher: LauncherController, onBack: () -> Unit, onEditLogin:
                 if (launcher.hasSavedLogin) FwButton("Forget login", launcher::forgetLogin, kind = FwButtonKind.Danger)
             }
         }
-        GameAccountSection()
+        GameAccountSection(launcher)
         BlockedLoginSection()
         FwSection("How it works") {
             Text(
@@ -150,22 +154,51 @@ private fun BlockedLoginSection() {
 
 /** Account, Game account: which WoW account to play when the Battle.net login has several. */
 @Composable
-private fun GameAccountSection() {
+private fun GameAccountSection(launcher: LauncherController) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val configWtf = launcher.files.product?.let { File(File(launcher.gamePath, it.flavorDir), "WTF/Config.wtf") }
     var current by remember { mutableStateOf(GameAccounts.chosen) }
-    fun pick(number: Int?) {
-        GameAccounts.save(context, number)
-        current = number
+    var typed by remember { mutableStateOf("") }
+    val known by produceState(emptyList<String>(), configWtf) {
+        value = withContext(Dispatchers.IO) { runCatching { GameAccounts.namesIn(configWtf!!.readLines()) }.getOrDefault(emptyList()) }
+    }
+    fun pick(name: String?) {
+        GameAccounts.save(context, name)
+        current = name
+        if (name == null && configWtf != null) {
+            // The app's last pick is still marked there, so the game would keep logging into it.
+            scope.launch(Dispatchers.IO) {
+                runCatching { if (configWtf.isFile) configWtf.writeText(GameAccounts.withoutAccountList(configWtf.readLines()).joinToString("\n") + "\n") }
+            }
+        }
     }
     FwSection("Game account") {
         Text(
-            "If your Battle.net login has more than one WoW account, such as WoW1 and WoW2, choose the one to play. " +
-                "The Battle.net app lists them in its account menu. A change applies the next time you start the game.",
+            "If your Battle.net login has more than one WoW account, choose the one to play. If yours has its own name " +
+                "and isn't listed, type it below. A change applies the next time you start the game.",
             style = Fw.Secondary,
         )
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FwChip("The game's choice", current == null, { pick(null) })
-            GameAccounts.NUMBERS.forEach { n -> FwChip(GameAccounts.name(n), current == n, { pick(n) }) }
+            GameAccounts.suggestions(known, current).forEach { name ->
+                FwChip(name, current.equals(name, ignoreCase = true), { pick(name) })
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                typed,
+                { typed = it },
+                Modifier.weight(1f),
+                singleLine = true,
+                label = { Text("Account name") },
+                textStyle = Fw.Text,
+            )
+            val name = GameAccounts.clean(typed)
+            FwButton("Use", {
+                pick(name)
+                typed = ""
+            }, enabled = name != null)
         }
     }
 }

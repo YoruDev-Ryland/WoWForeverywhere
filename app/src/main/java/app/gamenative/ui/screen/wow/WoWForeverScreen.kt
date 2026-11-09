@@ -1126,7 +1126,7 @@ private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String
         installLocale(root, product),
         installPortal(root, product),
         forcePortal = GameRegions.chosen != null,
-        gameAccount = app.gamenative.wow.product.GameAccounts.chosen?.let(app.gamenative.wow.product.GameAccounts::name),
+        gameAccount = app.gamenative.wow.product.GameAccounts.chosen,
     ) ?: return
     configWtf.parentFile?.mkdirs()
     configWtf.writeText(updated.joinToString("\n") + "\n")
@@ -1180,15 +1180,14 @@ internal fun buildConfigWtf(
     ) + staleResolutionKeys.map { "SET $it \"$screenSize\"" } + missingNarrator.map { "SET $it \"0\"" }
 }
 
-private const val ACCOUNT_LIST = "SET accountList "
+private const val ACCOUNT_LIST = app.gamenative.wow.product.GameAccounts.ACCOUNT_LIST
 
 /**
  * The game's account list ([existing], e.g. `SET accountList "WoW1|!WoW2|"`) with [account] marked by `!`
  * as the one to log into. The game's other accounts are kept, and [account] is added if the game hasn't seen it.
  */
 internal fun accountListLine(existing: String?, account: String): String {
-    val names = existing?.substringAfter('"', "")?.substringBeforeLast('"', "")
-        ?.split('|')?.map { it.trim().removePrefix("!") }?.filter { it.isNotEmpty() }.orEmpty()
+    val names = app.gamenative.wow.product.GameAccounts.namesInLine(existing)
     val all = if (names.any { it.equals(account, ignoreCase = true) }) names else names + account
     return ACCOUNT_LIST + "\"" + all.joinToString("") { (if (it.equals(account, ignoreCase = true)) "!" else "") + it + "|" } + "\""
 }
