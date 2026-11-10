@@ -186,7 +186,10 @@ fun SettingsScreen(
             Text("WoW Foreverywhere v${BuildConfig.VERSION_NAME}", style = Fw.Text)
             val update = launcher.appUpdate
             if (update == null) {
-                Text("No app update found.", style = Fw.Secondary)
+                Text(
+                    if (launcher.appUpdateCheckFailed) "Couldn't reach GitHub to check for an update. Try again later." else "No app update found.",
+                    style = Fw.Secondary,
+                )
                 FwButton("Check for app update", launcher::checkAppUpdate, kind = FwButtonKind.Ghost)
             } else {
                 Text("Version ${update.version} is available.", style = Fw.Text.copy(color = Fw.Brass))

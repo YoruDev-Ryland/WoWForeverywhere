@@ -14,7 +14,19 @@ import org.json.JSONObject
 import timber.log.Timber
 
 object AppUpdater {
-    private const val RELEASES_URL = "https://api.github.com/repos/YoruDev-Ryland/WoWForeverywhere/releases/latest"
+    private const val REPO = "YoruDev-Ryland/WoWForeverywhere"
+    private const val RELEASES_URL = "https://api.github.com/repos/$REPO/releases/latest"
+    private const val APK_NAME = "WoW-Foreverywhere.apk"
+    private const val USER_AGENT = "WoW-Foreverywhere"
+
+    // github.com redirects this to the latest tag without counting against the API's 60 requests an hour per
+    // address, which phones sharing one mobile data address can run out of.
+    private const val LATEST_PAGE_URL = "https://github.com/$REPO/releases/latest"
+
+    /** True when the last [check] couldn't reach GitHub, as opposed to finding no newer version. */
+    @Volatile
+    var lastCheckFailed = false
+        private set
 
     data class Release(
         val version: String,
@@ -66,22 +78,59 @@ object AppUpdater {
     }.getOrNull()
 
     suspend fun check(currentVersion: String = BuildConfig.VERSION_NAME): Release? = withContext(Dispatchers.IO) {
-        runCatching {
-            val request = Request.Builder()
-                .url(RELEASES_URL)
-                .header("User-Agent", "WoW-Foreverywhere")
-                .header("Accept", "application/vnd.github+json")
-                .build()
-            Net.http.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext null
-                val body = response.body?.string() ?: return@withContext null
-                parseRelease(body, currentVersion)
-            }
-        }.getOrElse {
-            Timber.w(it, "AppUpdater check failed")
-            null
+        val api = fetchFromApi(currentVersion)
+        if (api.isSuccess) {
+            lastCheckFailed = false
+            return@withContext api.getOrNull()
+        }
+        Timber.w(api.exceptionOrNull(), "AppUpdater API check failed, trying the releases page")
+        val page = fetchFromReleasesPage(currentVersion)
+        lastCheckFailed = page.isFailure
+        page.onFailure { Timber.w(it, "AppUpdater releases page check failed") }
+        page.getOrNull()
+    }
+
+    private fun fetchFromApi(currentVersion: String): Result<Release?> = runCatching {
+        val request = Request.Builder()
+            .url(RELEASES_URL)
+            .header("User-Agent", USER_AGENT)
+            .header("Accept", "application/vnd.github+json")
+            .build()
+        Net.http.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("HTTP ${response.code}, rate limit left ${response.header("X-RateLimit-Remaining")}")
+            parseRelease(response.body?.string() ?: error("Empty response"), currentVersion)
         }
     }
+
+    private val noRedirectHttp by lazy { Net.http.newBuilder().followRedirects(false).followSslRedirects(false).build() }
+
+    private fun fetchFromReleasesPage(currentVersion: String): Result<Release?> = runCatching {
+        val request = Request.Builder().url(LATEST_PAGE_URL).header("User-Agent", USER_AGENT).build()
+        val location = noRedirectHttp.newCall(request).execute().use { response ->
+            if (!response.isRedirect) error("HTTP ${response.code}")
+            response.header("Location")
+        }
+        val tag = tagFromLatestRedirect(location) ?: error("No tag in redirect: $location")
+        if (!isNewer(tag, currentVersion)) return@runCatching null
+        Release(
+            version = tag.trimStart('v', 'V'),
+            name = tag,
+            notes = fetchReleaseNotes(tag),
+            downloadUrl = "https://github.com/$REPO/releases/download/$tag/$APK_NAME",
+            sizeBytes = 0L,
+        )
+    }
+
+    fun tagFromLatestRedirect(location: String?): String? =
+        location?.substringAfter("/releases/tag/", "")?.substringBefore('?')?.trimEnd('/')?.takeIf { it.isNotBlank() && '/' !in it }
+
+    private fun fetchReleaseNotes(tag: String): String = runCatching {
+        val request = Request.Builder()
+            .url("https://raw.githubusercontent.com/$REPO/$tag/.github/release-notes.md")
+            .header("User-Agent", USER_AGENT)
+            .build()
+        Net.http.newCall(request).execute().use { if (it.isSuccessful) it.body?.string().orEmpty() else "" }
+    }.getOrDefault("")
 
     suspend fun download(
         context: Context,

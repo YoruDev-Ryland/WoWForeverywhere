@@ -102,6 +102,8 @@ class LauncherController(
 
     var appUpdate by mutableStateOf<AppUpdater.Release?>(null)
         private set
+    var appUpdateCheckFailed by mutableStateOf(false)
+        private set
     var isDownloadingAppUpdate by mutableStateOf(false)
         private set
     var appUpdateProgress by mutableFloatStateOf(0f)
@@ -257,7 +259,10 @@ class LauncherController(
         scope.launch { fetchVersionStatus() }
     }
 
-    private suspend fun fetchAppUpdate(): AppUpdater.Release? = AppUpdater.check().also { appUpdate = it }
+    private suspend fun fetchAppUpdate(): AppUpdater.Release? = AppUpdater.check().also {
+        appUpdate = it
+        appUpdateCheckFailed = AppUpdater.lastCheckFailed
+    }
 
     fun checkAppUpdate() {
         scope.launch { fetchAppUpdate() }

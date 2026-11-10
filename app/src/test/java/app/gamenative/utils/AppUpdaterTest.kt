@@ -119,4 +119,15 @@ class AppUpdaterTest {
     fun parseRelease_invalidJson_returnsNull() {
         assertNull(AppUpdater.parseRelease("not-json", "2.1.2"))
     }
+
+    @Test
+    fun tagFromLatestRedirect_readsTag() {
+        assertEquals("v1.0.8", AppUpdater.tagFromLatestRedirect("https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/tag/v1.0.8"))
+    }
+
+    @Test
+    fun tagFromLatestRedirect_noTag_returnsNull() {
+        assertNull(AppUpdater.tagFromLatestRedirect("https://github.com/YoruDev-Ryland/WoWForeverywhere/releases"))
+        assertNull(AppUpdater.tagFromLatestRedirect(null))
+    }
 }
