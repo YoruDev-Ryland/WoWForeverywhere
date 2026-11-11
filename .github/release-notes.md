@@ -1,9 +1,16 @@
-Back button fix for RedMagic phones, and Taiwan logins.
+Fewer login disconnects, the on-screen keyboard in every language, and a home screen that fits 4:3 handhelds.
 
 ## Fixed
 
-- **On RedMagic phones the back button didn't open the side menu.** These phones send each back press twice, so the menu opened and closed again straight away, or only showed while the button was held. One press now opens it once. If an edge swipe still does nothing on your phone, use the back button; RedMagic's game mode can take that swipe for itself.
-- **Taiwan accounts couldn't log in (BLZ51901016).** Blizzard has no separate Taiwan login server; Taiwan realms sign in through Korea. With your region set to Taiwan, the app now uses the Korean server, and existing installs are fixed the next time you launch.
+- **Logins dropped with BLZ51914400.** Every copy of the app showed Blizzard the same Windows machine ID and computer name. Each device now gets its own identity, created the first time you start the game after updating and kept from then on. Thanks to @dienstag0815 for the fix (#12, #37).
+- **The on-screen keyboard only typed US letters.** Cyrillic, accented and other non-US letters now type into the game (#38).
+- **On 4:3 handhelds like the Retroid Pocket Nova, the Play button shrank to a thin strip.** The home screen now puts Play beside the other tiles on any landscape screen, and fits short screens in portrait too (#39).
+- **Settings → Update app could say no update was found.** GitHub limits how often one internet address can check, and phones on the same mobile network share an address. When that limit runs out, the app now checks the releases page instead, and says so if GitHub can't be reached.
+- **Switching region didn't fully move the install.** The next update downloaded the new region's build, but the game still recorded the old region. It now moves to the new one, and switching region checks for that region's game update straight away.
+
+## Changed
+
+- Game downloads, repairs, updates and version checks now use HTTPS, and downloaded game configs are checked against their checksums before use. Ported from wow-forever-android, based on work by Rbm3267 and danieleforte92.
 
 ## Install
 
