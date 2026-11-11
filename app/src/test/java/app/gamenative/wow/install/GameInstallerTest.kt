@@ -219,6 +219,32 @@ class GameInstallerTest {
     }
 
     @Test
+    fun updateAfterARegionSwitchMovesTheInstallToTheNewRegion() = runBlocking {
+        val tags = "Windows arm64 EU? acct-EUA? geoip-EU? deDE speech?:Windows arm64 EU? deDE text?"
+        File(root, ".build.info").writeText(
+            BuildInfo(GameInstaller.BUILD_INFO_HEADER, listOf(mapOf("Branch" to "eu", "Active" to "1", "Tags" to tags, "Version" to "old", "Product" to "wowf"))).serialize(),
+        )
+        try {
+            app.gamenative.wow.product.GameRegions.chosen = app.gamenative.wow.product.GameRegion.KR
+            installer().run(req) {}
+        } finally {
+            app.gamenative.wow.product.GameRegions.chosen = null
+        }
+        val row = BuildInfo.read(root)!!.active(WowProduct.FOREVER)!!
+        assertEquals("kr", row["Branch"])
+        assertEquals("Windows arm64 KR? acct-KRA? geoip-KR? deDE speech?:Windows arm64 KR? deDE text?", row["Tags"])
+    }
+
+    @Test
+    fun regionTagsChangeOnlyTheRegion() {
+        assertEquals(
+            "Windows arm64 TW? acct-TWA? geoip-TW? enUS speech?:Windows arm64 TW? enUS text?",
+            GameInstaller.regionTags("Windows arm64 US? acct-USA? geoip-US? enUS speech?:Windows arm64 US? enUS text?", "tw"),
+        )
+        assertEquals("Windows arm64 EU? enUS speech?", GameInstaller.regionTags("Windows arm64 EU? enUS speech?", "eu"))
+    }
+
+    @Test
     fun repairReplacesDamagedFile() = runBlocking {
         installer().run(req) {}
         File(root, "_forever_/Wow-arm64.exe").writeText("damaged")

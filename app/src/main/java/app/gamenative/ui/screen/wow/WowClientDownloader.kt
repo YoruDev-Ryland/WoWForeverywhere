@@ -117,9 +117,11 @@ object WowClientDownloader {
         )
     }
 
-    /** The patch service row for [region] in [column], else the first row if that region isn't listed. */
+    /** The patch service row for [region] in [column], else the US row, else the first if neither is listed. */
     internal fun regionRow(rows: List<Map<String, String>>, column: String, region: String): Map<String, String>? =
-        rows.firstOrNull { it[column].equals(region, ignoreCase = true) } ?: rows.firstOrNull()
+        rows.firstOrNull { it[column].equals(region, ignoreCase = true) }
+            ?: rows.firstOrNull { it[column].equals("us", ignoreCase = true) }
+            ?: rows.firstOrNull()
 
     fun updateGame(gameRoot: File, product: WowProduct, target: VersionCheckResult, onStatus: (String) -> Unit) {
         val cdn = Cdn(

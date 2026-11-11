@@ -247,7 +247,11 @@ class LauncherController(
     private suspend fun fetchVersionStatus() {
         isCheckingVersion = true
         val product = files.product
-        versionStatus = withContext(Dispatchers.IO) { WowClientDownloader.checkVersion(File(gamePath), product) }
+        val region = GameRegions.chosen
+        val status = withContext(Dispatchers.IO) { WowClientDownloader.checkVersion(File(gamePath), product) }
+        // A check for a region the player has since switched away from is stale; the switch started a new one.
+        if (region != GameRegions.chosen) return
+        versionStatus = status
         canConvertToLaunch = product == WowProduct.BETA && ForeverTracks.selected == ForeverTrack.LAUNCH &&
             withContext(Dispatchers.IO) { runCatching { WowClientDownloader.isProductLive(WowProduct.FOREVER) }.getOrDefault(false) }
         isCheckingVersion = false

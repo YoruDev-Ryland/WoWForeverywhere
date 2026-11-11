@@ -1,5 +1,6 @@
 package app.gamenative.wow.install
 
+import app.gamenative.ui.screen.wow.WowClientDownloader
 import app.gamenative.utils.Net
 import app.gamenative.wow.product.BuildInfo
 import app.gamenative.wow.product.GameRegions
@@ -125,10 +126,10 @@ class GameInstaller(
     suspend fun plan(request: InstallRequest): InstallPlan = withContext(Dispatchers.IO) {
         val req = request.keepingInstallRegion()
         val versions = Psv.parse(fetchText("$patchBase/${req.product.code}/versions"))
-        val row = versions.firstOrNull { it["Region"] == req.region } ?: versions.firstOrNull()
+        val row = WowClientDownloader.regionRow(versions, "Region", req.region)
             ?: throw IOException("Blizzard's patch service has no build for ${req.product.code}")
         val cdns = Psv.parse(fetchText("$patchBase/${req.product.code}/cdns"))
-        val cdnRow = cdns.firstOrNull { it["Name"] == req.region } ?: cdns.firstOrNull() ?: throw IOException("No CDN listed")
+        val cdnRow = WowClientDownloader.regionRow(cdns, "Name", req.region) ?: throw IOException("No CDN listed")
         val cdn = Cdn(cdnRow.getValue("Hosts").split(" ").filter { it.isNotBlank() }, cdnRow.getValue("Path"), http, cdnScheme)
 
         val buildConfigKey = row.getValue("BuildConfig")
@@ -311,13 +312,23 @@ class GameInstaller(
         )
         val info = when {
             existing == null -> BuildInfo(BUILD_INFO_HEADER, listOf(values))
-            // Repair or update: only the build columns change; Branch and Tags (region, language) stay.
-            existing.rows.any { it["Product"] == req.product.code } -> existing.withUpdatedActive(req.product, values - KEEP_ON_UPDATE)
+            // Repair or update: the build columns change and the language stays. Branch and the region tags follow the
+            // region the build was picked for, so an update after a region switch doesn't leave the old region behind.
+            existing.rows.any { it["Product"] == req.product.code } ->
+                existing.withUpdatedActive(req.product, values - KEEP_ON_UPDATE + movedRegion(existing.active(req.product), req))
             else -> existing.copy(rows = existing.rows + values)
         }
         val temp = File(req.root, "${BuildInfo.FILE_NAME}.tmp")
         temp.writeText(info.serialize())
         if (!temp.renameTo(File(req.root, BuildInfo.FILE_NAME))) throw IOException("Couldn't write ${BuildInfo.FILE_NAME}")
+    }
+
+    /** Branch and Tags for [row] moved to [req]'s region; empty when it's already there. */
+    private fun movedRegion(row: Map<String, String>?, req: InstallRequest): Map<String, String> {
+        val branch = row?.get("Branch").orEmpty()
+        if (req.region.isBlank() || branch.equals(req.region, ignoreCase = true)) return emptyMap()
+        val tags = row?.get("Tags")?.takeIf { it.isNotBlank() }?.let { regionTags(it, req.region) } ?: tags(req)
+        return mapOf("Branch" to req.region, "Tags" to tags)
     }
 
     private fun tags(req: InstallRequest): String {
@@ -352,6 +363,12 @@ class GameInstaller(
             "CDN Path!STRING:0", "CDN Hosts!STRING:0", "CDN Servers!STRING:0", "Tags!STRING:0", "Armadillo!STRING:0",
             "Last Activated!STRING:0", "Version!STRING:0", "KeyRing!HEX:16", "Product!STRING:0",
         )
+
+        // The region parts of Tags: "EU?", "acct-EUA?", "geoip-EU?".
+        private val REGION_TAG = Regex("""(?<=^|[\s:-])[A-Z]{2}(?=A?\?)""")
+
+        /** [tags] with every region part set to [region], everything else (platform, language) unchanged. */
+        internal fun regionTags(tags: String, region: String): String = tags.replace(REGION_TAG, region.uppercase())
 
         fun configPath(key: String) = "Data/config/${key.substring(0, 2)}/${key.substring(2, 4)}/$key"
     }

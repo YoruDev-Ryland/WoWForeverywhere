@@ -408,11 +408,16 @@ private fun RegionSection(launcher: LauncherController) {
     var current by remember(branch) { mutableStateOf(GameRegions.effective(branch)) }
     FwSection("Region") {
         Text("The Battle.net region you play in. A change applies the next time you start the game.", style = Fw.Secondary)
+        // An update in progress downloads the region it started with, so the region can't change under it.
+        if (launcher.isUpdating) Text("You can change the region once the game update finishes.", style = Fw.Secondary.copy(color = Fw.Warn))
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             GameRegion.entries.forEach { r ->
                 FwRow(selected = r == current, onClick = {
+                    if (launcher.isUpdating || r == current) return@FwRow
                     GameRegions.save(context, r)
                     current = r
+                    // Regions can be on different builds, so the install may now need an update.
+                    launcher.checkVersionStatus()
                 }) {
                     Text(r.label, style = Fw.Text, modifier = Modifier.weight(1f))
                     Text(r.portal, style = Fw.Data.copy(color = Fw.Ash))
