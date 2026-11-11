@@ -84,7 +84,7 @@ class GameInstallerTest {
                 val body = files[path] ?: return MockResponse().setResponseCode(404)
                 val range = request.getHeader("Range")?.removePrefix("bytes=")?.split("-")?.map { it.toInt() }
                 val slice = if (range != null) body.copyOfRange(range[0], minOf(range[1] + 1, body.size)) else body
-                return MockResponse().setBody(Buffer().write(slice))
+                return MockResponse().setResponseCode(if (range != null) 206 else 200).setBody(Buffer().write(slice))
             }
         }
         server.start()
@@ -97,7 +97,7 @@ class GameInstallerTest {
     private fun cdnPath(kind: String, key: String) = "/tpr/wow/$kind/${key.substring(0, 2)}/${key.substring(2, 4)}/$key"
 
     private fun installer(space: Long = Long.MAX_VALUE) =
-        GameInstaller(patchBase = server.url("/").toString().trimEnd('/'), http = OkHttpClient(), usableSpace = { space })
+        GameInstaller(patchBase = server.url("/").toString().trimEnd('/'), http = OkHttpClient(), cdnScheme = "http", usableSpace = { space })
 
     private val req get() = InstallRequest(root, WowProduct.FOREVER)
 

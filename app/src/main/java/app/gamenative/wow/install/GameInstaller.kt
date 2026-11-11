@@ -118,9 +118,10 @@ data class InstallPlan(
  * mistaken for a complete one.
  */
 class GameInstaller(
-    private val patchBase: String = "http://us.patch.battle.net:1119",
+    // Blizzard's HTTPS version service; it lists every region's build like the plain-HTTP patch server on port 1119.
+    private val patchBase: String = "https://us.version.battle.net/v2/products",
     private val http: OkHttpClient = Net.http,
-    private val cdnScheme: String = "http",
+    private val cdnScheme: String = "https",
     private val usableSpace: (File) -> Long = { generateSequence(it) { f -> f.parentFile }.first { f -> f.exists() }.usableSpace },
 ) {
     suspend fun plan(request: InstallRequest): InstallPlan = withContext(Dispatchers.IO) {
@@ -302,7 +303,8 @@ class GameInstaller(
             "IM Size" to p.installSize.toString(),
             "CDN Path" to p.cdn.path,
             "CDN Hosts" to p.cdn.hosts.joinToString(" "),
-            "CDN Servers" to p.cdn.hosts.joinToString(" ") { "$cdnScheme://$it/?maxhosts=4" },
+            // For the game client's own streaming, which has always used these plain-HTTP URLs; our downloads use HTTPS.
+            "CDN Servers" to p.cdn.hosts.joinToString(" ") { "http://$it/?maxhosts=4" },
             "Tags" to tags(req),
             "Armadillo" to "",
             "Last Activated" to Instant.now().toString(),

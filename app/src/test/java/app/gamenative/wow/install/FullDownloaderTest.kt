@@ -106,7 +106,7 @@ class FullDownloaderTest {
                 val body = files[path] ?: return MockResponse().setResponseCode(404)
                 val range = request.getHeader("Range")?.removePrefix("bytes=")?.split("-")?.map { it.toInt() }
                 val slice = if (range != null) body.copyOfRange(range[0], minOf(range[1] + 1, body.size)) else body
-                return MockResponse().setBody(Buffer().write(slice))
+                return MockResponse().setResponseCode(if (range != null) 206 else 200).setBody(Buffer().write(slice))
             }
         }
         server.start()
@@ -128,7 +128,7 @@ class FullDownloaderTest {
     fun tearDown() = server.shutdown()
 
     private fun downloader(gameRunning: () -> Boolean = { false }) =
-        FullDownloader(http = OkHttpClient(), workers = 2, usableSpace = { Long.MAX_VALUE }, gameRunning = gameRunning, retryDelayMs = { 0 }, gamePollMs = 10)
+        FullDownloader(http = OkHttpClient(), cdnScheme = "http", workers = 2, usableSpace = { Long.MAX_VALUE }, gameRunning = gameRunning, retryDelayMs = { 0 }, gamePollMs = 10)
 
     private val req get() = InstallRequest(root, WowProduct.FOREVER, full = true)
 

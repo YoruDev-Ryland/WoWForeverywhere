@@ -38,7 +38,7 @@ import timber.log.Timber
  */
 class FullDownloader(
     private val http: OkHttpClient = Net.http,
-    private val cdnScheme: String = "http",
+    private val cdnScheme: String = "https",
     private val workers: Int = 4,
     private val usableSpace: (File) -> Long = { generateSequence(it) { f -> f.parentFile }.first { f -> f.exists() }.usableSpace },
     /** The game must be closed while its storage is swapped. */

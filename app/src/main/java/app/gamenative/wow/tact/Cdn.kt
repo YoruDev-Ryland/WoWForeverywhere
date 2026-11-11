@@ -7,27 +7,34 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import java.security.MessageDigest
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 
 /**
- * Blizzard's TACT CDN. Hosts are tried in order: a 403/404 from any host means the file doesn't exist,
- * other failures fall through to the next host.
+ * Blizzard's TACT CDN, over HTTPS. Hosts are tried in order: a 403/404 from any host means the file doesn't exist,
+ * other failures fall through to the next host. Configs are checked against their MD5 name; data files are checked
+ * once decoded, against the manifest that named them.
  */
 class Cdn(
     val hosts: List<String>,
     val path: String,
     private val http: OkHttpClient = Net.http,
-    private val scheme: String = "http",
+    private val scheme: String = "https",
 ) {
     /** Called with each block of bytes as it arrives from the network, for download speed and progress. */
     @Volatile
     var onBytes: ((Long) -> Unit)? = null
 
-    fun url(host: String, kind: String, key: String) = "$scheme://$host/$path/$kind/${key.substring(0, 2)}/${key.substring(2, 4)}/$key"
+    fun url(host: String, kind: String, key: String) =
+        "$scheme://${if (scheme == "https") sslHost(host) else host}/$path/$kind/${key.substring(0, 2)}/${key.substring(2, 4)}/$key"
 
-    fun require(kind: String, key: String) = fetch(kind, key) ?: throw IOException("CDN is missing $kind/$key")
+    fun require(kind: String, key: String): ByteArray {
+        val bytes = fetch(kind, key) ?: throw IOException("CDN is missing $kind/$key")
+        if (kind == "config") verifyConfig(key, bytes)
+        return bytes
+    }
 
     fun fetch(kind: String, key: String, range: LongRange? = null): ByteArray? =
         withResponse(kind, key, range) { response ->
@@ -58,7 +65,8 @@ class Cdn(
             try {
                 val response = http.newCall(request).execute()
                 when {
-                    response.isSuccessful -> return CdnStream(response)
+                    answered(response, range) -> return CdnStream(response)
+                    response.isSuccessful -> failure = IOException("$host ignored the byte range")
                     response.code == 403 || response.code == 404 -> missing = true
                     else -> failure = IOException("HTTP ${response.code} from $host")
                 }
@@ -105,7 +113,8 @@ class Cdn(
             try {
                 http.newCall(request).execute().use { response ->
                     when {
-                        response.isSuccessful -> return read(response)
+                        answered(response, range) -> return read(response)
+                        response.isSuccessful -> failure = IOException("$host ignored the byte range")
                         response.code == 403 || response.code == 404 -> missing = true
                         else -> failure = IOException("HTTP ${response.code} from $host")
                     }
@@ -116,6 +125,20 @@ class Cdn(
         }
         if (missing) return null
         throw failure ?: IOException("No CDN hosts configured")
+    }
+
+    // A server that ignores Range answers 200 with the whole file, which isn't the bytes asked for.
+    private fun answered(response: Response, range: LongRange?) = if (range != null) response.code == 206 else response.isSuccessful
+
+    companion object {
+        /** Level 3 serves HTTPS under its own host name; Blizzard's other CDN hosts serve both on one name. */
+        fun sslHost(host: String) = if (host.equals("level3.blizzard.com", ignoreCase = true)) "level3.ssl.blizzard.com" else host
+
+        fun verifyConfig(key: String, bytes: ByteArray) {
+            if (!hex(MessageDigest.getInstance("MD5").digest(bytes), 0, 16).equals(key, ignoreCase = true)) {
+                throw IOException("Checksum mismatch for config $key")
+            }
+        }
     }
 }
 

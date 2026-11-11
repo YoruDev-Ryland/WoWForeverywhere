@@ -103,7 +103,7 @@ class TactTest {
     fun cdnFallsBackToNextHostOnServerError() {
         val bad = server { MockResponse().setResponseCode(500) }
         val good = server { MockResponse().setBody("ok") }
-        val cdn = Cdn(listOf(hostOf(bad), hostOf(good)), "tpr/wow", OkHttpClient())
+        val cdn = Cdn(listOf(hostOf(bad), hostOf(good)), "tpr/wow", OkHttpClient(), "http")
         assertEquals("ok", String(cdn.fetch("config", "abcdef")!!))
         assertEquals("/tpr/wow/config/ab/cd/abcdef", good.takeRequest().path)
     }
@@ -111,13 +111,37 @@ class TactTest {
     @Test
     fun cdnReturnsNullOnNotFound() {
         val s = server { MockResponse().setResponseCode(404) }
-        assertNull(Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient()).fetch("data", "abcdef"))
+        assertNull(Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient(), "http").fetch("data", "abcdef"))
+    }
+
+    @Test
+    fun cdnUsesLevel3sHttpsHostName() {
+        val cdn = Cdn(listOf("level3.blizzard.com", "us.cdn.blizzard.com"), "tpr/wow", OkHttpClient())
+        assertEquals("https://level3.ssl.blizzard.com/tpr/wow/config/ab/cd/abcdef", cdn.url("level3.blizzard.com", "config", "abcdef"))
+        assertEquals("https://us.cdn.blizzard.com/tpr/wow/config/ab/cd/abcdef", cdn.url("us.cdn.blizzard.com", "config", "abcdef"))
+    }
+
+    @Test
+    fun cdnRejectsAConfigThatDoesntMatchItsName() {
+        val s = server { MockResponse().setBody("tampered") }
+        val cdn = Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient(), "http")
+        val error = runCatching { cdn.require("config", "0123456789abcdef0123456789abcdef") }.exceptionOrNull()
+        assertEquals("Checksum mismatch for config 0123456789abcdef0123456789abcdef", error?.message)
+        val good = "tampered".toByteArray().let { java.security.MessageDigest.getInstance("MD5").digest(it) }.joinToString("") { "%02x".format(it) }
+        assertEquals("tampered", String(cdn.require("config", good)))
+    }
+
+    @Test
+    fun cdnRejectsAWholeFileForARangedRequest() {
+        val s = server { MockResponse().setBody("whole file") }
+        val error = runCatching { Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient(), "http").fetch("data", "abcdef", 0L until 4L) }.exceptionOrNull()
+        assertEquals("${hostOf(s)} ignored the byte range", error?.message)
     }
 
     @Test
     fun cdnSendsRange() {
-        val s = server { MockResponse().setBody("x") }
-        Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient()).fetch("data", "abcdef", 10L until 20L)
+        val s = server { MockResponse().setResponseCode(206).setBody("x") }
+        Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient(), "http").fetch("data", "abcdef", 10L until 20L)
         assertEquals("bytes=10-19", s.takeRequest().getHeader("Range"))
     }
 
@@ -131,9 +155,9 @@ class TactTest {
         val ekey = "ee".repeat(16)
         val s = server { request ->
             val range = request.getHeader("Range")!!.removePrefix("bytes=").split("-").map { it.toInt() }
-            MockResponse().setBody(okio.Buffer().write(blte.copyOfRange(range[0], range[1] + 1)))
+            MockResponse().setResponseCode(206).setBody(okio.Buffer().write(blte.copyOfRange(range[0], range[1] + 1)))
         }
-        val found = EncodingLookup(Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient()), ekey).find(setOf(c1, c2, "33".repeat(16)))
+        val found = EncodingLookup(Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient(), "http"), ekey).find(setOf(c1, c2, "33".repeat(16)))
         assertEquals(mapOf(c1 to e1, c2 to e2), found)
     }
 }

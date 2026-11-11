@@ -27,7 +27,8 @@ object WowClientDownloader {
     const val BUILD_INFO = BuildInfo.FILE_NAME
     private const val PLATFORM_ARCH = "arm64"
     private const val EXCLUDED_ARCH = "x86_64"
-    private fun patchUrl(product: WowProduct) = "http://us.patch.battle.net:1119/${product.code}"
+    // Blizzard's HTTPS version service; it lists every region's build like the plain-HTTP patch server on port 1119.
+    private fun patchUrl(product: WowProduct) = "https://us.version.battle.net/v2/products/${product.code}"
     private const val DEFAULT_CDN_PATH = "tpr/wow"
     private val DEFAULT_CDN_HOSTS = listOf("level3.blizzard.com", "us.cdn.blizzard.com")
 
