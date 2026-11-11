@@ -149,6 +149,9 @@ static int (*next_getaddrinfo)(const char *, const char *, const struct addrinfo
                                struct addrinfo **);
 static void (*next_freeaddrinfo)(struct addrinfo *);
 static int (*next_gethostname)(char *, size_t);
+static struct hostent *(*next_gethostbyname)(const char *);
+static int (*next_gethostbyname_r)(const char *, struct hostent *, char *, size_t,
+                                   struct hostent **, int *);
 static pthread_once_t resolver_once = PTHREAD_ONCE_INIT;
 static pthread_mutex_t mapped_results_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct mapped_result *mapped_results;
@@ -158,6 +161,8 @@ static void resolve_next_symbols(void)
     next_getaddrinfo = dlsym(RTLD_NEXT, "getaddrinfo");
     next_freeaddrinfo = dlsym(RTLD_NEXT, "freeaddrinfo");
     next_gethostname = dlsym(RTLD_NEXT, "gethostname");
+    next_gethostbyname = dlsym(RTLD_NEXT, "gethostbyname");
+    next_gethostbyname_r = dlsym(RTLD_NEXT, "gethostbyname_r");
 }
 
 static int network_getaddrinfo(const char *node, const char *service,
@@ -451,6 +456,52 @@ void freeaddrinfo(struct addrinfo *result)
     {
         next_freeaddrinfo(result);
     }
+}
+
+/*
+ * The older gethostbyname(_r) path for the own host name: Android's resolver
+ * doesn't know WOWFOREVER_HOSTNAME, so look up the address it stands for
+ * (routable address, else 127.0.0.1) instead.  Other names are passed through.
+ */
+static const char *own_name_to_address(const char *name, char *address, size_t length)
+{
+    const char *self = name ? wow_hostname() : NULL;
+
+    if (!self || strcasecmp(name, self) != 0)
+        return name;
+    if (!routable_address(address, length))
+        snprintf(address, length, "127.0.0.1");
+    DNS_LOG("gethostbyname(own host name) -> own address");
+    return address;
+}
+
+struct hostent *gethostbyname(const char *name)
+{
+    char address[INET_ADDRSTRLEN];
+
+    pthread_once(&resolver_once, resolve_next_symbols);
+    if (!next_gethostbyname)
+    {
+        h_errno = NO_RECOVERY;
+        return NULL;
+    }
+    return next_gethostbyname(own_name_to_address(name, address, sizeof(address)));
+}
+
+int gethostbyname_r(const char *name, struct hostent *ret, char *buf,
+                    size_t buflen, struct hostent **result, int *h_errnop)
+{
+    char address[INET_ADDRSTRLEN];
+
+    pthread_once(&resolver_once, resolve_next_symbols);
+    if (!next_gethostbyname_r)
+    {
+        *result = NULL;
+        *h_errnop = NO_RECOVERY;
+        return ENOSYS;
+    }
+    return next_gethostbyname_r(own_name_to_address(name, address, sizeof(address)),
+                                ret, buf, buflen, result, h_errnop);
 }
 
 /*
