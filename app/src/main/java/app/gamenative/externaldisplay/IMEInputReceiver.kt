@@ -7,8 +7,12 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import app.gamenative.wow.input.ComposingText
+import app.gamenative.wow.input.UnicodeKeys
 import com.winlator.xserver.Pointer
+import com.winlator.xserver.XKeycode
 import com.winlator.xserver.XServer
+import java.util.concurrent.Executors
 import kotlinx.coroutines.delay
 import timber.log.Timber
 
@@ -49,6 +53,12 @@ class IMEInputReceiver(
 
     private var imeSessionActive = false
 
+    // Everything typed goes through one queue so characters reach the game in order, including the
+    // non-US ones that may wait for a spare key (see UnicodeKeys).
+    private val typing = Executors.newSingleThreadExecutor { r -> Thread(r, "ime-typing").apply { isDaemon = true } }
+    private val unicodeKeys = UnicodeKeys()
+    private val composing = ComposingText()
+
     init {
         isFocusable = false
         isFocusableInTouchMode = false
@@ -69,41 +79,67 @@ class IMEInputReceiver(
         }
 
         Timber.d("IMEInputReceiver: onCreateInputConnection called!")
-        // Disable autocomplete/suggestions so each key commits immediately
-        outAttrs.inputType = EditorInfo.TYPE_CLASS_TEXT or 
-                             EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
-                             EditorInfo.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-        outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN or 
+        // A plain text field, so the keyboard offers its languages and voice typing (#38). No suggestions,
+        // so most keyboards commit each key at once; the ones that still show pending text are handled below.
+        outAttrs.inputType = EditorInfo.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN or
                               EditorInfo.IME_FLAG_NO_EXTRACT_UI or
                               EditorInfo.IME_ACTION_NONE
-        
+        composing.finish()
+
         return object : BaseInputConnection(this, false) {
             override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
                 Timber.d("IMEInputReceiver: commitText called with: '$text'")
-                text?.let(::typeText)
+                replaceComposing(text?.toString().orEmpty())
+                composing.finish()
+                return true
+            }
+
+            override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
+                replaceComposing(text?.toString().orEmpty())
+                return true
+            }
+
+            override fun finishComposingText(): Boolean {
+                composing.finish()
                 return true
             }
 
             override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
                 Timber.d("IMEInputReceiver: deleteSurroundingText called")
-                if (beforeLength > 0) {
-                    repeat(beforeLength) {
-                        xServer.injectKeyPress(com.winlator.xserver.XKeycode.KEY_BKSP, 0)
-                        xServer.injectKeyRelease(com.winlator.xserver.XKeycode.KEY_BKSP)
-                    }
-                    Timber.v("IMEInputReceiver: Sent backspace x$beforeLength")
-                }
+                if (beforeLength > 0) backspace(beforeLength)
+                return true
+            }
+
+            override fun performEditorAction(editorAction: Int): Boolean {
+                composing.finish()
+                typeText("\n")
                 return true
             }
 
             override fun sendKeyEvent(event: KeyEvent): Boolean {
                 if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_DEL) {
-                    xServer.injectKeyPress(com.winlator.xserver.XKeycode.KEY_BKSP, 0)
-                    xServer.injectKeyRelease(com.winlator.xserver.XKeycode.KEY_BKSP)
+                    composing.finish()
+                    backspace(1)
                     Timber.v("IMEInputReceiver: Sent backspace from sendKeyEvent")
                     return true
                 }
                 return super.sendKeyEvent(event)
+            }
+        }
+    }
+
+    private fun replaceComposing(text: String) {
+        val (back, add) = composing.replaceWith(text)
+        if (back > 0) backspace(back)
+        if (add.isNotEmpty()) typeText(add)
+    }
+
+    private fun backspace(count: Int) {
+        typing.execute {
+            repeat(count) {
+                xServer.injectKeyPress(XKeycode.KEY_BKSP, 0)
+                xServer.injectKeyRelease(XKeycode.KEY_BKSP)
             }
         }
     }
@@ -122,39 +158,32 @@ class IMEInputReceiver(
     )
 
     fun typeText(text: CharSequence) {
-        text.forEach(::sendCharacterToGame)
+        val codePoints = text.codePoints().toArray()
+        typing.execute {
+            // a character that can't be sent is skipped; an exception on this thread would close the game
+            codePoints.forEach { cp -> runCatching { sendCharacterToGame(cp) }.onFailure { Timber.w(it, "IMEInputReceiver: couldn't type U+%04X", cp) } }
+        }
     }
 
-    private fun sendCharacterToGame(char: Char) {
-        val keyDispatch = charToKeyDispatch(char)
-        if (keyDispatch != null) {
-            val metaState = if (keyDispatch.requiresShift) KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON else 0
-            val downEvent = KeyEvent(
-                0L,
-                0L,
-                KeyEvent.ACTION_DOWN,
-                keyDispatch.keyCode,
-                0,
-                metaState,
-            )
-            xServer.keyboard.onKeyEvent(downEvent)
-
-            val upEvent = KeyEvent(
-                0L,
-                0L,
-                KeyEvent.ACTION_UP,
-                keyDispatch.keyCode,
-                0,
-                metaState,
-            )
-            xServer.keyboard.onKeyEvent(upEvent)
-
-            Timber.v(
-                "IMEInputReceiver: Sent char '$char' as keyCode ${keyDispatch.keyCode} (shift=${keyDispatch.requiresShift})",
-            )
-        } else {
-            Timber.w("IMEInputReceiver: Could not map character '$char' to keyCode")
+    private fun sendCharacterToGame(codePoint: Int) {
+        val keyDispatch = if (codePoint < 0x80) charToKeyDispatch(codePoint.toChar()) else null
+        if (keyDispatch == null) {
+            sendUnicode(codePoint)
+            return
         }
+        val metaState = if (keyDispatch.requiresShift) KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON else 0
+        xServer.keyboard.onKeyEvent(KeyEvent(0L, 0L, KeyEvent.ACTION_DOWN, keyDispatch.keyCode, 0, metaState))
+        xServer.keyboard.onKeyEvent(KeyEvent(0L, 0L, KeyEvent.ACTION_UP, keyDispatch.keyCode, 0, metaState))
+    }
+
+    /** A character with no US key: a spare keycode remapped to its keysym (#38). */
+    private fun sendUnicode(codePoint: Int) {
+        if (Character.isISOControl(codePoint)) return
+        val (keycode, wait) = unicodeKeys.reserve(UnicodeKeys.keysymFor(codePoint))
+        if (wait > 0) Thread.sleep(wait)
+        xServer.injectKeyPress(keycode, UnicodeKeys.keysymFor(codePoint))
+        xServer.injectKeyRelease(keycode)
+        Timber.v("IMEInputReceiver: Sent U+%04X on keycode %d", codePoint, keycode.toInt() and 0xFF)
     }
 
     private fun charToKeyDispatch(char: Char): KeyDispatch? {

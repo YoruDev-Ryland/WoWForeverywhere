@@ -287,6 +287,19 @@ public class XServer {
         }
     }
 
+    /** Presses a raw keycode that has no {@link XKeycode}, such as a spare key carrying a Unicode keysym. */
+    public void injectKeyPress(byte keycode, int keysym) {
+        try (XLock lock = lock(Lockable.WINDOW_MANAGER, Lockable.INPUT_DEVICE)) {
+            keyboard.setKeyPress(keycode, keysym);
+        }
+    }
+
+    public void injectKeyRelease(byte keycode) {
+        try (XLock lock = lock(Lockable.WINDOW_MANAGER, Lockable.INPUT_DEVICE)) {
+            keyboard.setKeyRelease(keycode);
+        }
+    }
+
     private void registerExtension(Extension ext, int[] nextEventId, int[] nextErrorId) {
         if (ext.getNumEvents() > 0) {
             ext.setFirstEventId((byte) nextEventId[0]);
