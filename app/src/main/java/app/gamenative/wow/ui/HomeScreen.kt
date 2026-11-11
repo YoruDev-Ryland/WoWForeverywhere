@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -65,10 +66,13 @@ fun HomeScreen(
     Column(Modifier.fillMaxSize().background(Fw.Ground).padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Header(launcher)
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            val wide = maxWidth >= 600.dp
+            // Side by side on any landscape screen, 4:3 handhelds included (#39), and on wide tablets in portrait.
+            val wide = maxWidth > maxHeight || maxWidth >= 600.dp
             val play: @Composable (Modifier) -> Unit = { m -> PlayTile(launcher, onOpenGame, m.focusRequester(playFocus)) }
+            // Narrow side-by-side (a 4:3 handheld): the small tiles are too slim for the full title size.
+            val tileTitle = if (wide && maxWidth < 720.dp) Fw.Title.copy(fontSize = 20.sp, lineHeight = 24.sp) else Fw.Title
             val tiles: @Composable (Modifier) -> Unit = { m ->
-                SmallTiles(launcher, addonUpdates, addonCount, onOpenAddons, onOpenGame, onOpenAccount, onOpenSettings, m)
+                SmallTiles(launcher, addonUpdates, addonCount, onOpenAddons, onOpenGame, onOpenAccount, onOpenSettings, tileTitle, m)
             }
             if (wide) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -76,10 +80,11 @@ fun HomeScreen(
                     tiles(Modifier.weight(1f).fillMaxHeight())
                 }
             } else {
-                // Portrait: the four small tiles keep a fixed height and Play takes all the rest.
+                // Portrait: Play on top and the four small tiles below, never more than half the height so Play keeps its room.
+                val tilesHeight = minOf(340.dp, (maxHeight - 14.dp) / 2)
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     play(Modifier.fillMaxWidth().weight(1f))
-                    tiles(Modifier.fillMaxWidth().height(340.dp))
+                    tiles(Modifier.fillMaxWidth().height(tilesHeight))
                 }
             }
         }
@@ -192,11 +197,12 @@ private fun SmallTiles(
     onOpenGame: () -> Unit,
     onOpenAccount: () -> Unit,
     onOpenSettings: () -> Unit,
+    titleStyle: TextStyle,
     modifier: Modifier,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            FwTile("Addons", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.INTERFACE, badge = addonUpdates?.takeIf { it > 0 }?.toString(), onClick = onOpenAddons) {
+            FwTile("Addons", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.INTERFACE, titleStyle = titleStyle, badge = addonUpdates?.takeIf { it > 0 }?.toString(), onClick = onOpenAddons) {
                 Text(
                     when {
                         addonCount == null -> "Browse and install addons"
@@ -206,19 +212,20 @@ private fun SmallTiles(
                     style = Fw.Secondary,
                 )
             }
-            FwTile("Game files", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.ASHENVALE, onClick = onOpenGame) {
+            FwTile("Game files", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.ASHENVALE, titleStyle = titleStyle, onClick = onOpenGame) {
                 Text(if (launcher.filesMissing) "Not installed" else launcher.files.product?.displayName.orEmpty(), style = Fw.Secondary)
                 if (launcher.canConvertToLaunch) Text("Launch version available", style = Fw.Secondary.copy(color = Fw.Brass))
             }
         }
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            FwTile("Account", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.SKYBORNE, onClick = onOpenAccount) {
+            FwTile("Account", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.SKYBORNE, titleStyle = titleStyle, onClick = onOpenAccount) {
                 Text(if (launcher.hasSavedLogin) "Login saved on this device" else "No login saved", style = Fw.Secondary)
             }
             FwTile(
                 "Settings",
                 Modifier.weight(1f).fillMaxHeight(),
                 art = ForeverArt.CAMP,
+                titleStyle = titleStyle,
                 badge = launcher.appUpdate?.let { "NEW" },
                 onClick = onOpenSettings,
             ) {
