@@ -203,11 +203,11 @@ class PhysicalControllerHandler(
 
                 if (controllerBinding != null) {
                     // Some controllers emit BOTH a digital KeyEvent for L2/R2 and an analog axis value in MotionEvent.
-                    // If this physical key is mapped to a virtual trigger AND the device exposes trigger axes,
-                    // ignore the KeyEvent to avoid an initial "full press" spike. MotionEvent will provide the analog value.
+                    // Once this trigger has sent analog values, ignore its KeyEvent so a press isn't a "full press"
+                    // spike. Controllers that list trigger axes but only ever send the button (#44) keep using it.
                     if ((keyCode == KeyEvent.KEYCODE_BUTTON_L2 || keyCode == KeyEvent.KEYCODE_BUTTON_R2) &&
                         controllerBinding.bindingCombo.bindings.any { it == Binding.GAMEPAD_BUTTON_L2 || it == Binding.GAMEPAD_BUTTON_R2 } &&
-                        deviceHasTriggerAxis(event.device, keyCode)
+                        controller.hasAnalogTrigger(keyCode)
                     ) {
                         return true
                     }
@@ -243,23 +243,6 @@ class PhysicalControllerHandler(
             }
         }
         return false
-    }
-
-    private fun deviceHasTriggerAxis(device: InputDevice?, keyCode: Int): Boolean {
-        return when (keyCode) {
-            KeyEvent.KEYCODE_BUTTON_L2 ->
-                hasMotionRange(device, MotionEvent.AXIS_LTRIGGER) || hasMotionRange(device, MotionEvent.AXIS_BRAKE)
-            KeyEvent.KEYCODE_BUTTON_R2 ->
-                hasMotionRange(device, MotionEvent.AXIS_RTRIGGER) || hasMotionRange(device, MotionEvent.AXIS_GAS)
-            else -> false
-        }
-    }
-
-    private fun hasMotionRange(device: InputDevice?, axis: Int): Boolean {
-        if (device == null) return false
-        return device.getMotionRange(axis, InputDevice.SOURCE_JOYSTICK) != null ||
-            device.getMotionRange(axis, InputDevice.SOURCE_GAMEPAD) != null ||
-            device.getMotionRange(axis) != null
     }
 
     /**

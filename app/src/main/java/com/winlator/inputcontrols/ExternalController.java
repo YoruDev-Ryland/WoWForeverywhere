@@ -211,12 +211,36 @@ public class ExternalController {
     private void processTriggerButton(MotionEvent event) {
         float l = event.getAxisValue(event.getAxisValue(MotionEvent.AXIS_LTRIGGER) == 0.0f ? MotionEvent.AXIS_BRAKE : MotionEvent.AXIS_LTRIGGER);
         float r = event.getAxisValue(event.getAxisValue(MotionEvent.AXIS_RTRIGGER) == 0.0f ? MotionEvent.AXIS_GAS : MotionEvent.AXIS_RTRIGGER);
+        applyAnalogTriggers(l, r);
+    }
+
+    // Whether each trigger has sent a real analog value. Some Bluetooth controllers list trigger axes but send L2/R2
+    // only as buttons (BTN_TL2/BTN_TR2), so waiting for the axis left their triggers dead (#44). Until a trigger's
+    // axis moves, its button drives it; after that the axis does, as before.
+    private boolean analogL = false;
+    private boolean analogR = false;
+
+    /** Whether the L2 or R2 trigger ([keyCode]) has been seen sending analog values, so its button is ignored. */
+    public boolean hasAnalogTrigger(int keyCode) {
+        if (keyCode == KeyEvent.KEYCODE_BUTTON_L2) return analogL;
+        if (keyCode == KeyEvent.KEYCODE_BUTTON_R2) return analogR;
+        return false;
+    }
+
+    /** Axis values for both triggers from a motion event; a trigger that never moved keeps its button's state. */
+    void applyAnalogTriggers(float l, float r) {
         l = (l <= 0.01f) ? 0.0f : Math.min(1.0f, Math.max(0.0f, l));
         r = (r <= 0.01f) ? 0.0f : Math.min(1.0f, Math.max(0.0f, r));
-        this.state.triggerL = l;
-        this.state.triggerR = r;
-        this.state.setPressed(IDX_BUTTON_L2, l > 0.0f);
-        this.state.setPressed(IDX_BUTTON_R2, r > 0.0f);
+        if (l > 0.0f) analogL = true;
+        if (r > 0.0f) analogR = true;
+        if (analogL) {
+            this.state.triggerL = l;
+            this.state.setPressed(IDX_BUTTON_L2, l > 0.0f);
+        }
+        if (analogR) {
+            this.state.triggerR = r;
+            this.state.setPressed(IDX_BUTTON_R2, r > 0.0f);
+        }
     }
 
     public boolean isXboxController() {
@@ -274,13 +298,13 @@ public class ExternalController {
         int buttonIdx = getButtonIdxByKeyCode(keyCode);
         if (buttonIdx != -1) {
             if (buttonIdx == IDX_BUTTON_L2) {
-                if (triggerType == TRIGGER_IS_BUTTON || JoyConSupport.isJoyCon(event.getDevice())) {
+                if (triggerType == TRIGGER_IS_BUTTON || JoyConSupport.isJoyCon(event.getDevice()) || !analogL) {
                     state.triggerL = pressed ? 1.0f : 0f;
                     state.setPressed(buttonIdx, pressed);
                 } else
                     return true;
             } else if (buttonIdx == IDX_BUTTON_R2) {
-                if (triggerType == TRIGGER_IS_BUTTON || JoyConSupport.isJoyCon(event.getDevice())) {
+                if (triggerType == TRIGGER_IS_BUTTON || JoyConSupport.isJoyCon(event.getDevice()) || !analogR) {
                     state.triggerR = pressed ? 1.0f : 0f;
                     state.setPressed(buttonIdx, pressed);
                 } else
