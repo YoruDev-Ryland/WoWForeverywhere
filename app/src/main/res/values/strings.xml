@@ -696,7 +696,7 @@
     <string name="gyro_degrees_per_second_value">%1$.1f°/s</string>
     <string name="gyro_milliseconds_value">%1$d ms</string>
     <string name="reset_gyro_settings">Reset gyro settings</string>
-    <string name="fw_a_select_b_back">A  Select      B  Back</string>
+    <string name="fw_a_select_b_back">"A  Select      B  Back"</string>
     <string name="fw_support_on_ko_fi">Support on Ko-fi</string>
     <string name="fw_experimental">Experimental</string>
     <string name="fw_game_not_installed">Game not installed</string>
@@ -1008,7 +1008,7 @@
     <string name="fw_github_addon_catalog">GitHub (addon catalog and links)</string>
     <string name="fw_gpu_profile">%1$s profile</string>
     <string name="fw_managed_addons_folder">The app manages the %1$s addons in this folder and nothing else:</string>
-    <string name="fw_version_and_language">Version: %1$s  ·  Language: %2$s</string>
+    <string name="fw_version_and_language">"Version: %1$s  ·  Language: %2$s"</string>
     <string name="fw_checking">checking…</string>
     <string name="fw_category_quests">Quests &amp; leveling</string>
     <string name="fw_category_map">Map &amp; navigation</string>

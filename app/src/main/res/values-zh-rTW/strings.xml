@@ -697,7 +697,7 @@
     <string name="gyro_degrees_per_second_value">%1$.1f°/秒</string>
     <string name="gyro_milliseconds_value">%1$d 毫秒</string>
     <string name="reset_gyro_settings">重設陀螺儀設定</string>
-    <string name="fw_a_select_b_back">A  選擇      B  返回</string>
+    <string name="fw_a_select_b_back">"A  選擇      B  返回"</string>
     <string name="fw_support_on_ko_fi">在 Ko-fi 上支援</string>
     <string name="fw_experimental">實驗性</string>
     <string name="fw_game_not_installed">尚未安裝遊戲</string>
@@ -1009,7 +1009,7 @@
     <string name="fw_github_addon_catalog">GitHub（插件目錄和連結）</string>
     <string name="fw_gpu_profile">%1$s 設定</string>
     <string name="fw_managed_addons_folder">應用程式僅管理此資料夾中的 %1$s 插件：</string>
-    <string name="fw_version_and_language">版本：%1$s  ·  語言：%2$s</string>
+    <string name="fw_version_and_language">"版本：%1$s  ·  語言：%2$s"</string>
     <string name="fw_checking">正在檢查…</string>
     <string name="fw_category_quests">任務與升級</string>
     <string name="fw_category_map">地圖與導航</string>
