@@ -29,6 +29,19 @@ class GameRegionTest {
     }
 
     @Test
+    fun settingsShowsTheRegionTheGameLogsInto() {
+        // a US install whose Config.wtf still logs into Europe shows Europe, not Americas (#46)
+        assertEquals(GameRegion.EU, GameRegions.shown("us", "EU"))
+        assertEquals(GameRegion.KR, GameRegions.shown("tw", "KR"))
+        // no portal yet, or one that isn't a region (the beta's "test"): the install's region
+        assertEquals(GameRegion.US, GameRegions.shown("us", null))
+        assertEquals(GameRegion.EU, GameRegions.shown("eu", "test"))
+        // a picked region is what the game uses
+        GameRegions.chosen = GameRegion.US
+        assertEquals(GameRegion.US, GameRegions.shown("us", "EU"))
+    }
+
+    @Test
     fun taiwanLogsInThroughTheKoreanPortal() {
         assertEquals("KR", GameRegion.TW.portal)
         assertEquals("tw", GameRegion.TW.code)

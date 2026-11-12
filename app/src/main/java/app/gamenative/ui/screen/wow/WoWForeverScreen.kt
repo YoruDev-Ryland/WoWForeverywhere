@@ -1105,8 +1105,13 @@ private const val BROKEN_TEXT_LOCALE = "itIT"
 private const val TEXT_LOCALE = "SET textLocale "
 
 /** The text language set in Config.wtf [lines], or null if there is none. */
-internal fun configTextLocale(lines: List<String>): String? =
-    lines.lastOrNull { it.trim().startsWith(TEXT_LOCALE, ignoreCase = true) }
+internal fun configTextLocale(lines: List<String>): String? = configValue(lines, TEXT_LOCALE)
+
+/** The login portal set in Config.wtf [lines] ("US", "EU", ...), or null if there is none. */
+internal fun configPortal(lines: List<String>): String? = configValue(lines, "SET portal ")
+
+private fun configValue(lines: List<String>, prefix: String): String? =
+    lines.lastOrNull { it.trim().startsWith(prefix, ignoreCase = true) }
         ?.substringAfter('"', "")?.substringBefore('"')?.takeIf { it.isNotEmpty() }
 
 private fun configDefaults(product: WowProduct, locale: String, portal: String) = linkedMapOf(

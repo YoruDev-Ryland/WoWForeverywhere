@@ -172,6 +172,13 @@ class GameConfigTest {
     }
 
     @Test
+    fun configPortalReadsTheLoginServer() {
+        assertEquals("EU", configPortal(listOf("SET gxApi \"D3D11\"", "SET portal \"EU\"")))
+        assertEquals("US", configPortal(buildConfigWtf(null, WowProduct.FOREVER, "1920x1080")!!))
+        assertNull(configPortal(listOf("SET gxApi \"D3D11\"")))
+    }
+
+    @Test
     fun newBetaConfigUsesTestPortal() {
         val lines = buildConfigWtf(null, WowProduct.BETA, "1280x720")!!
         assertTrue("SET portal \"test\"" in lines)

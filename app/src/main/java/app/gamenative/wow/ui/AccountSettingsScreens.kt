@@ -405,7 +405,8 @@ private fun RegionSection(launcher: LauncherController) {
     val branch = remember(launcher.gamePath, launcher.files.product) {
         app.gamenative.wow.product.BuildInfo.read(java.io.File(launcher.gamePath))?.active(launcher.files.product)?.get("Branch")
     }
-    var current by remember(branch) { mutableStateOf(GameRegions.effective(branch)) }
+    // Where the game will log in: until a region is picked, that's the portal already in its Config.wtf (#46).
+    var current by remember(branch) { mutableStateOf(GameRegions.shown(branch, launcher.gamePortal())) }
     FwSection("Region") {
         Text("The Battle.net region you play in. A change applies the next time you start the game.", style = Fw.Secondary)
         // An update in progress downloads the region it started with, so the region can't change under it.
@@ -413,7 +414,8 @@ private fun RegionSection(launcher: LauncherController) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             GameRegion.entries.forEach { r ->
                 FwRow(selected = r == current, onClick = {
-                    if (launcher.isUpdating || r == current) return@FwRow
+                    // Picking the region already shown still saves it when none was picked, so the game is set to it.
+                    if (launcher.isUpdating || (r == current && GameRegions.chosen != null)) return@FwRow
                     GameRegions.save(context, r)
                     current = r
                     // Regions can be on different builds, so the install may now need an update.

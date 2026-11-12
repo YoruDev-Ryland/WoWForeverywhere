@@ -14,6 +14,7 @@ import app.gamenative.ui.screen.wow.GpuProfile
 import app.gamenative.ui.screen.wow.StorageAccessDeniedException
 import app.gamenative.ui.screen.wow.WoWLauncherState
 import app.gamenative.ui.screen.wow.WowClientDownloader
+import app.gamenative.ui.screen.wow.configPortal
 import app.gamenative.ui.screen.wow.configTextLocale
 import app.gamenative.ui.screen.wow.fitScreenSizeToWindow
 import app.gamenative.ui.screen.wow.installLocale
@@ -528,9 +529,13 @@ class LauncherController(
         "Time since boot: ${DeviceClock.days(SystemClock.elapsedRealtime())} days",
     )
 
-    private fun gameTextLanguage(): String? =
-        gameFolder()?.let { File(it, "WTF/Config.wtf") }?.takeIf { it.isFile }
-            ?.let { runCatching { configTextLocale(it.readLines()) }.getOrNull() }
+    private fun gameTextLanguage(): String? = configLines()?.let(::configTextLocale)
+
+    /** The login portal in the game's Config.wtf, which it keeps using until a region is picked in Settings. */
+    fun gamePortal(): String? = configLines()?.let(::configPortal)
+
+    private fun configLines(): List<String>? =
+        gameFolder()?.let { File(it, "WTF/Config.wtf") }?.takeIf { it.isFile }?.let { runCatching { it.readLines() }.getOrNull() }
 
     /** The product folder holding the game's own Logs and Errors. */
     fun gameFolder(): File? = files.product?.let { File(gamePath, it.flavorDir) }
