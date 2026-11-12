@@ -85,27 +85,65 @@ fun AddonsRoute(launcher: LauncherController, addons: AddonsController?, onBack:
  * The addon browser. With [onSettings], it's the app's main screen in addon manager mode: a Settings
  * button takes the place of Back.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Unit)? = null) {
     val localSource = stringResource(R.string.fw_this_device)
     var showUrlDialog by remember { mutableStateOf(false) }
-    val wideBar = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+    // One bar needs room for the buttons and a usable search box; a 4:3 handheld (about 620dp) doesn't have it.
+    val wideBar = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 760
     LaunchedEffect(c) { if (c.installed == null) c.refreshInstalled() }
+    val zipPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri -> if (uri != null) c.installFromFile(uri) }
+    // Some file managers label zips as generic binary files, so that type is offered too.
+    val pickZip = { zipPicker.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }
 
     Column(Modifier.fillMaxSize().background(Fw.Ground)) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
+        val back: @Composable () -> Unit = {
             if (onSettings != null) FwButton(stringResource(R.string.fw_settings), onSettings, kind = FwButtonKind.Ghost) else FwButton(stringResource(R.string.fw_back_2), onBack, kind = FwButtonKind.Ghost)
+        }
+        val modes: @Composable () -> Unit = {
             FwChip(stringResource(R.string.fw_addons_installed_count, c.installed?.size?.toString() ?: "…"), c.mode == AddonsController.Mode.INSTALLED, { c.switchMode(AddonsController.Mode.INSTALLED) })
             FwChip(stringResource(R.string.fw_browse), c.mode == AddonsController.Mode.BROWSE, { c.switchMode(AddonsController.Mode.BROWSE) })
-            if (wideBar) SearchField(c.query, c::search, searchHint(c.version), Modifier.weight(1f)) else Box(Modifier.weight(1f))
-            c.updates?.takeIf { it > 0 }?.let { FwButton(stringResource(R.string.fw_update_all_count, it), c::updateAll, enabled = c.working == null) }
-            if (wideBar) FwButton(stringResource(R.string.fw_from_link), { showUrlDialog = true }, kind = FwButtonKind.Ghost)
         }
-        if (!wideBar) SearchField(c.query, c::search, searchHint(c.version), Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp))
+        val updateAll: @Composable () -> Unit = {
+            c.updates?.takeIf { it > 0 }?.let { FwButton(stringResource(R.string.fw_update_all_count, it), c::updateAll, enabled = c.working == null) }
+        }
+        val addAddon: @Composable () -> Unit = { FwButton(stringResource(R.string.fw_add_addon), { showUrlDialog = true }, kind = FwButtonKind.Ghost) }
+        if (wideBar) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                back()
+                modes()
+                SearchField(c.query, c::search, searchHint(c.version), Modifier.weight(1f))
+                updateAll()
+                addAddon()
+            }
+        } else {
+            // Narrower screens: navigation on top (wrapping if even that doesn't fit), then search with Add addon.
+            androidx.compose.foundation.layout.FlowRow(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                back()
+                modes()
+                updateAll()
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                SearchField(c.query, c::search, searchHint(c.version), Modifier.weight(1f))
+                addAddon()
+            }
+        }
         // One scrolling row of filters: game version, source, then categories.
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -118,7 +156,6 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
             item { Box(Modifier.width(1.dp).height(42.dp).background(Fw.Rule)) }
             item { FwChip(stringResource(R.string.fw_all_categories), c.category == null, { c.selectCategory(null) }) }
             items(AddonCategory.entries) { cat -> FwChip(categoryLabel(cat), c.category == cat, { c.selectCategory(cat) }) }
-            if (!wideBar) item { FwButton(stringResource(R.string.fw_from_link), { showUrlDialog = true }, kind = FwButtonKind.Ghost) }
         }
         (c.working ?: c.message)?.let {
             Text(it, style = Fw.Secondary.copy(color = if (c.working != null) Fw.Brass else Fw.Ash), modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
@@ -148,8 +185,8 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
     if (showUrlDialog) {
         var url by remember { mutableStateOf("") }
         FwDialog(
-            title = stringResource(R.string.fw_install_from_a_link),
-            message = stringResource(R.string.fw_paste_a_github_repository_link_or_a),
+            title = stringResource(R.string.fw_add_an_addon),
+            message = stringResource(R.string.fw_add_addon_explanation),
             confirm = stringResource(R.string.fw_install),
             onConfirm = {
                 showUrlDialog = false
@@ -158,6 +195,10 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
             onDismiss = { showUrlDialog = false },
         ) {
             OutlinedTextField(url, { url = it }, singleLine = true, label = { Text(stringResource(R.string.fw_link)) }, textStyle = Fw.Text)
+            FwButton(stringResource(R.string.fw_choose_a_zip_file), {
+                showUrlDialog = false
+                pickZip()
+            }, kind = FwButtonKind.Ghost, enabled = c.working == null)
         }
     }
 }

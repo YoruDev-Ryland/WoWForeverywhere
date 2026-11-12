@@ -120,4 +120,43 @@ class AddonArchiveTest {
         assertThrows(IOException::class.java) { AddonArchive.install(zip(TestZips.text("readme.txt" to "hi")), addons) }
         assertNoLeftovers()
     }
+
+    @Test
+    fun gitHubDownloadIsRenamedToItsToc() {
+        // GitHub's "Download ZIP" wraps the add-on in "<repo>-<branch>", a folder name WoW won't load
+        val file = zip(TestZips.text("HelloForever-main/HelloForever.toc" to "## Title: Hello", "HelloForever-main/core.lua" to "--"))
+        assertEquals(listOf("HelloForever"), AddonArchive.install(file, addons))
+        assertTrue(File(addons, "HelloForever/HelloForever.toc").isFile)
+        assertTrue(File(addons, "HelloForever/core.lua").isFile)
+        assertNoLeftovers()
+    }
+
+    @Test
+    fun folderMatchingAFlavorTocKeepsItsName() {
+        val file = zip(TestZips.text("Details/Details_Mainline.toc" to "## Title: Details", "Details/Details_Vanilla.toc" to "## Title: Details"))
+        assertEquals(listOf("Details"), AddonArchive.install(file, addons))
+    }
+
+    @Test
+    fun flavorSuffixIsDroppedWhenRenaming() {
+        val file = zip(TestZips.text("Details-v1.2/Details_Mainline.toc" to "## Title: Details", "Details-v1.2/Details_Vanilla.toc" to "## Title: Details"))
+        assertEquals(listOf("Details"), AddonArchive.install(file, addons))
+    }
+
+    @Test
+    fun tocAtTheRootIsInstalledUnderItsName() {
+        val file = zip(TestZips.text("Foo.toc" to "## Title: Foo", "core.lua" to "--", "libs/Lib.lua" to "--"))
+        assertEquals(listOf("Foo"), AddonArchive.install(file, addons))
+        assertTrue(File(addons, "Foo/Foo.toc").isFile)
+        assertTrue(File(addons, "Foo/libs/Lib.lua").isFile)
+        assertNoLeftovers()
+    }
+
+    @Test
+    fun macMetadataIsSkipped() {
+        val file = zip(TestZips.text("Foo/Foo.toc" to "## Title: Foo", "Foo/._Foo.toc" to "x", "__MACOSX/Foo/._Foo.toc" to "x"))
+        assertEquals(listOf("Foo"), AddonArchive.install(file, addons))
+        assertEquals(setOf("Foo.toc"), File(addons, "Foo").list()!!.toSet())
+        assertFalse(File(addons, "__MACOSX").exists())
+    }
 }

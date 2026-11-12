@@ -856,13 +856,10 @@
     <string name="fw_try_anyway">仍然嘗試</string>
     <string name="fw_allow_app_installs">允許安裝應用</string>
     <string name="fw_browse">瀏覽</string>
-    <string name="fw_from_link">透過連結安裝</string>
     <string name="fw_forever_only">僅 Forever</string>
     <string name="fw_all_sources">全部來源</string>
     <string name="fw_all_categories">全部分類</string>
     <string name="fw_back_to_list">返回列表</string>
-    <string name="fw_install_from_a_link">透過連結安裝</string>
-    <string name="fw_paste_a_github_repository_link_or_a">貼上 GitHub 倉庫連結或插件 .zip 檔案的直接下載連結。</string>
     <string name="fw_link">連結</string>
     <string name="fw_reading_your_addons_folder">正在讀取 AddOns 資料夾…</string>
     <string name="fw_no_addons_installed_yet_switch_to_browse">尚未安裝插件。請切換到瀏覽頁面查詢。</string>

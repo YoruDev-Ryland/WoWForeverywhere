@@ -866,13 +866,10 @@
     <string name="fw_try_anyway">仍然尝试</string>
     <string name="fw_allow_app_installs">允许安装应用</string>
     <string name="fw_browse">浏览</string>
-    <string name="fw_from_link">通过链接安装</string>
     <string name="fw_forever_only">仅 Forever</string>
     <string name="fw_all_sources">全部来源</string>
     <string name="fw_all_categories">全部分类</string>
     <string name="fw_back_to_list">返回列表</string>
-    <string name="fw_install_from_a_link">通过链接安装</string>
-    <string name="fw_paste_a_github_repository_link_or_a">粘贴 GitHub 仓库链接或插件 .zip 文件的直接下载链接。</string>
     <string name="fw_link">链接</string>
     <string name="fw_reading_your_addons_folder">正在读取 AddOns 文件夹…</string>
     <string name="fw_no_addons_installed_yet_switch_to_browse">尚未安装插件。请切换到浏览页面查找。</string>

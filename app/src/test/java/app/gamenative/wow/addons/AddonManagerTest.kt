@@ -364,4 +364,27 @@ class AddonManagerTest {
         assertEquals(AddonFlavor.FALLBACK, result.flavor)
         assertThrows(IllegalArgumentException::class.java) { runBlocking { manager().installFromUrl("not a url") } }
     }
+
+    @Test
+    fun installFromZipFileRecordsItAsLocal() = runBlocking {
+        val zip = TestZips.write(File(root, "picked.zip"), TestZips.text(
+            "Hello-main/Hello.toc" to "## Interface: 16001\n## Title: Hello There\n## Version: 2.0\n",
+            "Hello-main/core.lua" to "--",
+        ))
+        val result = manager().installFromZip(zip).single()
+        assertEquals("local:Hello", result.id)
+        assertEquals("Hello There", result.name)
+        assertEquals(listOf("Hello"), result.folders)
+        assertEquals(AddonFlavor.MAIN, result.flavor)
+        assertTrue(File(addonsDir, "Hello/core.lua").isFile)
+        assertEquals(listOf("local:Hello"), db.load().map { it.id })
+    }
+
+    @Test
+    fun installFromZipFileReplacesTheCopyItOverwrites() = runBlocking {
+        installedOnDisk(record("curseforge:9", listOf("Hello"), AddonFlavor.MAIN, SourceRef("curseforge", "9", "f1")))
+        val zip = TestZips.write(File(root, "picked.zip"), TestZips.addon("Hello"))
+        manager().installFromZip(zip)
+        assertEquals(listOf("local:Hello"), db.load().map { it.id })
+    }
 }

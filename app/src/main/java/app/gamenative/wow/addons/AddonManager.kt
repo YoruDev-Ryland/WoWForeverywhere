@@ -141,6 +141,18 @@ class AddonManager(
         commit(record)
     }
 
+    /**
+     * Installs the addons in a zip already on the device. They're recorded like addons copied in by hand, from their
+     * TOCs, so one whose TOC names its CurseForge or Wago project still gets update checks. A record whose folders
+     * the zip all replaced is dropped first, since it describes the copy that was overwritten.
+     */
+    suspend fun installFromZip(zip: File): List<InstalledAddon> = lock.withLock {
+        val folders = withContext(Dispatchers.IO) { AddonArchive.install(zip, addonsDir) }.toSet()
+        val records = db.load()
+        db.save(records.filterNot { folders.containsAll(it.folders) })
+        syncDb().filter { record -> record.folders.any { it in folders } }
+    }
+
     // --- browsing -------------------------------------------------------------------------------
 
     private suspend fun browse(

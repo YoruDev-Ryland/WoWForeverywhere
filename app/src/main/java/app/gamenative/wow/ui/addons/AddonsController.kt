@@ -191,6 +191,24 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
 
     fun installFromUrl(url: String) = act(context.getString(R.string.fw_addon_installing_link)) { manager.installFromUrl(url.trim()) }
 
+    /** Installs the addons in a .zip the player picked on the device, copied to the cache first. */
+    fun installFromFile(uri: android.net.Uri) {
+        val name = runCatching {
+            context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { if (it.moveToFirst()) it.getString(0) else null }
+        }.getOrNull() ?: "add-on .zip"
+        act(context.getString(R.string.fw_addon_installing, name)) {
+            val zip = File(context.cacheDir, "addon-import-${System.nanoTime()}.zip")
+            try {
+                context.contentResolver.openInputStream(uri)?.use { input -> zip.outputStream().use { input.copyTo(it) } }
+                    ?: throw java.io.IOException(context.getString(R.string.fw_addon_file_unreadable))
+                manager.installFromZip(zip)
+            } finally {
+                zip.delete()
+            }
+        }
+    }
+
     private fun act(label: String, block: suspend () -> Unit) {
         if (working != null) return
         working = label

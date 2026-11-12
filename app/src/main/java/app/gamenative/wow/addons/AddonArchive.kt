@@ -8,6 +8,7 @@ import java.util.zip.ZipInputStream
 object AddonArchive {
     private const val TEMP_PREFIX = ".foreverywhere-extract-"
     private val driveLetter = Regex("^[A-Za-z]:")
+    private val flavorSuffix = Regex("[_-](Mainline|Classic|Vanilla|TBC|BCC|Wrath|WOTLKC|Cata|Mists|Standard)$", RegexOption.IGNORE_CASE)
 
     /**
      * Extracts [zip] into [addonsDir] and returns the top-level addon folder names written, sorted.
@@ -17,6 +18,10 @@ object AddonArchive {
      * - Each existing folder is moved aside, the new one renamed in, then the old one deleted. A
      *   failed rename rolls every folder back.
      * - A single wrapper folder with no `.toc` whose children have TOCs is unwrapped.
+     * - WoW only loads an addon from a folder named like its `.toc`, so a folder whose name matches none of its TOCs
+     *   (GitHub's "Download ZIP" gives "<repo>-main") is installed under the TOC's name, and TOCs at the zip's root
+     *   make the whole zip one addon named after them.
+     * - Mac metadata (`__MACOSX/`, `._` files) is skipped.
      * - Entries that are absolute or contain `..` throw `IOException("unsafe path")`.
      */
     fun install(zip: File, addonsDir: File): List<String> {
@@ -24,12 +29,14 @@ object AddonArchive {
         val staging = File(addonsDir, "$TEMP_PREFIX${System.nanoTime()}")
         if (!staging.mkdirs()) throw IOException("cannot create ${staging.path}")
         try {
-            extract(zip, staging)
-            val root = unwrap(staging)
-            val folders = addonFolders(root)
+            val content = File(staging, "content")
+            extract(zip, content)
+            val root = unwrap(content)
+            val folders = if (hasToc(root)) listOf(root to tocName(root)!!) else childDirs(root).map { it to (tocName(it) ?: it.name) }
             if (folders.isEmpty()) throw IOException("no addon folders in ${zip.name}")
+            if (folders.map { it.second.lowercase() }.distinct().size != folders.size) throw IOException("two addons named alike in ${zip.name}")
             swapIn(folders, addonsDir)
-            return folders.map { it.name }.sorted()
+            return folders.map { it.second }.sorted()
         } finally {
             staging.deleteRecursively()
         }
@@ -41,6 +48,7 @@ object AddonArchive {
             while (true) {
                 val entry = input.nextEntry ?: break
                 val name = safeName(entry.name)
+                if (name.split('/').let { parts -> parts.first() == "__MACOSX" || parts.last().startsWith("._") }) continue
                 val target = File(dest, name)
                 if (!target.canonicalFile.toPath().startsWith(destPath)) throw IOException("unsafe path")
                 if (entry.isDirectory || entry.name.endsWith("/") || entry.name.endsWith("\\")) {
@@ -75,21 +83,37 @@ object AddonArchive {
         return if (!hasToc(only) && childDirs(only).any(::hasToc)) only else staging
     }
 
-    private fun addonFolders(root: File): List<File> = childDirs(root)
+    /**
+     * The folder name WoW needs for the addon in [dir]: [dir]'s own name when one of its TOCs is named after it
+     * ("Details" holding Details_Mainline.toc), otherwise its TOC's name without a flavor suffix. Null without a TOC.
+     */
+    private fun tocName(dir: File): String? {
+        val tocs = dir.listFiles().orEmpty()
+            .filter { it.isFile && it.name.endsWith(".toc", ignoreCase = true) && !it.name.startsWith(".") }
+            .map { it.name.substringBeforeLast('.') }
+            .sorted()
+        if (tocs.isEmpty()) return null
+        val bases = tocs.map { it.replace(flavorSuffix, "") }
+        if (bases.any { it.equals(dir.name, ignoreCase = true) }) return dir.name
+        return bases.groupingBy { it }.eachCount().maxBy { it.value }.key.takeIf(::plainName)
+            ?: throw IOException("unsafe path")
+    }
 
-    private fun swapIn(folders: List<File>, addonsDir: File) {
+    private fun plainName(name: String) = name.isNotBlank() && name != "." && name != ".." && '/' !in name && '\\' !in name
+
+    private fun swapIn(folders: List<Pair<File, String>>, addonsDir: File) {
         val nonce = System.nanoTime()
         val done = mutableListOf<Pair<File, File?>>() // target to its backup
         try {
-            for (folder in folders) {
-                val target = File(addonsDir, folder.name)
+            for ((folder, name) in folders) {
+                val target = File(addonsDir, name)
                 var backup: File? = null
                 if (target.exists()) {
-                    backup = File(addonsDir, ".${folder.name}.old-$nonce")
+                    backup = File(addonsDir, ".$name.old-$nonce")
                     if (!target.renameTo(backup)) throw IOException("cannot move aside ${target.name}")
                 }
                 done += target to backup
-                if (!folder.renameTo(target)) throw IOException("cannot move ${folder.name} into place")
+                if (!folder.renameTo(target)) throw IOException("cannot move $name into place")
             }
         } catch (e: IOException) {
             for ((target, backup) in done.asReversed()) {

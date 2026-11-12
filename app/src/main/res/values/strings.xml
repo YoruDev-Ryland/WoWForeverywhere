@@ -855,13 +855,14 @@
     <string name="fw_try_anyway">Try anyway</string>
     <string name="fw_allow_app_installs">Allow app installs</string>
     <string name="fw_browse">Browse</string>
-    <string name="fw_from_link">From link</string>
+    <string name="fw_add_addon">Add addon</string>
+    <string name="fw_add_an_addon">Add an addon</string>
+    <string name="fw_add_addon_explanation">Paste a GitHub repository link or a direct link to an addon .zip, or choose a .zip on this device.</string>
+    <string name="fw_choose_a_zip_file">Choose a .zip file</string>
     <string name="fw_forever_only">Forever only</string>
     <string name="fw_all_sources">All sources</string>
     <string name="fw_all_categories">All categories</string>
     <string name="fw_back_to_list">Back to list</string>
-    <string name="fw_install_from_a_link">Install from a link</string>
-    <string name="fw_paste_a_github_repository_link_or_a">Paste a GitHub repository link, or a direct link to an addon .zip.</string>
     <string name="fw_link">Link</string>
     <string name="fw_reading_your_addons_folder">Reading your AddOns folder…</string>
     <string name="fw_no_addons_installed_yet_switch_to_browse">No addons installed yet. Switch to Browse to find some.</string>
@@ -1001,6 +1002,7 @@
     <string name="fw_addon_removing">Removing %1$s</string>
     <string name="fw_addons_updating_all">Updating all addons</string>
     <string name="fw_addon_installing_link">Installing from link</string>
+    <string name="fw_addon_file_unreadable">couldn\'t open the file</string>
     <string name="fw_addon_action_done">%1$s: done.</string>
     <string name="fw_addon_action_failed">%1$s failed: %2$s</string>
     <string name="fw_unknown_error">unknown error</string>
