@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -84,26 +86,26 @@ internal fun FwSection(title: String, content: @Composable () -> Unit) {
 
 @Composable
 fun AccountScreen(launcher: LauncherController, onBack: () -> Unit, onEditLogin: () -> Unit) {
-    FwPage("Account", onBack) {
-        FwSection("Battle.net login") {
+    FwPage(stringResource(R.string.fw_account), onBack) {
+        FwSection(stringResource(R.string.fw_battle_net_login)) {
             Text(
                 if (launcher.hasSavedLogin) {
-                    "Your email and password are saved on this device, encrypted with the Android keystore. The game logs you in automatically. Authenticator codes are still typed in the game."
+                    stringResource(R.string.fw_your_email_and_password_are_saved_on)
                 } else {
-                    "No login saved. Save one to skip the login screen, or sign in inside the game each time."
+                    stringResource(R.string.fw_no_login_saved_save_one_to_skip)
                 },
                 style = Fw.Text,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FwButton(if (launcher.hasSavedLogin) "Change login" else "Save login", onEditLogin)
-                if (launcher.hasSavedLogin) FwButton("Forget login", launcher::forgetLogin, kind = FwButtonKind.Danger)
+                FwButton(if (launcher.hasSavedLogin) stringResource(R.string.fw_change_login) else stringResource(R.string.fw_save_login), onEditLogin)
+                if (launcher.hasSavedLogin) FwButton(stringResource(R.string.fw_forget_login), launcher::forgetLogin, kind = FwButtonKind.Danger)
             }
         }
         GameAccountSection()
         BlockedLoginSection()
-        FwSection("How it works") {
+        FwSection(stringResource(R.string.fw_how_it_works)) {
             Text(
-                "When you press Play the app hands your login to the game in a temporary file, then wipes it shortly after the game has read it, or after ten minutes at most.",
+                stringResource(R.string.fw_when_you_press_play_the_app_hands),
                 style = Fw.Secondary,
             )
         }
@@ -118,31 +120,30 @@ fun AccountScreen(launcher: LauncherController, onBack: () -> Unit, onEditLogin:
 private fun BlockedLoginSection() {
     val context = LocalContext.current
     var open by remember { mutableStateOf(false) }
-    FwSection("Can't log in?") {
+    FwSection(stringResource(R.string.fw_can_t_log_in)) {
         Text(
-            "If the game says \"You have been disconnected\" with BLZ51914400 or BLZ51914500 right after you log in, Blizzard is blocking the sign-in.",
+            stringResource(R.string.fw_login_blocked_hint),
             style = Fw.Secondary,
         )
-        FwButton("Fix a blocked login", { open = true }, kind = FwButtonKind.Ghost)
+        FwButton(stringResource(R.string.fw_fix_a_blocked_login), { open = true }, kind = FwButtonKind.Ghost)
     }
     if (open) {
         FwDialog(
-            title = "Blocked login",
-            message = "Blizzard blocks game logins from a network it hasn't seen your account use, such as mobile data or a new Wi-Fi, " +
-                "or a login that arrives over Wi-Fi and mobile data at once.",
-            confirm = "Open battle.net",
+            title = stringResource(R.string.fw_blocked_login),
+            message = stringResource(R.string.fw_login_blocked_explanation),
+            confirm = stringResource(R.string.fw_open_battle_net),
             onConfirm = {
                 open = false
                 Links.open(context, Links.BATTLE_NET)
             },
             onDismiss = { open = false },
-            dismiss = "Close",
+            dismiss = stringResource(R.string.fw_close),
         ) {
             listOf(
-                "1. Turn off any phone setting that uses Wi-Fi and mobile data together, such as Optimize network for speed in Settings, System, Network.",
-                "2. Tap Open battle.net and sign in there, on the same connection.",
-                "3. Come back to the app and start the game again.",
-                "4. Still getting BLZ51914500? Your password didn't match. Re-enter it with Change login.",
+                stringResource(R.string.fw_login_blocked_step_one),
+                stringResource(R.string.fw_login_blocked_step_two),
+                stringResource(R.string.fw_login_blocked_step_three),
+                stringResource(R.string.fw_login_blocked_step_four),
             ).forEach { Text(it, style = Fw.Text) }
         }
     }
@@ -157,14 +158,13 @@ private fun GameAccountSection() {
         GameAccounts.save(context, number)
         current = number
     }
-    FwSection("Game account") {
+    FwSection(stringResource(R.string.fw_game_account)) {
         Text(
-            "If your Battle.net login has more than one WoW account, such as WoW1 and WoW2, choose the one to play. " +
-                "The Battle.net app lists them in its account menu. A change applies the next time you start the game.",
+            stringResource(R.string.fw_game_account_explanation),
             style = Fw.Secondary,
         )
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FwChip("The game's choice", current == null, { pick(null) })
+            FwChip(stringResource(R.string.fw_the_game_s_choice), current == null, { pick(null) })
             GameAccounts.NUMBERS.forEach { n -> FwChip(GameAccounts.name(n), current == n, { pick(n) }) }
         }
     }
@@ -181,24 +181,24 @@ fun SettingsScreen(
     onOpenAddonMode: () -> Unit = {},
     onDisableAddonMode: () -> Unit = {},
 ) {
-    FwPage("Settings", onBack) {
-        FwSection("App") {
+    FwPage(stringResource(R.string.fw_settings), onBack) {
+        FwSection(stringResource(R.string.fw_app)) {
             Text("WoW Foreverywhere v${BuildConfig.VERSION_NAME}", style = Fw.Text)
             val update = launcher.appUpdate
             if (update == null) {
                 Text(
-                    if (launcher.appUpdateCheckFailed) "Couldn't reach GitHub to check for an update. Try again later." else "No app update found.",
+                    if (launcher.appUpdateCheckFailed) stringResource(R.string.fw_couldn_t_reach_github_to_check_for) else stringResource(R.string.fw_no_app_update_found),
                     style = Fw.Secondary,
                 )
-                FwButton("Check for app update", launcher::checkAppUpdate, kind = FwButtonKind.Ghost)
+                FwButton(stringResource(R.string.fw_check_for_app_update), launcher::checkAppUpdate, kind = FwButtonKind.Ghost)
             } else {
-                Text("Version ${update.version} is available.", style = Fw.Text.copy(color = Fw.Brass))
+                Text(stringResource(R.string.fw_version_1_s_is_available, update.version), style = Fw.Text.copy(color = Fw.Brass))
                 if (update.notes.isNotBlank()) Text(renderReleaseNotes(update.notes), style = Fw.Secondary)
                 if (launcher.isDownloadingAppUpdate) {
-                    Text("Downloading ${(launcher.appUpdateProgress * 100).toInt()}%", style = Fw.Data)
+                    Text(stringResource(R.string.fw_app_update_progress, (launcher.appUpdateProgress * 100).toInt()), style = Fw.Data)
                     FwProgress(launcher.appUpdateProgress)
                 } else {
-                    FwButton(if (launcher.downloadedApk?.exists() == true) "Install update" else "Update app", launcher::performAppUpdate)
+                    FwButton(if (launcher.downloadedApk?.exists() == true) stringResource(R.string.fw_install_update) else stringResource(R.string.fw_update_app), launcher::performAppUpdate)
                 }
             }
         }
@@ -207,34 +207,34 @@ fun SettingsScreen(
             GameVersionSection(launcher, onVersionChanged)
             RegionSection(launcher)
         }
-        FwSection("Support Foreverywhere") {
+        FwSection(stringResource(R.string.fw_support_foreverywhere)) {
             val context = LocalContext.current
-            Text("Foreverywhere is free and open source. If it saves you some time, you can support its development on Ko-fi.", style = Fw.Text)
-            FwButton("Support on Ko-fi", { Links.open(context, Links.KOFI) }, kind = FwButtonKind.Ghost, icon = Icons.Filled.LocalCafe)
+            Text(stringResource(R.string.fw_foreverywhere_is_free_and_open_source_if), style = Fw.Text)
+            FwButton(stringResource(R.string.fw_support_on_ko_fi), { Links.open(context, Links.KOFI) }, kind = FwButtonKind.Ghost, icon = Icons.Filled.LocalCafe)
         }
-        FwSection("Addon sources") {
+        FwSection(stringResource(R.string.fw_addon_sources)) {
             ProviderLine("CurseForge", true)
             ProviderLine("Wago Addons", BuildConfig.WAGO_API_KEY.isNotBlank())
             ProviderLine("WoWInterface", true)
-            ProviderLine("GitHub (addon catalog and links)", true)
-            Text("Wago needs an API key built into the app. Builds without one still use the other sources.", style = Fw.Secondary)
+            ProviderLine(stringResource(R.string.fw_github_addon_catalog), true)
+            Text(stringResource(R.string.fw_wago_needs_an_api_key_built_into), style = Fw.Secondary)
         }
         if (addonFolder == null) {
-            FwSection("Device") {
-                Text("${launcher.gpu.edition} profile", style = Fw.Data)
+            FwSection(stringResource(R.string.fw_device)) {
+                Text(stringResource(R.string.fw_gpu_profile, launcher.gpu.edition), style = Fw.Data)
             }
             ResolutionSection(launcher)
             FrameGenerationSection()
             TroubleshootingSection(launcher, onOpenControllerTest)
             AddonModeSection(null, onOpenAddonMode, onDisableAddonMode)
         }
-        FwSection("About") {
+        FwSection(stringResource(R.string.fw_about)) {
             Text(
-                "Unofficial community project, not affiliated with Blizzard Entertainment. The game is downloaded from Blizzard's own servers and needs your own Battle.net account. Based on jaredgei/wow-forever-android (GPL-3.0).",
+                stringResource(R.string.fw_about_project),
                 style = Fw.Secondary,
             )
             val context = LocalContext.current
-            FwButton("Source code on GitHub", { Links.open(context, Links.REPO) }, kind = FwButtonKind.Ghost, icon = Icons.AutoMirrored.Filled.OpenInNew)
+            FwButton(stringResource(R.string.fw_source_code_on_github), { Links.open(context, Links.REPO) }, kind = FwButtonKind.Ghost, icon = Icons.AutoMirrored.Filled.OpenInNew)
         }
     }
 }
@@ -242,21 +242,21 @@ fun SettingsScreen(
 /** Settings, Addon manager mode: offered when the app is the full launcher, and the way back out of it. */
 @Composable
 private fun AddonModeSection(folder: AddonMode.Folder?, onOpen: () -> Unit, onDisable: () -> Unit) {
-    FwSection("Addon manager mode") {
+    FwSection(stringResource(R.string.fw_addon_manager_mode)) {
         if (folder == null) {
             Text(
-                "Play WoW some other way, such as through DroidDeck? Addon manager mode turns this app into an addon manager for that install, and turns everything else off.",
+                stringResource(R.string.fw_addon_mode_description),
                 style = Fw.Secondary,
             )
-            FwButton("Use addon manager mode", onOpen, kind = FwButtonKind.Ghost)
+            FwButton(stringResource(R.string.fw_use_addon_manager_mode), onOpen, kind = FwButtonKind.Ghost)
         } else {
-            Text("The app manages the ${folder.version?.displayName ?: ""} addons in this folder and nothing else:", style = Fw.Text)
+            Text(stringResource(R.string.fw_managed_addons_folder, folder.version?.displayName ?: ""), style = Fw.Text)
             Text(folder.addonsDir.path, style = Fw.Data)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FwButton("Change folder", onOpen, kind = FwButtonKind.Ghost)
-                FwButton("Turn off addon manager mode", onDisable)
+                FwButton(stringResource(R.string.fw_change_folder), onOpen, kind = FwButtonKind.Ghost)
+                FwButton(stringResource(R.string.fw_turn_off_addon_manager_mode), onDisable)
             }
-            Text("Turning it off brings back the launcher: installing, updating and playing WoW Forever on this device.", style = Fw.Secondary)
+            Text(stringResource(R.string.fw_addon_mode_disable_description), style = Fw.Secondary)
         }
     }
 }
@@ -269,29 +269,28 @@ private fun TroubleshootingSection(launcher: LauncherController, onOpenControlle
     var logging by remember { mutableStateOf(DebugLog.isEnabled(context)) }
     var building by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
-    FwSection("Troubleshooting") {
+    FwSection(stringResource(R.string.fw_troubleshooting)) {
         Text(
-            "If a button doesn't work in the game, the controller test shows what each press sends and whether the game receives it.",
+            stringResource(R.string.fw_if_a_button_doesn_t_work_in),
             style = Fw.Secondary,
         )
-        FwButton("Controller test", onOpenControllerTest, kind = FwButtonKind.Ghost)
+        FwButton(stringResource(R.string.fw_controller_test), onOpenControllerTest, kind = FwButtonKind.Ghost)
         Text(
-            "For other problems, turn on debug logging, make the problem happen again, then share a debug report on your GitHub issue. The game won't start by itself while logging is on, so opening the app doesn't replace the game's logs. " +
-                "The report holds your device details, settings and logs. Email addresses and your saved login are removed from it.",
+            stringResource(R.string.fw_debug_report_explanation),
             style = Fw.Secondary,
         )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf(false to "Debug logging off", true to "Debug logging on").forEach { (value, label) ->
+            listOf(false to stringResource(R.string.fw_debug_logging_off), true to stringResource(R.string.fw_debug_logging_on)).forEach { (value, label) ->
                 FwRow(selected = logging == value, onClick = {
                     DebugLog.setEnabled(context, value)
                     logging = value
                 }) {
                     Text(label, style = Fw.Text, modifier = Modifier.weight(1f))
-                    if (logging == value) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                    if (logging == value) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
                 }
             }
         }
-        FwButton(if (building) "Preparing report…" else "Share debug report", {
+        FwButton(if (building) stringResource(R.string.fw_preparing_report) else stringResource(R.string.fw_share_debug_report), {
             building = true
             failed = false
             scope.launch {
@@ -302,7 +301,7 @@ private fun TroubleshootingSection(launcher: LauncherController, onOpenControlle
                 if (zip != null) DebugReport.share(context, zip) else failed = true
             }
         }, kind = FwButtonKind.Ghost, enabled = !building)
-        if (failed) Text("Couldn't put the report together. Try again.", style = Fw.Secondary.copy(color = Fw.Warn))
+        if (failed) Text(stringResource(R.string.fw_couldn_t_put_the_report_together_try), style = Fw.Secondary.copy(color = Fw.Warn))
     }
 }
 
@@ -323,53 +322,50 @@ private fun FrameGenerationSection() {
             }
             message = when (result) {
                 FrameGeneration.ImportResult.OK -> null
-                FrameGeneration.ImportResult.NOT_A_DLL -> "That file isn't Lossless.dll. Pick the one from your Lossless Scaling folder."
-                FrameGeneration.ImportResult.NO_SHADERS -> "That Lossless.dll doesn't have the frame generation shaders. Use the one from a current Steam install of Lossless Scaling."
-                FrameGeneration.ImportResult.FAILED -> "Couldn't read that file. Try copying it to the device again."
+                FrameGeneration.ImportResult.NOT_A_DLL -> context.getString(R.string.fw_lossless_invalid)
+                FrameGeneration.ImportResult.NO_SHADERS -> context.getString(R.string.fw_lossless_no_shaders)
+                FrameGeneration.ImportResult.FAILED -> context.getString(R.string.fw_lossless_read_failed)
             }
             hasDll = FrameGeneration.hasDll(context)
             enabled = FrameGeneration.isEnabled(context)
         }
     }
-    FwSection("Frame generation") {
+    FwSection(stringResource(R.string.fw_frame_generation)) {
         Text(
-            "Lossless Scaling's frame generation (LSFG) can raise the frame rate by adding generated frames, at the cost of a little input delay. " +
-                "It needs Lossless.dll from your own copy of Lossless Scaling on Steam: on your PC it's in Steam/steamapps/common/Lossless Scaling. " +
-                "Copy it to this device and choose it here. The in-game menu (Back) then has an LSFG tab to set it up.",
+            stringResource(R.string.fw_frame_generation_explanation),
             style = Fw.Secondary,
         )
         if (hasDll) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(true to "On", false to "Off").forEach { (value, label) ->
+                listOf(true to stringResource(R.string.fw_on), false to stringResource(R.string.fw_off)).forEach { (value, label) ->
                     FwRow(selected = enabled == value, onClick = {
                         FrameGeneration.setEnabled(context, value)
                         enabled = value
                     }) {
                         Text(label, style = Fw.Text, modifier = Modifier.weight(1f))
-                        if (enabled == value) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                        if (enabled == value) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
                     }
                 }
             }
             val usable = remember(hasDll, message) { FrameGeneration.hasShaders(context) }
             if (usable) {
-                Text("Lossless.dll added. A change applies the next time you start the game.", style = Fw.Data)
+                Text(stringResource(R.string.fw_lossless_dll_added_a_change_applies_the), style = Fw.Data)
             } else {
                 Text(
-                    "This Lossless.dll doesn't have the frame generation shaders, so the game starts without frame generation. " +
-                        "Choose the one from a current Steam install of Lossless Scaling.",
+                    stringResource(R.string.fw_frame_generation_missing_shaders),
                     style = Fw.Secondary.copy(color = Fw.Warn),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FwButton("Choose another file", { picker.launch(arrayOf("*/*")) }, kind = FwButtonKind.Ghost)
-                FwButton("Remove", {
+                FwButton(stringResource(R.string.fw_choose_another_file), { picker.launch(arrayOf("*/*")) }, kind = FwButtonKind.Ghost)
+                FwButton(stringResource(R.string.fw_remove), {
                     FrameGeneration.remove(context)
                     hasDll = false
                     enabled = FrameGeneration.isEnabled(context)
                 }, kind = FwButtonKind.Ghost)
             }
         } else {
-            FwButton("Choose Lossless.dll", { picker.launch(arrayOf("*/*")) }, kind = FwButtonKind.Ghost)
+            FwButton(stringResource(R.string.fw_choose_lossless_dll), { picker.launch(arrayOf("*/*")) }, kind = FwButtonKind.Ghost)
         }
         message?.let { Text(it, style = Fw.Secondary.copy(color = Fw.Warn)) }
     }
@@ -380,8 +376,8 @@ private fun FrameGenerationSection() {
 private fun ResolutionSection(launcher: LauncherController) {
     val context = LocalContext.current
     var current by remember { mutableStateOf(RenderSizes.selected) }
-    FwSection("Resolution") {
-        Text("The size the game runs at. Higher looks sharper but is harder on the device. A change applies the next time you start the game.", style = Fw.Secondary)
+    FwSection(stringResource(R.string.fw_resolution)) {
+        Text(stringResource(R.string.fw_the_size_the_game_runs_at_higher), style = Fw.Secondary)
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             RenderSize.entries.forEach { r ->
                 val result = remember(r) { fitScreenSizeToWindow(context, launcher.gpu.screenSize, r) }
@@ -389,9 +385,9 @@ private fun ResolutionSection(launcher: LauncherController) {
                     RenderSizes.save(context, r)
                     current = r
                 }) {
-                    Text(if (r == RenderSize.AUTO) "Automatic, for this device" else r.label, style = Fw.Text, modifier = Modifier.weight(1f))
+                    Text(if (r == RenderSize.AUTO) stringResource(R.string.fw_automatic_for_this_device) else r.label, style = Fw.Text, modifier = Modifier.weight(1f))
                     Text(result, style = Fw.Data.copy(color = Fw.Ash))
-                    if (r == current) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                    if (r == current) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
                 }
             }
         }
@@ -406,10 +402,10 @@ private fun RegionSection(launcher: LauncherController) {
         app.gamenative.wow.product.BuildInfo.read(java.io.File(launcher.gamePath))?.active(launcher.files.product)?.get("Branch")
     }
     var current by remember(branch) { mutableStateOf(GameRegions.effective(branch)) }
-    FwSection("Region") {
-        Text("The Battle.net region you play in. A change applies the next time you start the game.", style = Fw.Secondary)
+    FwSection(stringResource(R.string.fw_region)) {
+        Text(stringResource(R.string.fw_the_battle_net_region_you_play_in), style = Fw.Secondary)
         // An update in progress downloads the region it started with, so the region can't change under it.
-        if (launcher.isUpdating) Text("You can change the region once the game update finishes.", style = Fw.Secondary.copy(color = Fw.Warn))
+        if (launcher.isUpdating) Text(stringResource(R.string.fw_you_can_change_the_region_once_the), style = Fw.Secondary.copy(color = Fw.Warn))
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             GameRegion.entries.forEach { r ->
                 FwRow(selected = r == current, onClick = {
@@ -419,9 +415,9 @@ private fun RegionSection(launcher: LauncherController) {
                     // Regions can be on different builds, so the install may now need an update.
                     launcher.checkVersionStatus()
                 }) {
-                    Text(r.label, style = Fw.Text, modifier = Modifier.weight(1f))
+                    Text(regionLabel(r), style = Fw.Text, modifier = Modifier.weight(1f))
                     Text(r.portal, style = Fw.Data.copy(color = Fw.Ash))
-                    if (r == current) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                    if (r == current) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
                 }
             }
         }
@@ -438,8 +434,8 @@ private fun GameVersionSection(launcher: LauncherController, onVersionChanged: (
         pending = null
         if (launcher.switchVersion(to)) onVersionChanged()
     }
-    FwSection("Game version") {
-        Text("Foreverywhere is made for WoW Forever. You can also try other official versions of WoW, which are experimental.", style = Fw.Secondary)
+    FwSection(stringResource(R.string.fw_game_version)) {
+        Text(stringResource(R.string.fw_foreverywhere_is_made_for_wow_forever_you), style = Fw.Secondary)
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             GameVersion.entries.forEach { v ->
                 val current = v == launcher.version
@@ -455,34 +451,34 @@ private fun GameVersionSection(launcher: LauncherController, onVersionChanged: (
                 ) {
                     GameIconImage(v.icon, 24.dp) { Box(Modifier.size(24.dp)) }
                     Text(v.displayName, style = Fw.Text, modifier = Modifier.weight(1f))
-                    if (v.isExperimental) Text("Experimental", style = Fw.Data.copy(color = Fw.Ash))
-                    if (current) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                    if (v.isExperimental) Text(stringResource(R.string.fw_experimental), style = Fw.Data.copy(color = Fw.Ash))
+                    if (current) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
                 }
             }
         }
         if (launcher.version == GameVersion.FOREVER) {
-            Text("WoW Forever build", style = Fw.Text)
-            Text("Which of Blizzard's WoW Forever releases to use. Keep WoW Forever unless Blizzard opens a new beta or test phase.", style = Fw.Secondary)
+            Text(stringResource(R.string.fw_wow_forever_build), style = Fw.Text)
+            Text(stringResource(R.string.fw_which_of_blizzard_s_wow_forever_releases), style = Fw.Secondary)
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 ForeverTrack.entries.forEach { t ->
                     FwRow(selected = t == launcher.foreverTrack, onClick = { if (!downloading) launcher.switchForeverTrack(t) }) {
                         Text(t.label, style = Fw.Text, modifier = Modifier.weight(1f))
                         Text(t.product.code, style = Fw.Data.copy(color = Fw.Ash))
-                        if (t == launcher.foreverTrack) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                        if (t == launcher.foreverTrack) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
                     }
                 }
             }
         }
         when {
-            downloading -> Text("Finish or cancel the current download before switching.", style = Fw.Secondary.copy(color = Fw.Warn))
-            launcher.busy -> Text("Wait for the game to start or the update to finish before switching.", style = Fw.Secondary.copy(color = Fw.Warn))
+            downloading -> Text(stringResource(R.string.fw_finish_or_cancel_the_current_download_before), style = Fw.Secondary.copy(color = Fw.Warn))
+            launcher.busy -> Text(stringResource(R.string.fw_wait_for_the_game_to_start_or), style = Fw.Secondary.copy(color = Fw.Warn))
         }
     }
     pending?.let { v ->
         FwDialog(
-            title = "Other WoW versions are experimental",
-            message = "Foreverywhere is made for WoW Forever. Other versions may run poorly or not start at all, and they get little support. Your WoW Forever install and addons stay as they are, and you can switch back any time.",
-            confirm = "Switch to ${v.displayName}",
+            title = stringResource(R.string.fw_other_wow_versions_are_experimental),
+            message = stringResource(R.string.fw_other_versions_warning),
+            confirm = stringResource(R.string.fw_switch_to_1_s, v.displayName),
             onConfirm = { switch(v) },
             onDismiss = { pending = null },
         )
@@ -493,6 +489,14 @@ private fun GameVersionSection(launcher: LauncherController, onVersionChanged: (
 private fun ProviderLine(name: String, enabled: Boolean) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(name, style = Fw.Text)
-        Text(if (enabled) "On" else "Off: no API key", style = Fw.Data.copy(color = if (enabled) Fw.Ok else Fw.Ash))
+        Text(if (enabled) stringResource(R.string.fw_on) else stringResource(R.string.fw_off_no_api_key), style = Fw.Data.copy(color = if (enabled) Fw.Ok else Fw.Ash))
     }
 }
+
+@Composable
+internal fun regionLabel(region: GameRegion): String = stringResource(when (region) {
+    GameRegion.US -> R.string.fw_region_us
+    GameRegion.EU -> R.string.fw_region_eu
+    GameRegion.KR -> R.string.fw_region_kr
+    GameRegion.TW -> R.string.fw_region_tw
+})

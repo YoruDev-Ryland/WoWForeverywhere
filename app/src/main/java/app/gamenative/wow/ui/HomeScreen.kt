@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,7 +91,7 @@ fun HomeScreen(
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("A  Select      B  Back", style = Fw.Data, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.fw_a_select_b_back), style = Fw.Data, modifier = Modifier.weight(1f))
             SupportLink()
         }
     }
@@ -110,7 +112,7 @@ private fun SupportLink() {
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Icon(Icons.Filled.LocalCafe, contentDescription = null, tint = if (focused) Fw.Brass else Fw.Ash, modifier = Modifier.size(14.dp))
-        Text("Support on Ko-fi", style = Fw.Data.copy(color = if (focused) Fw.Brass else Fw.Ash))
+        Text(stringResource(R.string.fw_support_on_ko_fi), style = Fw.Data.copy(color = if (focused) Fw.Brass else Fw.Ash))
     }
 }
 
@@ -122,17 +124,17 @@ private fun Header(launcher: LauncherController) {
             Text("Foreverywhere", style = Fw.Title.copy(fontSize = 21.sp), maxLines = 1, softWrap = false)
             if (launcher.version.isExperimental) {
                 Text(launcher.version.displayName, style = Fw.Data, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                Text("Experimental", style = Fw.Data.copy(color = Fw.Warn), modifier = Modifier.background(Fw.Stone, Fw.Pill).padding(horizontal = 10.dp, vertical = 4.dp))
+                Text(stringResource(R.string.fw_experimental), style = Fw.Data.copy(color = Fw.Warn), modifier = Modifier.background(Fw.Stone, Fw.Pill).padding(horizontal = 10.dp, vertical = 4.dp))
             }
         }
         val version = launcher.versionStatus
         val (text, color) = when {
-            launcher.filesMissing -> "Game not installed" to Fw.Ash
-            launcher.canConvertToLaunch -> "WoW Forever is out: switch in Game files" to Fw.Warn
-            launcher.isCheckingVersion || !launcher.versionChecked -> "Checking for game updates…" to Fw.Ash
-            version == null -> "Game version unknown (offline?)" to Fw.Ash
-            version.isOutdated -> "Game update ${version.remoteVersion} available" to Fw.Warn
-            else -> "Game up to date" to Fw.Ok
+            launcher.filesMissing -> stringResource(R.string.fw_game_not_installed) to Fw.Ash
+            launcher.canConvertToLaunch -> stringResource(R.string.fw_wow_forever_is_out_switch_in_game) to Fw.Warn
+            launcher.isCheckingVersion || !launcher.versionChecked -> stringResource(R.string.fw_checking_for_game_updates) to Fw.Ash
+            version == null -> stringResource(R.string.fw_game_version_unknown_offline) to Fw.Ash
+            version.isOutdated -> stringResource(R.string.fw_game_update_1_s_available, version.remoteVersion) to Fw.Warn
+            else -> stringResource(R.string.fw_game_up_to_date) to Fw.Ok
         }
         // The title is measured first and keeps its line; a long status wraps inside the pill instead.
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
@@ -152,16 +154,16 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
     val files = launcher.files
     val version = launcher.versionStatus
     FwTile(
-        title = if (launcher.filesMissing) "Install" else "Play",
+        title = if (launcher.filesMissing) stringResource(R.string.fw_install) else stringResource(R.string.fw_play),
         modifier = modifier,
         art = ForeverArt.KEY_ART,
         titleStyle = Fw.Hero,
         footer = {
             when {
-                launcher.busy -> FwActionBar("Working…", enabled = false)
-                launcher.filesMissing -> FwActionBar("Set up")
-                version?.isOutdated == true -> FwActionBar("Update")
-                else -> FwActionBar("Play", enabled = launcher.canPlay)
+                launcher.busy -> FwActionBar(stringResource(R.string.fw_working), enabled = false)
+                launcher.filesMissing -> FwActionBar(stringResource(R.string.fw_set_up))
+                version?.isOutdated == true -> FwActionBar(stringResource(R.string.fw_update))
+                else -> FwActionBar(stringResource(R.string.fw_play), enabled = launcher.canPlay)
             }
         },
         onClick = {
@@ -173,17 +175,17 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
         },
     ) {
         Text(
-            files.product?.let { listOfNotNull(it.displayName, version?.localVersion).joinToString(" · ") } ?: "Set up ${launcher.version.displayName} to start",
+            files.product?.let { listOfNotNull(it.displayName, version?.localVersion).joinToString(" · ") } ?: stringResource(R.string.fw_set_up_1_s_to_start, launcher.version.displayName),
             style = Fw.Data,
         )
         when {
             launcher.busy -> Text(if (launcher.isUpdating) launcher.updateStatusText else launcher.statusText, style = Fw.Text)
-            launcher.filesMissing -> Text("Download the game, or find the copy already on this device.", style = Fw.Secondary)
+            launcher.filesMissing -> Text(stringResource(R.string.fw_download_the_game_or_find_the_copy), style = Fw.Secondary)
             version?.isOutdated == true -> {
-                Text("Live servers need ${version.remoteVersion}. Press A to update.", style = Fw.Secondary.copy(color = Fw.Warn))
-                FwButton("Launch anyway", launcher::launchGame, kind = FwButtonKind.Ghost)
+                Text(stringResource(R.string.fw_live_servers_need_1_s_press_a, version.remoteVersion), style = Fw.Secondary.copy(color = Fw.Warn))
+                FwButton(stringResource(R.string.fw_launch_anyway), launcher::launchGame, kind = FwButtonKind.Ghost)
             }
-            !launcher.hasSavedLogin -> Text("No saved login: you'll sign in inside the game.", style = Fw.Secondary)
+            !launcher.hasSavedLogin -> Text(stringResource(R.string.fw_no_saved_login_you_ll_sign_in), style = Fw.Secondary)
         }
     }
 }
@@ -202,34 +204,34 @@ private fun SmallTiles(
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            FwTile("Addons", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.INTERFACE, titleStyle = titleStyle, badge = addonUpdates?.takeIf { it > 0 }?.toString(), onClick = onOpenAddons) {
+            FwTile(stringResource(R.string.fw_addons), Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.INTERFACE, titleStyle = titleStyle, badge = addonUpdates?.takeIf { it > 0 }?.toString(), onClick = onOpenAddons) {
                 Text(
                     when {
-                        addonCount == null -> "Browse and install addons"
-                        addonUpdates != null && addonUpdates > 0 -> "$addonCount installed · $addonUpdates updates"
-                        else -> "$addonCount installed"
+                        addonCount == null -> stringResource(R.string.fw_browse_and_install_addons)
+                        addonUpdates != null && addonUpdates > 0 -> stringResource(R.string.fw_1_s_installed_2_s_updates, addonCount, addonUpdates)
+                        else -> stringResource(R.string.fw_1_s_installed, addonCount)
                     },
                     style = Fw.Secondary,
                 )
             }
-            FwTile("Game files", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.ASHENVALE, titleStyle = titleStyle, onClick = onOpenGame) {
-                Text(if (launcher.filesMissing) "Not installed" else launcher.files.product?.displayName.orEmpty(), style = Fw.Secondary)
-                if (launcher.canConvertToLaunch) Text("Launch version available", style = Fw.Secondary.copy(color = Fw.Brass))
+            FwTile(stringResource(R.string.fw_game_files), Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.ASHENVALE, titleStyle = titleStyle, onClick = onOpenGame) {
+                Text(if (launcher.filesMissing) stringResource(R.string.fw_not_installed) else launcher.files.product?.displayName.orEmpty(), style = Fw.Secondary)
+                if (launcher.canConvertToLaunch) Text(stringResource(R.string.fw_launch_version_available), style = Fw.Secondary.copy(color = Fw.Brass))
             }
         }
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            FwTile("Account", Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.SKYBORNE, titleStyle = titleStyle, onClick = onOpenAccount) {
-                Text(if (launcher.hasSavedLogin) "Login saved on this device" else "No login saved", style = Fw.Secondary)
+            FwTile(stringResource(R.string.fw_account), Modifier.weight(1f).fillMaxHeight(), art = ForeverArt.SKYBORNE, titleStyle = titleStyle, onClick = onOpenAccount) {
+                Text(if (launcher.hasSavedLogin) stringResource(R.string.fw_login_saved_on_this_device) else stringResource(R.string.fw_no_login_saved), style = Fw.Secondary)
             }
             FwTile(
-                "Settings",
+                stringResource(R.string.fw_settings),
                 Modifier.weight(1f).fillMaxHeight(),
                 art = ForeverArt.CAMP,
                 titleStyle = titleStyle,
                 badge = launcher.appUpdate?.let { "NEW" },
                 onClick = onOpenSettings,
             ) {
-                Text(launcher.appUpdate?.let { "App ${it.version} available" } ?: "App v${BuildConfig.VERSION_NAME}", style = Fw.Secondary)
+                Text(launcher.appUpdate?.let { stringResource(R.string.fw_app_1_s_available, it.version) } ?: stringResource(R.string.fw_app_v_1_s, BuildConfig.VERSION_NAME), style = Fw.Secondary)
             }
         }
     }

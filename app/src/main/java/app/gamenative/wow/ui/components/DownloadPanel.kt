@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui.components
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,7 +38,7 @@ fun FwDownloadPanel(title: String, progress: InstallProgress?, bytesPerSecond: L
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Text(title, style = Fw.Text, modifier = Modifier.weight(1f))
             Text(
-                fraction?.let { "${(it * 100).toInt()}%" } ?: "Preparing",
+                fraction?.let { "${(it * 100).toInt()}%" } ?: stringResource(R.string.fw_preparing),
                 style = Fw.Title.copy(color = Fw.Brass, fontSize = 26.sp),
             )
         }
@@ -44,7 +46,7 @@ fun FwDownloadPanel(title: String, progress: InstallProgress?, bytesPerSecond: L
         if (progress != null && progress.totalBytes > 0) {
             Text(DownloadSpeed.summary(progress, bytesPerSecond), style = Fw.Data.copy(color = Fw.Bone))
         } else {
-            Text("Reading the build manifest…", style = Fw.Data)
+            Text(stringResource(R.string.fw_reading_the_build_manifest), style = Fw.Data)
         }
         progress?.stepText?.let { Text(it, style = Fw.Data, maxLines = 1, overflow = TextOverflow.Ellipsis) }
     }

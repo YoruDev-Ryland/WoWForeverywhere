@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import android.content.Intent
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -80,32 +82,31 @@ fun ControllerTestScreen(onBack: () -> Unit) {
         }
     }
 
-    FwPage("Controller test", onBack) {
-        FwSection("Press any button") {
+    FwPage(stringResource(R.string.fw_controller_test), onBack) {
+        FwSection(stringResource(R.string.fw_press_any_button)) {
             Text(
-                "Press each button you want to check. Every press shows up below with the device it came from and what the game does with it. " +
-                    "While this screen is open the buttons only test, so hold B for two seconds or tap Back to leave.",
+                stringResource(R.string.fw_controller_test_explanation),
                 style = Fw.Secondary,
             )
-            Text(sticks ?: "Move a stick or trigger to see its position.", style = Fw.Data)
+            Text(sticks ?: stringResource(R.string.fw_move_a_stick_or_trigger_to_see), style = Fw.Data)
         }
-        FwSection("Presses") {
+        FwSection(stringResource(R.string.fw_presses)) {
             val presses = ControllerTestLog.presses
             if (presses.isEmpty()) {
-                Text("No presses yet.", style = Fw.Secondary)
+                Text(stringResource(R.string.fw_no_presses_yet), style = Fw.Secondary)
             } else {
                 presses.forEach { PressRow(it) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FwButton("Share results", {
+                FwButton(stringResource(R.string.fw_share_results), {
                     val text = ControllerTestLog.report(devices)
                     val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
                     context.startActivity(Intent.createChooser(send, "Share controller test"))
                 }, kind = FwButtonKind.Ghost, enabled = presses.isNotEmpty())
-                FwButton("Clear", ControllerTestLog::clear, kind = FwButtonKind.Ghost, enabled = presses.isNotEmpty())
+                FwButton(stringResource(R.string.fw_clear), ControllerTestLog::clear, kind = FwButtonKind.Ghost, enabled = presses.isNotEmpty())
             }
         }
-        FwSection("Input devices") {
+        FwSection(stringResource(R.string.fw_input_devices)) {
             devices.forEach { Text(it, style = Fw.Data) }
         }
     }
@@ -123,8 +124,8 @@ private fun PressRow(press: ControllerTestLog.Press) {
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(press.key, style = Fw.Label.copy(color = Fw.Bone, fontSize = 15.sp))
-        Text("From ${press.device}", style = Fw.Secondary)
-        Text("In the game: ${press.result.detail}", style = Fw.Data.copy(color = color))
+        Text(stringResource(R.string.fw_from_1_s, press.device), style = Fw.Secondary)
+        Text(stringResource(R.string.fw_in_the_game_1_s, press.result.detail), style = Fw.Data.copy(color = color))
     }
 }
 

@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui.addons
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -71,8 +73,8 @@ import java.io.File
 @Composable
 fun AddonsRoute(launcher: LauncherController, addons: AddonsController?, onBack: () -> Unit) {
     if (addons == null) {
-        FwPage("Addons", onBack) {
-            Text("Install or find ${launcher.version.displayName} first. Addons go into the game's folder.", style = Fw.Text)
+        FwPage(stringResource(R.string.fw_addons), onBack) {
+            Text(stringResource(R.string.fw_addons_require_game, launcher.version.displayName), style = Fw.Text)
         }
         return
     }
@@ -85,6 +87,7 @@ fun AddonsRoute(launcher: LauncherController, addons: AddonsController?, onBack:
  */
 @Composable
 fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Unit)? = null) {
+    val localSource = stringResource(R.string.fw_this_device)
     var showUrlDialog by remember { mutableStateOf(false) }
     val wideBar = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
     LaunchedEffect(c) { if (c.installed == null) c.refreshInstalled() }
@@ -95,12 +98,12 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (onSettings != null) FwButton("Settings", onSettings, kind = FwButtonKind.Ghost) else FwButton("Back", onBack, kind = FwButtonKind.Ghost)
-            FwChip("Installed ${c.installed?.size ?: "…"}", c.mode == AddonsController.Mode.INSTALLED, { c.switchMode(AddonsController.Mode.INSTALLED) })
-            FwChip("Browse", c.mode == AddonsController.Mode.BROWSE, { c.switchMode(AddonsController.Mode.BROWSE) })
+            if (onSettings != null) FwButton(stringResource(R.string.fw_settings), onSettings, kind = FwButtonKind.Ghost) else FwButton(stringResource(R.string.fw_back_2), onBack, kind = FwButtonKind.Ghost)
+            FwChip(stringResource(R.string.fw_addons_installed_count, c.installed?.size?.toString() ?: "…"), c.mode == AddonsController.Mode.INSTALLED, { c.switchMode(AddonsController.Mode.INSTALLED) })
+            FwChip(stringResource(R.string.fw_browse), c.mode == AddonsController.Mode.BROWSE, { c.switchMode(AddonsController.Mode.BROWSE) })
             if (wideBar) SearchField(c.query, c::search, searchHint(c.version), Modifier.weight(1f)) else Box(Modifier.weight(1f))
-            c.updates?.takeIf { it > 0 }?.let { FwButton("Update all ($it)", c::updateAll, enabled = c.working == null) }
-            if (wideBar) FwButton("From link", { showUrlDialog = true }, kind = FwButtonKind.Ghost)
+            c.updates?.takeIf { it > 0 }?.let { FwButton(stringResource(R.string.fw_update_all_count, it), c::updateAll, enabled = c.working == null) }
+            if (wideBar) FwButton(stringResource(R.string.fw_from_link), { showUrlDialog = true }, kind = FwButtonKind.Ghost)
         }
         if (!wideBar) SearchField(c.query, c::search, searchHint(c.version), Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp))
         // One scrolling row of filters: game version, source, then categories.
@@ -110,12 +113,12 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
             modifier = Modifier.padding(vertical = 10.dp),
         ) {
             // Only WoW Forever has a fallback version (Classic Era) to include or leave out.
-            if (c.version == GameVersion.FOREVER) item { FwChip(if (c.includeClassic) "Forever + Classic" else "Forever only", false, c::toggleClassic) }
-            item { FwChip(c.source?.let(::sourceName) ?: "All sources", false, c::cycleSource) }
+            if (c.version == GameVersion.FOREVER) item { FwChip(if (c.includeClassic) "Forever + Classic" else stringResource(R.string.fw_forever_only), false, c::toggleClassic) }
+            item { FwChip(c.source?.let { sourceName(it, localSource) } ?: stringResource(R.string.fw_all_sources), false, c::cycleSource) }
             item { Box(Modifier.width(1.dp).height(42.dp).background(Fw.Rule)) }
-            item { FwChip("All categories", c.category == null, { c.selectCategory(null) }) }
-            items(AddonCategory.entries) { cat -> FwChip(cat.label, c.category == cat, { c.selectCategory(cat) }) }
-            if (!wideBar) item { FwButton("From link", { showUrlDialog = true }, kind = FwButtonKind.Ghost) }
+            item { FwChip(stringResource(R.string.fw_all_categories), c.category == null, { c.selectCategory(null) }) }
+            items(AddonCategory.entries) { cat -> FwChip(categoryLabel(cat), c.category == cat, { c.selectCategory(cat) }) }
+            if (!wideBar) item { FwButton(stringResource(R.string.fw_from_link), { showUrlDialog = true }, kind = FwButtonKind.Ghost) }
         }
         (c.working ?: c.message)?.let {
             Text(it, style = Fw.Secondary.copy(color = if (c.working != null) Fw.Brass else Fw.Ash), modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
@@ -134,7 +137,7 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
                 val sel = c.selected
                 if (detailOpen && sel != null) {
                     Column(Modifier.fillMaxSize().background(Fw.Ground)) {
-                        FwButton("Back to list", { detailOpen = false }, kind = FwButtonKind.Ghost, modifier = Modifier.padding(16.dp))
+                        FwButton(stringResource(R.string.fw_back_to_list), { detailOpen = false }, kind = FwButtonKind.Ghost, modifier = Modifier.padding(16.dp))
                         Detail(c, sel, Modifier.fillMaxSize())
                     }
                 }
@@ -145,30 +148,31 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
     if (showUrlDialog) {
         var url by remember { mutableStateOf("") }
         FwDialog(
-            title = "Install from a link",
-            message = "Paste a GitHub repository link, or a direct link to an addon .zip.",
-            confirm = "Install",
+            title = stringResource(R.string.fw_install_from_a_link),
+            message = stringResource(R.string.fw_paste_a_github_repository_link_or_a),
+            confirm = stringResource(R.string.fw_install),
             onConfirm = {
                 showUrlDialog = false
                 if (url.isNotBlank()) c.installFromUrl(url)
             },
             onDismiss = { showUrlDialog = false },
         ) {
-            OutlinedTextField(url, { url = it }, singleLine = true, label = { Text("Link") }, textStyle = Fw.Text)
+            OutlinedTextField(url, { url = it }, singleLine = true, label = { Text(stringResource(R.string.fw_link)) }, textStyle = Fw.Text)
         }
     }
 }
 
 @Composable
 private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Unit) {
+    val localSource = stringResource(R.string.fw_this_device)
     Box(modifier) {
         when {
-            c.loading -> Text("Searching…", style = Fw.Secondary, modifier = Modifier.padding(20.dp))
+            c.loading -> Text(stringResource(R.string.fw_searching), style = Fw.Secondary, modifier = Modifier.padding(20.dp))
             c.listings.isEmpty() -> Text(
                 when (c.mode) {
-                    AddonsController.Mode.INSTALLED -> if (c.installed == null) "Reading your AddOns folder…" else "No addons installed yet. Switch to Browse to find some."
+                    AddonsController.Mode.INSTALLED -> if (c.installed == null) stringResource(R.string.fw_reading_your_addons_folder) else stringResource(R.string.fw_no_addons_installed_yet_switch_to_browse)
                     AddonsController.Mode.BROWSE ->
-                        if (c.version == GameVersion.FOREVER) "Nothing found. Try another name, or include Classic addons." else "Nothing found. Try another name."
+                        if (c.version == GameVersion.FOREVER) stringResource(R.string.fw_nothing_found_try_another_name_or_include) else stringResource(R.string.fw_nothing_found_try_another_name)
                 },
                 style = Fw.Secondary,
                 modifier = Modifier.padding(20.dp),
@@ -191,18 +195,18 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
                             }
                             Text(
                                 listOfNotNull(
-                                    listing.remote.categories.firstOrNull()?.label,
-                                    listing.sources.joinToString(" · ", transform = ::sourceName).takeIf { it.isNotBlank() },
-                                    listing.remote.downloads.takeIf { it > 0 }?.let { "${compact(it)} downloads" },
+                                    listing.remote.categories.firstOrNull()?.let { categoryLabel(it) },
+                                    listing.sources.joinToString(" · ", transform = { sourceName(it, localSource) }).takeIf { it.isNotBlank() },
+                                    listing.remote.downloads.takeIf { it > 0 }?.let { stringResource(R.string.fw_downloads_count, compact(it)) },
                                 ).joinToString(" · "),
                                 style = Fw.Data,
                                 maxLines = 1,
                             )
                         }
                         val (state, color) = when {
-                            listing.updateAvailable -> "Update" to Fw.Warn
-                            listing.installed != null -> "Installed" to Fw.Ok
-                            else -> "Get" to Fw.Ash
+                            listing.updateAvailable -> stringResource(R.string.fw_update) to Fw.Warn
+                            listing.installed != null -> stringResource(R.string.fw_installed) to Fw.Ok
+                            else -> stringResource(R.string.fw_get) to Fw.Ash
                         }
                         Text(state, style = Fw.Data.copy(color = color))
                     }
@@ -214,6 +218,7 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
 
 @Composable
 private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifier) {
+    val localSource = stringResource(R.string.fw_this_device)
     val remote = listing.remote
     val file = remote.latest[listing.bestFlavor] ?: remote.latest.values.firstOrNull()
     LaunchedEffect(c.keyOf(listing)) { c.loadDescription(listing) }
@@ -232,7 +237,7 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
                 AddonIcon(listing, 56, c.version)
                 Column(Modifier.weight(1f)) {
                     Text(remote.name, style = Fw.Title)
-                    if (remote.author.isNotBlank()) Text("by ${remote.author}", style = Fw.Secondary)
+                    if (remote.author.isNotBlank()) Text(stringResource(R.string.fw_by_1_s, remote.author), style = Fw.Secondary)
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -242,25 +247,25 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 val idle = c.working == null
                 when {
-                    listing.installed == null -> FwButton("Install", { c.install(listing) }, enabled = idle && file?.installable == true)
+                    listing.installed == null -> FwButton(stringResource(R.string.fw_install), { c.install(listing) }, enabled = idle && file?.installable == true)
                     listing.updateAvailable -> FwButton(
-                        if (listing.installed.flavor == AddonFlavor.FALLBACK && listing.bestFlavor == AddonFlavor.MAIN) "Switch to Forever version" else "Update",
+                        if (listing.installed.flavor == AddonFlavor.FALLBACK && listing.bestFlavor == AddonFlavor.MAIN) stringResource(R.string.fw_switch_to_forever_version) else stringResource(R.string.fw_update),
                         { c.update(listing) },
                         enabled = idle,
                     )
-                    else -> FwButton("Installed", {}, enabled = false)
+                    else -> FwButton(stringResource(R.string.fw_installed), {}, enabled = false)
                 }
-                if (listing.installed != null) FwButton("Remove", { c.remove(listing) }, kind = FwButtonKind.Danger, enabled = idle)
+                if (listing.installed != null) FwButton(stringResource(R.string.fw_remove), { c.remove(listing) }, kind = FwButtonKind.Danger, enabled = idle)
             }
             if (file != null && !file.installable) {
-                Text("The author doesn't allow downloads through other apps. Open its page to get it there.", style = Fw.Secondary.copy(color = Fw.Warn))
+                Text(stringResource(R.string.fw_the_author_doesn_t_allow_downloads_through), style = Fw.Secondary.copy(color = Fw.Warn))
             }
             if (listing.pages.isNotEmpty()) {
                 val context = LocalContext.current
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listing.pages.entries.take(3).forEach { (provider, url) ->
                         FwButton(
-                            "Open on ${sourceName(provider)}",
+                            stringResource(R.string.fw_open_on_1_s, sourceName(provider, localSource)),
                             { Links.open(context, url) },
                             kind = FwButtonKind.Ghost,
                             icon = Icons.AutoMirrored.Filled.OpenInNew,
@@ -271,15 +276,15 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
             if (remote.categories.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     remote.categories.take(3).forEach { cat ->
-                        Text(cat.label, style = Fw.Label.copy(fontSize = 12.sp, color = Fw.Ash), modifier = Modifier.background(Fw.Stone2, Fw.Pill).padding(horizontal = 12.dp, vertical = 5.dp))
+                        Text(categoryLabel(cat), style = Fw.Label.copy(fontSize = 12.sp, color = Fw.Ash), modifier = Modifier.background(Fw.Stone2, Fw.Pill).padding(horizontal = 12.dp, vertical = 5.dp))
                     }
                 }
             }
             Text(
                 when {
                     description != null -> description
-                    c.keyOf(listing) in c.descriptions -> remote.summary.ifBlank { "No description." }
-                    else -> remote.summary.ifBlank { "Loading description…" }
+                    c.keyOf(listing) in c.descriptions -> remote.summary.ifBlank { stringResource(R.string.fw_no_description) }
+                    else -> remote.summary.ifBlank { stringResource(R.string.fw_loading_description) }
                 },
                 style = Fw.Text.copy(color = Fw.Bone),
                 maxLines = 40,
@@ -296,11 +301,11 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
             }
             Facts(
                 listOfNotNull(
-                    file?.let { "Latest" to it.version },
-                    listing.installed?.version?.let { "Installed" to it },
-                    "Source" to listing.sources.joinToString(", ", transform = ::sourceName).ifBlank { "This device" },
-                    file?.dependencies?.takeIf { it.isNotEmpty() }?.let { "Also installs" to "${it.size} required libraries" },
-                    listing.installed?.folders?.let { "Folders" to it.joinToString(", ") },
+                    file?.let { stringResource(R.string.fw_latest) to it.version },
+                    listing.installed?.version?.let { stringResource(R.string.fw_installed) to it },
+                    stringResource(R.string.fw_source) to listing.sources.joinToString(", ", transform = { sourceName(it, localSource) }).ifBlank { stringResource(R.string.fw_this_device) },
+                    file?.dependencies?.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.fw_also_installs) to stringResource(R.string.fw_required_libraries_count, it.size) },
+                    listing.installed?.folders?.let { stringResource(R.string.fw_folders) to it.joinToString(", ") },
                 ),
             )
         }
@@ -336,7 +341,8 @@ private fun SearchField(value: String, onChange: (String) -> Unit, hint: String,
     }
 }
 
-private fun searchHint(version: GameVersion) = if (version == GameVersion.FOREVER) "Search Forever addons…" else "Search ${version.displayName} addons…"
+@Composable
+private fun searchHint(version: GameVersion) = stringResource(R.string.fw_search_version_addons, version.displayName)
 
 /**
  * Game version marker: Blizzard's round icon for the version an addon is made for ([version]'s own, or
@@ -364,22 +370,45 @@ fun FlavorMark(flavor: AddonFlavor, version: GameVersion = GameVersion.FOREVER, 
     }
 }
 
+@Composable
 fun flavorLabel(flavor: AddonFlavor, version: GameVersion = GameVersion.FOREVER) = when {
     version == GameVersion.FOREVER -> when (flavor) {
-        AddonFlavor.MAIN -> "Made for WoW Forever"
-        AddonFlavor.FALLBACK -> "Made for Classic. It may not work in Forever."
-        AddonFlavor.OTHER -> "No game version listed. It may not work in Forever."
+        AddonFlavor.MAIN -> stringResource(R.string.fw_addon_for_forever)
+        AddonFlavor.FALLBACK -> stringResource(R.string.fw_addon_for_classic)
+        AddonFlavor.OTHER -> stringResource(R.string.fw_addon_version_unknown_forever)
     }
-    flavor == AddonFlavor.OTHER -> "No game version listed. It may not work in ${version.displayName}."
-    else -> "Made for ${version.displayName}"
+    flavor == AddonFlavor.OTHER -> stringResource(R.string.fw_addon_version_unknown, version.displayName)
+    else -> stringResource(R.string.fw_addon_for_version, version.displayName)
 }
 
-private fun sourceName(id: String) = when (id) {
+@Composable
+private fun categoryLabel(category: AddonCategory): String = stringResource(when (category) {
+    AddonCategory.QUESTS -> R.string.fw_category_quests
+    AddonCategory.MAP -> R.string.fw_category_map
+    AddonCategory.RAIDS -> R.string.fw_category_raids
+    AddonCategory.COMBAT -> R.string.fw_category_combat
+    AddonCategory.UNIT_FRAMES -> R.string.fw_category_unit_frames
+    AddonCategory.ACTION_BARS -> R.string.fw_category_action_bars
+    AddonCategory.BUFFS -> R.string.fw_category_buffs
+    AddonCategory.BAGS -> R.string.fw_category_bags
+    AddonCategory.AUCTION -> R.string.fw_category_auction
+    AddonCategory.PROFESSIONS -> R.string.fw_category_professions
+    AddonCategory.CHAT -> R.string.fw_category_chat
+    AddonCategory.TOOLTIPS -> R.string.fw_category_tooltips
+    AddonCategory.INTERFACE -> R.string.fw_category_interface
+    AddonCategory.CLASS -> R.string.fw_category_class
+    AddonCategory.PVP -> R.string.fw_category_pvp
+    AddonCategory.PETS -> R.string.fw_category_pets
+    AddonCategory.LIBRARIES -> R.string.fw_category_libraries
+    AddonCategory.OTHER -> R.string.fw_category_other
+})
+
+private fun sourceName(id: String, localSource: String) = when (id) {
     "curseforge" -> "CurseForge"
     "wago" -> "Wago"
     "wowinterface" -> "WoWInterface"
     "github" -> "GitHub"
-    "local" -> "This device"
+    "local" -> localSource
     else -> id
 }
 
@@ -389,5 +418,5 @@ private fun compact(n: Long) = when {
     else -> n.toString()
 }
 
-internal fun addonsControllerFor(root: String, product: app.gamenative.wow.product.WowProduct?, scope: kotlinx.coroutines.CoroutineScope): AddonsController? =
-    product?.let { AddonsController(File(root), it, scope) }
+internal fun addonsControllerFor(root: String, product: app.gamenative.wow.product.WowProduct?, scope: kotlinx.coroutines.CoroutineScope, context: android.content.Context): AddonsController? =
+    product?.let { AddonsController(File(root), it, scope, context) }
