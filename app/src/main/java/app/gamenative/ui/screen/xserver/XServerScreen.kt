@@ -3569,6 +3569,11 @@ private fun setupXEnvironment(
     val contentsManager = ContentsManager(context)
     contentsManager.syncContents()
     envVars.put("LC_ALL", lc_all)
+    // Xlib turns a key's keysym into text in the X locale's charset, and the container has no X locale data, so it
+    // could only produce ASCII: accented letters typed on the on-screen keyboard (ã, é, ç) reached Wine as nothing
+    // ("não" became "no", #38). With Latin-1, Wine gets the byte and maps it to the letter itself; keysyms above
+    // U+00FF (Cyrillic and the rest) still get no bytes from Xlib and keep going through Wine's own Unicode mapping.
+    envVars.put("_XKB_CHARSET", "ISO8859-1")
     envVars.put("MESA_DEBUG", "silent")
     envVars.put("MESA_NO_ERROR", "1")
     envVars.put("WINEPREFIX", imageFs.wineprefix)
