@@ -117,6 +117,7 @@ class GameConfigTest {
         val existing = listOf(
             "SET gxApi \"D3D11\"", "SET portal \"TW\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"",
             "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
+            WORK_OPTIMS_LINE,
         )
         // Even with no region picked, so a config written by an older version gets fixed.
         val fixed = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", portal = "KR")!!
@@ -132,6 +133,7 @@ class GameConfigTest {
         val existing = listOf(
             "SET gxApi \"D3D11\"", "SET portal \"US\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"",
             "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
+            WORK_OPTIMS_LINE,
         )
         assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", portal = "EU"))
         val forced = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", portal = "EU", forcePortal = true)!!
@@ -151,6 +153,22 @@ class GameConfigTest {
         assertTrue("SET showScreenNarrationDialog \"0\"" in updated)
         val chosen = updated.map { if (it.startsWith("SET accessibilityScreenNarrationEnabled")) "SET accessibilityScreenNarrationEnabled \"1\"" else it }
         assertNull(buildConfigWtf(chosen, WowProduct.FOREVER, "1920x1080"))
+    }
+
+    @Test
+    fun foreverStartsWithTheServersGraphicsSettingSoItSkipsTheRebuild() {
+        assertTrue(WORK_OPTIMS_LINE in buildConfigWtf(null, WowProduct.FOREVER, "1920x1080")!!)
+        assertTrue(buildConfigWtf(null, WowProduct.CLASSIC_ERA, "1920x1080")!!.none { it.startsWith("SET ClientSettings_") })
+        val old = listOf(
+            "SET gxApi \"D3D11\"", "SET portal \"US\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"",
+            "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
+        )
+        val updated = buildConfigWtf(old, WowProduct.FOREVER, "1920x1080")!!
+        assertEquals(old.toSet() + WORK_OPTIMS_LINE, updated.toSet())
+        assertNull(buildConfigWtf(updated, WowProduct.FOREVER, "1920x1080"))
+        // A value the game saved from the server is newer than ours and stays.
+        val newer = old + "SET ClientSettings_WORK_OPTIMS_BY_API_MASK \"16002,0xf,0x0,0x1ff\""
+        assertNull(buildConfigWtf(newer, WowProduct.FOREVER, "1920x1080"))
     }
 
     @Test
@@ -221,6 +239,7 @@ class GameConfigTest {
             "SET gxWindowedResolution \"1920x1080\"",
             "SET showScreenNarrationDialog \"0\"",
             "SET accessibilityScreenNarrationEnabled \"0\"",
+            WORK_OPTIMS_LINE,
         )
         assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080"))
     }
@@ -241,7 +260,7 @@ class GameConfigTest {
         val existing = listOf(
             "SET gxApi \"D3D11\"", "SET portal \"US\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"",
             "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
-            "SET accountList \"!WoW1|WoW2|\"",
+            "SET accountList \"!WoW1|WoW2|\"", WORK_OPTIMS_LINE,
         )
         // Without a pick, the game's own list stays as it is.
         assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080"))

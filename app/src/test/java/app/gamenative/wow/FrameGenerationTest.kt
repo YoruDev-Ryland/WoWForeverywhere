@@ -77,6 +77,43 @@ class FrameGenerationTest {
         assertFalse(FrameGeneration.hasShaders(context))
     }
 
+    /** The end of gx.log from a start that crashed in the rebuild (#46), and from one that got through it. */
+    private val crashedRebuild = listOf(
+        "11/12 08:19:25.917  [0] Dx11 Device Create Successful (1132.7 ms)",
+        "11/12 08:19:44.244  [0] Triggering GxRestart due to WORK_OPTIMS being disabled",
+        "11/12 08:19:44.244  [0] Doing GxRestart. Reason:DeviceStateChanged",
+        "11/12 08:19:44.244  [0] Dx11 Device Destroy",
+        "11/12 08:19:44.437  [0] Device Destroy Successful (192.8 ms)",
+    )
+    private val finishedRebuild = crashedRebuild + listOf(
+        "11/12 08:20:49.239  [0] Notify responders to DeviceCreate event",
+        "11/12 08:20:49.931  [0] Dx11 Device Create Successful (703.3 ms)",
+    )
+
+    @Test
+    fun aLogThatStopsInADeviceRebuildIsSpotted() {
+        assertTrue(FrameGeneration.endedInDeviceRebuild(crashedRebuild))
+        assertFalse(FrameGeneration.endedInDeviceRebuild(finishedRebuild))
+        assertFalse(FrameGeneration.endedInDeviceRebuild(crashedRebuild.take(1)))
+        assertFalse(FrameGeneration.endedInDeviceRebuild(emptyList()))
+    }
+
+    @Test
+    fun oneStartIsSatOutAfterARebuildCrashWithFrameGeneration() {
+        val log = java.io.File.createTempFile("gxlog", ".log").apply { writeText(crashedRebuild.joinToString("\n")) }
+        FrameGeneration.setUsedLastLaunch(context, true)
+        assertTrue(FrameGeneration.sitsOutAfterRebuildCrash(context, log))
+        // The start that sat out ran without frame generation, so the one after it uses it again even if it crashed too.
+        FrameGeneration.setUsedLastLaunch(context, false)
+        assertFalse(FrameGeneration.sitsOutAfterRebuildCrash(context, log))
+        // A crash without frame generation, a finished rebuild, or no log at all don't count.
+        FrameGeneration.setUsedLastLaunch(context, true)
+        log.writeText(finishedRebuild.joinToString("\n"))
+        assertFalse(FrameGeneration.sitsOutAfterRebuildCrash(context, log))
+        assertFalse(FrameGeneration.sitsOutAfterRebuildCrash(context, java.io.File(log.parentFile, "missing-gx.log")))
+        log.delete()
+    }
+
     @Test
     fun removeForgetsTheDll() {
         FrameGeneration.import(context, dll().inputStream())

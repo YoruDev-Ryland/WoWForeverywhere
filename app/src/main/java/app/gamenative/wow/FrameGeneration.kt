@@ -35,6 +35,30 @@ object FrameGeneration {
     /** True when frame generation should run at the next launch: a DLL is set and the switch is on. */
     fun isArmed(context: Context) = hasDll(context) && isEnabled(context)
 
+    private const val KEY_LAST_LAUNCH = "frame_generation_last_launch"
+
+    /** Records whether the game was just started with frame generation, for [sitsOutAfterRebuildCrash]. */
+    fun setUsedLastLaunch(context: Context, used: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_LAST_LAUNCH, used).apply()
+    }
+
+    private fun usedLastLaunch(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_LAST_LAUNCH, false)
+
+    /**
+     * Whether this start should run without frame generation: the last one had it on and the game died partway
+     * through rebuilding its graphics device, as it does when the server sends a new client setting (#46). Without
+     * the layer the game gets through the rebuild and saves the setting, so frame generation is back on the start
+     * after. Only one start is sat out: that start isn't recorded as using frame generation.
+     */
+    fun sitsOutAfterRebuildCrash(context: Context, gxLog: File) =
+        usedLastLaunch(context) && endedInDeviceRebuild(runCatching { gxLog.readLines() }.getOrDefault(emptyList()))
+
+    /** True when the game's graphics log [lines] stop after a device rebuild began and before it finished. */
+    internal fun endedInDeviceRebuild(lines: List<String>): Boolean {
+        val rebuild = lines.indexOfLast { "Doing GxRestart" in it }
+        return rebuild >= 0 && lines.drop(rebuild + 1).none { "Device Create Successful" in it }
+    }
+
     /**
      * Whether the added DLL has the shaders frame generation loads. Without them the frame-generation layer
      * closes the game as it starts, so the game is started without frame generation instead.
