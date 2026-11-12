@@ -1,16 +1,15 @@
-Fewer login disconnects, the on-screen keyboard in every language, and a home screen that fits 4:3 handhelds.
+Fixes for the character select crash with frame generation, accented letters and L2/R2, plus a Chinese launcher.
+
+## Added
+
+- **The launcher in Simplified and Traditional Chinese.** It follows your phone's language. Thanks to @AreChen for the translation (#45).
 
 ## Fixed
 
-- **Logins dropped with BLZ51914400.** Every copy of the app showed Blizzard the same Windows machine ID and computer name. Each device now gets its own identity, created the first time you start the game after updating and kept from then on. Thanks to @dienstag0815 for the fix (#12, #37).
-- **The on-screen keyboard only typed US letters.** Cyrillic, accented and other non-US letters now type into the game (#38).
-- **On 4:3 handhelds like the Retroid Pocket Nova, the Play button shrank to a thin strip.** The home screen now puts Play beside the other tiles on any landscape screen, and fits short screens in portrait too (#39).
-- **Settings → Update app could say no update was found.** GitHub limits how often one internet address can check, and phones on the same mobile network share an address. When that limit runs out, the app now checks the releases page instead, and says so if GitHub can't be reached.
-- **Switching region didn't fully move the install.** The next update downloaded the new region's build, but the game still recorded the old region. It now moves to the new one, and switching region checks for that region's game update straight away.
-
-## Changed
-
-- Game downloads, repairs, updates and version checks now use HTTPS, and downloaded game configs are checked against their checksums before use. Ported from wow-forever-android, based on work by Rbm3267 and danieleforte92.
+- **With frame generation on, the game crashed at character select.** Since November 11, Blizzard's servers send WoW Forever a new setting that makes the game rebuild its graphics the first time it arrives, and frame generation didn't survive the rebuild. The app now sets it up ahead of time, so frame generation can stay on (#46).
+- **Settings → Region could show Americas while the game logged into another region.** After reinstalling over a game folder that had played elsewhere, the game kept logging into that region, where you had no characters. That showed the ruleset picker, then an expired subscription or a disconnect. Settings now shows the region the game actually logs into, and tapping your region fixes it (#46).
+- **Accented letters from the on-screen keyboard didn't reach the game.** Typing "não" gave "no". Letters like ã, é, ñ and ç now type (#38).
+- **L2/R2 did nothing on some Bluetooth controllers.** Controllers that send their triggers as plain buttons now work, and analog triggers work as before (#44).
 
 ## Install
 
