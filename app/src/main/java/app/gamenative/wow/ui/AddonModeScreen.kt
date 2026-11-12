@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
@@ -59,26 +61,25 @@ fun AddonModeScreen(onBack: () -> Unit, onStarted: (AddonMode.Folder) -> Unit) {
         found.singleOrNull()?.let(::choose) ?: run { chosen = null }
     }
 
-    FwPage("Addon manager mode", onBack) {
-        FwSection("Only manage addons") {
+    FwPage(stringResource(R.string.fw_addon_manager_mode), onBack) {
+        FwSection(stringResource(R.string.fw_only_manage_addons)) {
             Text(
-                "Use the app as an addon manager for a WoW install you run some other way, such as DroidDeck, Winlator or a copy synced from a PC. " +
-                    "It opens straight to your addons, and the launcher, game files and account screens are turned off. You can turn this off again in Settings.",
+                stringResource(R.string.fw_addon_mode_intro),
                 style = Fw.Text,
             )
         }
 
-        FwSection("Addons folder") {
-            Text("Choose the game's Interface/AddOns folder, or the folder for your game version, such as _retail_ or _classic_era_.", style = Fw.Secondary)
+        FwSection(stringResource(R.string.fw_addons_folder)) {
+            Text(stringResource(R.string.fw_choose_the_game_s_interface_addons_folder), style = Fw.Secondary)
             if (choices.size > 1) {
                 Column {
                     choices.forEach { folder ->
                         FwRow(selected = folder == chosen, onClick = { choose(folder) }) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(folder.version?.displayName ?: "Unknown version", style = Fw.Text)
+                                Text(folder.version?.displayName ?: stringResource(R.string.fw_unknown_version), style = Fw.Text)
                                 Text(folder.addonsDir.path, style = Fw.Data)
                             }
-                            if (folder == chosen) Text("Selected", style = Fw.Data.copy(color = Fw.Brass))
+                            if (folder == chosen) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
                         }
                     }
                 }
@@ -86,14 +87,14 @@ fun AddonModeScreen(onBack: () -> Unit, onStarted: (AddonMode.Folder) -> Unit) {
                 chosen?.let { Text(it.addonsDir.path, style = Fw.Data.copy(color = Fw.Bone)) }
             }
             error?.let { Text(it, style = Fw.Secondary.copy(color = Fw.Warn)) }
-            FwButton(if (chosen == null) "Choose folder" else "Choose another folder", { picker.launch(null) }, kind = FwButtonKind.Ghost)
-            Text("Folders inside another app's private storage (Android/data) can't be opened: Android doesn't allow it.", style = Fw.Secondary)
+            FwButton(if (chosen == null) stringResource(R.string.fw_choose_folder) else stringResource(R.string.fw_choose_another_folder), { picker.launch(null) }, kind = FwButtonKind.Ghost)
+            Text(stringResource(R.string.fw_folders_inside_another_app_s_private_storage), style = Fw.Secondary)
         }
 
         if (chosen != null) {
-            FwSection("Game version") {
+            FwSection(stringResource(R.string.fw_game_version)) {
                 Text(
-                    if (chosen?.version != null) "Found from the folder. Addons are installed in their version for it." else "Pick the version this folder is for, so addons are installed in the right version.",
+                    if (chosen?.version != null) stringResource(R.string.fw_addons_folder_found) else stringResource(R.string.fw_addons_choose_version),
                     style = Fw.Secondary,
                 )
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -103,16 +104,16 @@ fun AddonModeScreen(onBack: () -> Unit, onStarted: (AddonMode.Folder) -> Unit) {
         }
 
         if (!access) {
-            FwSection("File access") {
-                Text("Android needs \"All files access\" so the app can change addons in another app's game folder.", style = Fw.Secondary)
-                FwButton("Allow file access", { StorageUtils.requestManageExternalStoragePermission(context) }, kind = FwButtonKind.Ghost)
+            FwSection(stringResource(R.string.fw_file_access)) {
+                Text(stringResource(R.string.fw_addon_mode_permission), style = Fw.Secondary)
+                FwButton(stringResource(R.string.fw_allow_file_access), { StorageUtils.requestManageExternalStoragePermission(context) }, kind = FwButtonKind.Ghost)
             }
         }
 
         val folder = chosen
         val v = version
         FwButton(
-            "Start addon manager mode",
+            stringResource(R.string.fw_start_addon_manager_mode),
             {
                 if (folder != null && v != null) {
                     AddonMode.enable(context, folder.addonsDir, v)

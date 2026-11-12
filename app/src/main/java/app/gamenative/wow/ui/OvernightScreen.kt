@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -105,17 +107,17 @@ fun OvernightScreen(onBack: () -> Unit) {
             when (val s = state) {
                 is InstallUiState.Running -> {
                     val p = s.progress
-                    Text(p.fraction?.let { "${(it * 100).toInt()}%" } ?: "Preparing", style = Fw.Title.copy(color = Dim, fontSize = 30.sp))
-                    Text(if (s.request.full) "Downloading all game data" else "Downloading the game", style = Fw.Data.copy(color = Dim))
+                    Text(p.fraction?.let { "${(it * 100).toInt()}%" } ?: stringResource(R.string.fw_preparing), style = Fw.Title.copy(color = Dim, fontSize = 30.sp))
+                    Text(if (s.request.full) stringResource(R.string.fw_downloading_all_game_data) else stringResource(R.string.fw_downloading_the_game), style = Fw.Data.copy(color = Dim))
                     if (p.totalBytes > 0) Text(DownloadSpeed.summary(p, speed), style = Fw.Data.copy(color = Dim))
                     p.stepText?.let { Text(it, style = Fw.Data.copy(color = Dim)) }
                 }
-                is InstallUiState.Done -> Text("Download complete.", style = Fw.Title.copy(color = Dim, fontSize = 22.sp))
-                is InstallUiState.Paused -> Text(s.reason ?: "Download paused.", style = Fw.Data.copy(color = Dim))
-                is InstallUiState.Failed -> Text("The download stopped: ${s.message}", style = Fw.Data.copy(color = Dim))
-                InstallUiState.Idle -> Text("Nothing is downloading.", style = Fw.Data.copy(color = Dim))
+                is InstallUiState.Done -> Text(stringResource(R.string.fw_download_complete), style = Fw.Title.copy(color = Dim, fontSize = 22.sp))
+                is InstallUiState.Paused -> Text(s.reason ?: stringResource(R.string.fw_download_paused), style = Fw.Data.copy(color = Dim))
+                is InstallUiState.Failed -> Text(stringResource(R.string.fw_the_download_stopped_1_s_3, s.message), style = Fw.Data.copy(color = Dim))
+                InstallUiState.Idle -> Text(stringResource(R.string.fw_nothing_is_downloading), style = Fw.Data.copy(color = Dim))
             }
-            Text("Tap or press any button to wake.", style = Fw.Data.copy(color = Dim.copy(alpha = 0.35f)))
+            Text(stringResource(R.string.fw_tap_or_press_any_button_to_wake), style = Fw.Data.copy(color = Dim.copy(alpha = 0.35f)))
         }
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import app.gamenative.R
 import app.gamenative.PluviaApp
 import app.gamenative.events.AndroidEvent
 import app.gamenative.ui.screen.wow.BattleNetSignIn
@@ -160,7 +161,7 @@ class LauncherController(
             } catch (e: Exception) {
                 Timber.e(e, "Error clearing game data")
                 if (e.isPermissionDenied()) needsStoragePermission = true
-                errorMessage = "Couldn't clear the game data: ${e.message}"
+                errorMessage = context.getString(R.string.fw_error_clear_data, e.message)
             } finally {
                 isClearingData = false
             }
@@ -169,7 +170,7 @@ class LauncherController(
 
     fun checkFiles(): Boolean {
         files = GamePath.status(context, gamePath)
-        if (files.isWrongGame) errorMessage = "This folder holds ${files.productCode}, not ${version.displayName}."
+        if (files.isWrongGame) errorMessage = context.getString(R.string.fw_error_wrong_game, files.productCode, version.displayName)
         return files.isReady
     }
 
@@ -235,7 +236,7 @@ class LauncherController(
         if (BattleNetSignIn.save(context, login)) {
             hasSavedLogin = true
         } else {
-            errorMessage = "Couldn't save your login on this device. You can still sign in inside the game."
+            errorMessage = context.getString(R.string.fw_error_save_login)
         }
     }
 
@@ -290,7 +291,7 @@ class LauncherController(
         }
         isLaunching = true
         errorMessage = null
-        statusText = "Preparing components..."
+        statusText = context.getString(R.string.fw_preparing_components)
         launchJob = scope.launch {
             try {
                 val screenSize = fitScreenSizeToWindow(context, gpu.screenSize)
@@ -299,7 +300,7 @@ class LauncherController(
                         scope.launch(Dispatchers.Main) { statusText = msg }
                     }
                 }
-                statusText = "Booting into World of Warcraft..."
+                statusText = context.getString(R.string.fw_booting_game)
                 onLaunch(containerId)
             } catch (e: CancellationException) {
                 throw e
@@ -308,8 +309,8 @@ class LauncherController(
                 needsStoragePermission = true
             } catch (e: Exception) {
                 Timber.e(e, "Error launching WoW Forever")
-                errorMessage = e.message ?: "Launch failed"
-                statusText = "Launch failed"
+                errorMessage = e.message ?: context.getString(R.string.fw_launch_failed)
+                statusText = context.getString(R.string.fw_launch_failed)
                 isLaunching = false
             }
         }
@@ -331,7 +332,7 @@ class LauncherController(
             return
         }
         isUpdating = true
-        updateStatusText = "Connecting to Blizzard CDN..."
+        updateStatusText = context.getString(R.string.fw_connecting_blizzard)
         errorMessage = null
         scope.launch {
             try {
@@ -341,9 +342,9 @@ class LauncherController(
                 GameInstaller().run(InstallRequest(root, product, installLocale(root, product))) { p ->
                     scope.launch(Dispatchers.Main) {
                         updateStatusText = when (p.phase) {
-                            InstallProgress.Phase.RESOLVING -> "Reading build ${target.remoteVersion}..."
-                            InstallProgress.Phase.DOWNLOADING -> p.fraction?.let { "Updating game files ${(it * 100).toInt()}%" } ?: "Updating game files..."
-                            else -> "Finishing update..."
+                            InstallProgress.Phase.RESOLVING -> context.getString(R.string.fw_reading_build, target.remoteVersion)
+                            InstallProgress.Phase.DOWNLOADING -> p.fraction?.let { context.getString(R.string.fw_updating_game_progress, (it * 100).toInt()) } ?: context.getString(R.string.fw_updating_game)
+                            else -> context.getString(R.string.fw_finishing_update)
                         }
                     }
                 }
@@ -354,7 +355,7 @@ class LauncherController(
             } catch (e: Exception) {
                 Timber.e(e, "Error updating game")
                 if (e.isPermissionDenied()) needsStoragePermission = true
-                errorMessage = "Update failed: ${e.message}"
+                errorMessage = context.getString(R.string.fw_update_failed, e.message)
                 isUpdating = false
             }
         }
@@ -364,7 +365,7 @@ class LauncherController(
     fun convertToLaunch() {
         if (busy || files.product != WowProduct.BETA) return
         isUpdating = true
-        updateStatusText = "Switching to the launch version..."
+        updateStatusText = context.getString(R.string.fw_switching_release)
         errorMessage = null
         isConverting = true
         convertProgress = null
@@ -393,7 +394,7 @@ class LauncherController(
             } catch (e: Exception) {
                 Timber.e(e, "Error converting to launch product")
                 if (e.isPermissionDenied()) needsStoragePermission = true
-                errorMessage = "Couldn't switch to the launch version: ${e.message}"
+                errorMessage = context.getString(R.string.fw_switch_release_failed, e.message)
                 isUpdating = false
                 isConverting = false
                 convertProgress = null
@@ -419,7 +420,7 @@ class LauncherController(
                 installOrRequestPermission(apk)
             } catch (e: Exception) {
                 Timber.e(e, "Error downloading app update")
-                errorMessage = "App update download failed: ${e.message}"
+                errorMessage = context.getString(R.string.fw_app_update_failed, e.message)
                 isDownloadingAppUpdate = false
             }
         }

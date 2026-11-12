@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,13 +56,13 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
     val launcher = remember { LauncherController(context, scope, onLaunch) }
     val nav = rememberNavController()
     var showLoginDialog by remember { mutableStateOf(false) }
-    val addonsNow = remember(launcher.gamePath, launcher.files.product) { addonsControllerFor(launcher.gamePath, launcher.files.product, scope) }
+    val addonsNow = remember(launcher.gamePath, launcher.files.product) { addonsControllerFor(launcher.gamePath, launcher.files.product, scope, context) }
     LaunchedEffect(addonsNow) { addonsNow?.refreshInstalled() }
     // The nav graph is built once, so destinations read this state instead of capturing a stale value.
     val addonsState = rememberUpdatedState(addonsNow)
     // Addon manager mode: the app only manages this folder's addons, for a game run some other way.
     var addonFolder by remember { mutableStateOf(AddonMode.folder(context)) }
-    val modeAddons = remember(addonFolder) { addonFolder?.let { AddonsController(it.addonsDir, it.version ?: GameVersion.FOREVER, scope) } }
+    val modeAddons = remember(addonFolder) { addonFolder?.let { AddonsController(it.addonsDir, it.version ?: GameVersion.FOREVER, scope, context) } }
     val modeAddonsState = rememberUpdatedState(modeAddons)
 
     // Decided once: recomputing it would rebuild the graph and drop first-run mid-way when an install appears.
@@ -149,7 +151,7 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 composable(Routes.ADDONS) { AddonsRoute(launcher, addonsState.value, onBack = { nav.popBackStack() }) }
                 composable(Routes.INSTALL) {
                     val back = { nav.popBackStack(); Unit }
-                    FwPage("Install or repair", back) {
+                    FwPage(stringResource(R.string.fw_install_or_repair), back) {
                         val repair = launcher.files.product?.takeIf { !launcher.filesMissing }?.let {
                             app.gamenative.wow.product.GameInstall(launcher.gamePath, it, launcher.versionStatus?.localVersion.orEmpty())
                         }
@@ -179,60 +181,60 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
         }
         if (launcher.needsStoragePermission && addonFolder == null) {
             FwDialog(
-                title = "Allow file access",
-                message = "Android needs \"All files access\" so the app can install and update the game in this folder. Turn on \"Allow access to manage all files\" on the next screen.",
-                confirm = "Open settings",
+                title = stringResource(R.string.fw_allow_file_access),
+                message = stringResource(R.string.fw_storage_permission_message),
+                confirm = stringResource(R.string.fw_open_settings),
                 onConfirm = launcher::openStorageSettings,
                 onDismiss = { launcher.needsStoragePermission = false },
             )
         }
         launcher.appUpdate?.takeIf { !appUpdateDismissed && !launcher.isDownloadingAppUpdate }?.let { update ->
             FwDialog(
-                title = "App update ${update.version}",
-                message = "A new version of WoW Foreverywhere is available.",
-                confirm = "Update now",
+                title = stringResource(R.string.fw_app_update_1_s, update.version),
+                message = stringResource(R.string.fw_a_new_version_of_wow_foreverywhere_is),
+                confirm = stringResource(R.string.fw_update_now),
                 onConfirm = {
                     appUpdateDismissed = true
                     launcher.performAppUpdate()
                 },
                 onDismiss = { appUpdateDismissed = true },
-                dismiss = "Later",
+                dismiss = stringResource(R.string.fw_later),
             )
         }
         // A beta install once WoW Forever is out: asked on every app start until it's switched.
         val updatePromptShowing = launcher.appUpdate != null && !appUpdateDismissed && !launcher.isDownloadingAppUpdate
         if (addonFolder == null && launcher.canConvertToLaunch && !launcher.switchPromptDismissed && !launcher.isConverting && !updatePromptShowing) {
             FwDialog(
-                title = "WoW Forever is out",
-                message = "This install is still on the beta. Switch it to WoW Forever to keep playing. Your game data, settings and addons are kept, so only the new game program downloads.",
-                confirm = "Switch now",
+                title = stringResource(R.string.fw_wow_forever_is_out),
+                message = stringResource(R.string.fw_this_install_is_still_on_the_beta),
+                confirm = stringResource(R.string.fw_switch_now),
                 onConfirm = {
                     launcher.switchPromptDismissed = true
                     nav.navigate(Routes.GAME) { launchSingleTop = true }
                     launcher.convertToLaunch()
                 },
                 onDismiss = { launcher.switchPromptDismissed = true },
-                dismiss = "Later",
+                dismiss = stringResource(R.string.fw_later),
             )
         }
         launcher.restartWarningDays?.let { days ->
             FwDialog(
-                title = "Restart your device first",
-                message = "This device has been on for $days days. After about 50 days without a restart, the game's clock stops: the login buttons don't appear and the world looks frozen. Restart your device, then press Play.",
-                confirm = "Play anyway",
+                title = stringResource(R.string.fw_restart_your_device_first),
+                message = stringResource(R.string.fw_restart_device_message, days),
+                confirm = stringResource(R.string.fw_play_anyway),
                 onConfirm = {
                     launcher.restartWarningDays = null
                     launcher.launchGame(confirmedUnsupported = true, confirmedRestart = true)
                 },
                 onDismiss = { launcher.restartWarningDays = null },
-                dismiss = "Not now",
+                dismiss = stringResource(R.string.fw_not_now),
             )
         }
         if (launcher.unsupportedDeviceWarning) {
             FwDialog(
-                title = "This device can't run the game",
-                message = "WoW Forever needs a Snapdragon chip with an Adreno GPU. On this device, including Android emulators, starting the game will most likely crash the app.",
-                confirm = "Try anyway",
+                title = stringResource(R.string.fw_this_device_can_t_run_the_game),
+                message = stringResource(R.string.fw_wow_forever_needs_a_snapdragon_chip_with),
+                confirm = stringResource(R.string.fw_try_anyway),
                 onConfirm = {
                     launcher.unsupportedDeviceWarning = false
                     launcher.launchGame(confirmedUnsupported = true)
@@ -242,9 +244,9 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
         }
         if (launcher.needsInstallPermission) {
             FwDialog(
-                title = "Allow app installs",
-                message = "Android needs permission to install the update. Turn on \"Allow from this source\" on the next screen.",
-                confirm = "Open settings",
+                title = stringResource(R.string.fw_allow_app_installs),
+                message = stringResource(R.string.fw_install_permission_message),
+                confirm = stringResource(R.string.fw_open_settings),
                 onConfirm = launcher::openInstallPermissionSettings,
                 onDismiss = { launcher.needsInstallPermission = false },
             )

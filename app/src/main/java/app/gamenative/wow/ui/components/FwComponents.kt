@@ -1,5 +1,7 @@
 package app.gamenative.wow.ui.components
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -198,7 +200,7 @@ fun FwTopBar(title: String, onBack: () -> Unit, actions: @Composable RowScope.()
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        FwButton("Back", onBack, kind = FwButtonKind.Ghost)
+        FwButton(stringResource(R.string.fw_back), onBack, kind = FwButtonKind.Ghost)
         Text(title, style = Fw.Title, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         actions()
     }
@@ -223,7 +225,7 @@ fun FwDialog(
     confirm: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    dismiss: String = "Cancel",
+    dismiss: String = stringResource(R.string.fw_cancel),
     extra: @Composable ColumnScope.() -> Unit = {},
 ) {
     AlertDialog(

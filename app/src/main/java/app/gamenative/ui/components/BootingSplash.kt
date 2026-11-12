@@ -1,5 +1,6 @@
 package app.gamenative.ui.components
 
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import app.gamenative.wow.ui.components.ArtImage
@@ -127,11 +128,11 @@ fun BootingSplash(
                     .padding(horizontal = 40.dp, vertical = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Text(text = "Starting World of Warcraft", style = Fw.Title.copy(fontSize = 28.sp, lineHeight = 32.sp))
+                Text(text = stringResource(R.string.fw_starting_wow), style = Fw.Title.copy(fontSize = 28.sp, lineHeight = 32.sp))
                 FwProgress(fraction = progress.takeIf { it >= 0f })
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(text = text, style = Fw.Text.copy(color = Fw.Bone), modifier = Modifier.weight(1f))
-                    Text(text = "Start + Select + L2 + R2 returns to setup", style = Fw.Secondary)
+                    Text(text = stringResource(R.string.fw_return_to_setup), style = Fw.Secondary)
                 }
             }
             if (onAbort != null) {

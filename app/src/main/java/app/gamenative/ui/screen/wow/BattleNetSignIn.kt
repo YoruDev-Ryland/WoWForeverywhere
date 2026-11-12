@@ -1,5 +1,7 @@
 package app.gamenative.ui.screen.wow
 
+import androidx.compose.ui.res.stringResource
+import app.gamenative.R
 import android.content.Context
 import android.util.Base64
 import androidx.compose.foundation.layout.Column
@@ -171,15 +173,15 @@ fun BattleNetCredentialDialog(
         onDismissRequest = onDismiss,
         // No screenshots, recordings or recent-apps previews of the login form.
         properties = androidx.compose.ui.window.DialogProperties(securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn),
-        title = { Text("Battle.net login") },
+        title = { Text(stringResource(R.string.fw_battle_net_login)) },
         text = {
             Column {
-                Text("Saved encrypted on this device. WoW will automatically log in on launch.")
+                Text(stringResource(R.string.fw_saved_encrypted_on_this_device_wow_will))
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Email") },
+                    label = { Text(stringResource(R.string.fw_email)) },
                     singleLine = true,
                     modifier = Modifier.focusRequester(emailFocus),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -187,7 +189,7 @@ fun BattleNetCredentialDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Password") },
+                    label = { Text(stringResource(R.string.fw_password)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -198,9 +200,9 @@ fun BattleNetCredentialDialog(
             TextButton(
                 enabled = email.isNotBlank() && password.isNotEmpty(),
                 onClick = { onConfirm(BattleNetSignIn.Login(email.trim(), password)) },
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.fw_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.fw_cancel)) } },
     )
 }
 

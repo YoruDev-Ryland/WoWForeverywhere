@@ -1,9 +1,11 @@
 package app.gamenative.wow.ui.addons
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.gamenative.BuildConfig
+import app.gamenative.R
 import app.gamenative.utils.Net
 import app.gamenative.wow.addons.AddonCategory
 import app.gamenative.wow.addons.AddonDb
@@ -28,10 +30,10 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /** UI state for the addon browser, bound to one `Interface/AddOns` folder whose addons are for [version]. */
-class AddonsController(val addonsDir: File, val version: GameVersion, private val scope: CoroutineScope) {
+class AddonsController(val addonsDir: File, val version: GameVersion, private val scope: CoroutineScope, private val context: Context) {
     /** The addons of one of the app's own installs. */
-    constructor(gameRoot: File, product: WowProduct, scope: CoroutineScope) :
-        this(File(gameRoot, "${product.flavorDir}/Interface/AddOns"), GameVersion.of(product), scope)
+    constructor(gameRoot: File, product: WowProduct, scope: CoroutineScope, context: Context) :
+        this(File(gameRoot, "${product.flavorDir}/Interface/AddOns"), GameVersion.of(product), scope, context)
 
     enum class Mode { INSTALLED, BROWSE }
 
@@ -148,7 +150,7 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                message = "Couldn't reach the addon sites. Check your connection."
+                message = context.getString(R.string.fw_addon_sites_unreachable)
                 Timber.w(e, "Addon search failed")
             } finally {
                 loading = false
@@ -167,9 +169,9 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
         selected = selected?.let { sel -> listings.firstOrNull { it.remote.projectId == sel.remote.projectId } } ?: listings.firstOrNull()
     }
 
-    fun install(listing: AddonListing) = act("Installing ${listing.remote.name}") { markInstalled(listing, manager.install(listing.remote)) }
+    fun install(listing: AddonListing) = act(context.getString(R.string.fw_addon_installing, listing.remote.name)) { markInstalled(listing, manager.install(listing.remote)) }
 
-    fun update(listing: AddonListing) = act("Updating ${listing.remote.name}") {
+    fun update(listing: AddonListing) = act(context.getString(R.string.fw_addon_updating, listing.remote.name)) {
         val record = listing.installed ?: return@act
         val updated = if (record.flavor == AddonFlavor.FALLBACK && listing.bestFlavor == AddonFlavor.MAIN) manager.install(listing.remote) else manager.update(record)
         markInstalled(listing, updated)
@@ -183,11 +185,11 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
         selected = selected?.let(patch)
     }
 
-    fun remove(listing: AddonListing) = act("Removing ${listing.remote.name}") { listing.installed?.let { manager.remove(it) } }
+    fun remove(listing: AddonListing) = act(context.getString(R.string.fw_addon_removing, listing.remote.name)) { listing.installed?.let { manager.remove(it) } }
 
-    fun updateAll() = act("Updating all addons") { manager.updateAll() }
+    fun updateAll() = act(context.getString(R.string.fw_addons_updating_all)) { manager.updateAll() }
 
-    fun installFromUrl(url: String) = act("Installing from link") { manager.installFromUrl(url.trim()) }
+    fun installFromUrl(url: String) = act(context.getString(R.string.fw_addon_installing_link)) { manager.installFromUrl(url.trim()) }
 
     private fun act(label: String, block: suspend () -> Unit) {
         if (working != null) return
@@ -196,12 +198,12 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
         scope.launch {
             try {
                 withContext(Dispatchers.IO) { block() }
-                message = "$label: done."
+                message = context.getString(R.string.fw_addon_action_done, label)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.w(e, label)
-                message = "$label failed: ${e.message ?: "unknown error"}"
+                message = context.getString(R.string.fw_addon_action_failed, label, e.message ?: context.getString(R.string.fw_unknown_error))
             } finally {
                 working = null
                 installed = runCatching { withContext(Dispatchers.IO) { manager.installed() } }.getOrDefault(installed.orEmpty())
