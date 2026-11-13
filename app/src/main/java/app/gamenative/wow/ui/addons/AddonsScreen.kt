@@ -129,11 +129,11 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                back()
-                modes()
-                updateAll()
+                // Each item centred in its line (FlowRow's itemVerticalAlignment needs Compose 1.8; release is on 1.7)
+                Box(Modifier.align(Alignment.CenterVertically)) { back() }
+                Box(Modifier.align(Alignment.CenterVertically)) { modes() }
+                Box(Modifier.align(Alignment.CenterVertically)) { updateAll() }
             }
             Row(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp),
