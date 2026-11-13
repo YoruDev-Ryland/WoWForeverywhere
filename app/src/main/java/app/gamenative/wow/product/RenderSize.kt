@@ -2,7 +2,7 @@ package app.gamenative.wow.product
 
 import android.content.Context
 
-/** The game's resolution, chosen in Settings. [AUTO] keeps the device profile's size. */
+/** The game's resolution, chosen in Settings. [AUTO] keeps the device profile's size; [DEFAULT] until one is picked. */
 enum class RenderSize(val key: String, val label: String, val size: String?) {
     AUTO("auto", "Automatic", null),
     P720("720", "720p", "1280x720"),
@@ -12,7 +12,10 @@ enum class RenderSize(val key: String, val label: String, val size: String?) {
     ;
 
     companion object {
-        fun fromKey(key: String?): RenderSize = entries.firstOrNull { it.key == key } ?: AUTO
+        /** 720p until the player picks a size: the 1080p some profiles use is harder on the device than most expect. */
+        val DEFAULT = P720
+
+        fun fromKey(key: String?): RenderSize = entries.firstOrNull { it.key == key } ?: DEFAULT
     }
 }
 
@@ -22,7 +25,7 @@ object RenderSizes {
     private const val KEY = "render_size"
 
     @Volatile
-    var selected: RenderSize = RenderSize.AUTO
+    var selected: RenderSize = RenderSize.DEFAULT
 
     fun load(context: Context) {
         selected = RenderSize.fromKey(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null))

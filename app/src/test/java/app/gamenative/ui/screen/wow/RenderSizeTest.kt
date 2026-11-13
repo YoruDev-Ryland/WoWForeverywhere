@@ -23,4 +23,11 @@ class RenderSizeTest {
         assertEquals("1920x1080", renderSize(RenderSize.NATIVE, "1280x720", 1080, 1920))
         assertEquals("2400x1080", renderSize(RenderSize.NATIVE, "1280x720", 2400, 1080))
     }
+
+    @Test
+    fun unpickedSizeIs720pAndAPickIsKept() {
+        assertEquals(RenderSize.P720, RenderSize.fromKey(null))
+        assertEquals(RenderSize.AUTO, RenderSize.fromKey("auto"))
+        assertEquals(RenderSize.P1080, RenderSize.fromKey("1080"))
+    }
 }
