@@ -1,15 +1,16 @@
-Fixes for the character select crash with frame generation, accented letters and L2/R2, plus a Chinese launcher.
+Install add-ons from a .zip on your device, and a lighter default resolution.
 
 ## Added
 
-- **The launcher in Simplified and Traditional Chinese.** It follows your phone's language. Thanks to @AreChen for the translation (#45).
+- **Install add-ons from a .zip file.** In the add-on browser, **Add addon** now takes a link or a .zip you've downloaded to your device. GitHub "Download ZIP" files and zips with the add-on at the top level are unpacked into the folder name WoW expects, so they load in game. The same applies to add-ons installed from a link.
+
+## Changed
+
+- **The game starts at 720p unless you've picked a resolution.** On many phones the old Automatic setting meant 1080p, which is harder on the device than most people expect. If you chose a resolution in **Settings → Resolution**, including Automatic, it stays as you set it.
 
 ## Fixed
 
-- **With frame generation on, the game crashed at character select.** Since November 11, Blizzard's servers send WoW Forever a new setting that makes the game rebuild its graphics the first time it arrives, and frame generation didn't survive the rebuild. The app now sets it up ahead of time, so frame generation can stay on (#46).
-- **Settings → Region could show Americas while the game logged into another region.** After reinstalling over a game folder that had played elsewhere, the game kept logging into that region, where you had no characters. That showed the ruleset picker, then an expired subscription or a disconnect. Settings now shows the region the game actually logs into, and tapping your region fixes it (#46).
-- **Accented letters from the on-screen keyboard didn't reach the game.** Typing "não" gave "no". Letters like ã, é, ñ and ç now type (#38).
-- **L2/R2 did nothing on some Bluetooth controllers.** Controllers that send their triggers as plain buttons now work, and analog triggers work as before (#44).
+- **On 4:3 screens the add-on browser's search box shrank to a sliver.** On narrower screens, search and Add addon now get their own row.
 
 ## Install
 
