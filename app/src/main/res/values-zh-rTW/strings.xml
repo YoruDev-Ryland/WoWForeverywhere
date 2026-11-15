@@ -973,6 +973,9 @@
     <string name="fw_login_blocked_step_three">3. 返回應用並重新啟動遊戲。</string>
     <string name="fw_login_blocked_step_four">4. 仍然出現 BLZ51914500？密碼不匹配，請透過“更改登入資訊”重新輸入。</string>
     <string name="fw_game_account_explanation">如果戰網帳號關聯了多個魔獸世界帳號，例如 WoW1 和 WoW2，請選擇要遊玩的帳號。戰網應用的帳號選單會列出這些帳號。更改將在下次啟動遊戲時生效。</string>
+    <string name="fw_game_account_custom_explanation">如果你的帳號有自己的名稱（例如 MyAccount），而不是 WoW1、WoW2 等，請按戰網應用中顯示的樣子在此輸入，不包括括號中的地區。</string>
+    <string name="fw_game_account_name">帳號名稱</string>
+    <string name="fw_apply">套用</string>
     <string name="fw_debug_report_explanation">對於其他問題，請開啟除錯日誌，重新復現問題，然後在 GitHub issue 中分享除錯報告。開啟日誌時遊戲不會自動啟動，因此開啟應用不會覆蓋遊戲日誌。報告包含裝置資訊、設定和日誌，郵箱地址和儲存的登入資訊會被移除。</string>
     <string name="fw_frame_generation_explanation">Lossless Scaling 幀生成（LSFG）可透過插入生成幀提高幀率，但會略微增加輸入延遲。您需要 Steam 上購買的 Lossless Scaling 中的 Lossless.dll；在電腦上，它位於 Steam/steamapps/common/Lossless Scaling。將檔案複製到此裝置並在此選擇，隨後可在遊戲內選單（Back）的 LSFG 標籤頁中設定。</string>
     <string name="fw_frame_generation_missing_shaders">此 Lossless.dll 不含幀生成著色器，遊戲將以未開啟幀生成的狀態啟動。請選擇 Steam 上當前安裝的 Lossless Scaling 中的檔案。</string>
