@@ -1163,7 +1163,7 @@ private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String
         installLocale(root, product),
         installPortal(root, product),
         forcePortal = GameRegions.chosen != null,
-        gameAccount = app.gamenative.wow.product.GameAccounts.chosen?.let(app.gamenative.wow.product.GameAccounts::name),
+        gameAccount = app.gamenative.wow.product.GameAccounts.chosen,
     ) ?: return
     configWtf.parentFile?.mkdirs()
     configWtf.writeText(updated.joinToString("\n") + "\n")
