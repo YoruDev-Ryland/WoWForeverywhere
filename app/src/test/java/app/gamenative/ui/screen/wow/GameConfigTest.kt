@@ -1,5 +1,6 @@
 package app.gamenative.ui.screen.wow
 
+import app.gamenative.wow.product.GameAccounts
 import app.gamenative.wow.product.WowProduct
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -274,6 +275,35 @@ class GameConfigTest {
         val picked = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", gameAccount = "WoW2")!!
         assertEquals(listOf("SET accountList \"WoW1|!WoW2|\""), picked.filter { it.startsWith("SET accountList") })
         assertNull(buildConfigWtf(picked, WowProduct.FOREVER, "1920x1080", gameAccount = "WoW2"))
+    }
+
+    @Test
+    fun aCustomNamedGameAccountIsMarked() {
+        assertEquals("SET accountList \"!MyAccount|\"", accountListLine(null, "MyAccount"))
+        // A WoWn picked earlier stays listed, but the custom-named account is the one logged into.
+        assertEquals("SET accountList \"WoW3|!MyAccount|\"", accountListLine("SET accountList \"!WoW3|\"", "MyAccount"))
+        val existing = listOf(
+            "SET gxApi \"D3D11\"", "SET portal \"EU\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"",
+            "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
+            "SET accountList \"!WoW3|\"", WORK_OPTIMS_LINE,
+        )
+        val picked = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", gameAccount = "MyAccount")!!
+        assertEquals(listOf("SET accountList \"WoW3|!MyAccount|\""), picked.filter { it.startsWith("SET accountList") })
+    }
+
+    @Test
+    fun gameAccountNamesAreCheckedBeforeSaving() {
+        assertEquals("MyAccount", GameAccounts.normalize("  MyAccount "))
+        assertEquals("WoW2", GameAccounts.normalize("WoW2"))
+        assertNull(GameAccounts.normalize(""))
+        assertNull(GameAccounts.normalize("   "))
+        assertNull(GameAccounts.normalize("My\"Account"))
+        assertNull(GameAccounts.normalize("WoW1|WoW2"))
+        assertNull(GameAccounts.normalize("!WoW1"))
+        assertNull(GameAccounts.normalize("MyAccount\nSET portal"))
+        assertNull(GameAccounts.normalize("x".repeat(GameAccounts.MAX_NAME_LENGTH + 1)))
+        assertTrue(GameAccounts.isNumbered("wow3"))
+        assertTrue(!GameAccounts.isNumbered("MyAccount"))
     }
 
     @Test
