@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -149,14 +150,19 @@ private fun BlockedLoginSection() {
     }
 }
 
-/** Account, Game account: which WoW account to play when the Battle.net login has several. */
+/**
+ * Account, Game account: which WoW account to play when the Battle.net login has several. WoW1..WoW8 are chips;
+ * an account with a custom name (e.g. MyAccount) is typed in and applied, and then shows as its own chip.
+ */
 @Composable
 private fun GameAccountSection() {
     val context = LocalContext.current
     var current by remember { mutableStateOf(GameAccounts.chosen) }
-    fun pick(number: Int?) {
-        GameAccounts.save(context, number)
-        current = number
+    var typed by remember { mutableStateOf(GameAccounts.chosen?.takeUnless(GameAccounts::isNumbered).orEmpty()) }
+    val typedName = GameAccounts.normalize(typed)
+    fun pick(account: String?) {
+        GameAccounts.save(context, account)
+        current = GameAccounts.chosen
     }
     FwSection(stringResource(R.string.fw_game_account)) {
         Text(
@@ -165,7 +171,31 @@ private fun GameAccountSection() {
         )
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FwChip(stringResource(R.string.fw_the_game_s_choice), current == null, { pick(null) })
-            GameAccounts.NUMBERS.forEach { n -> FwChip(GameAccounts.name(n), current == n, { pick(n) }) }
+            current?.takeUnless(GameAccounts::isNumbered)?.let { custom -> FwChip(custom, true, { pick(custom) }) }
+            GameAccounts.NUMBERS.forEach { n ->
+                val name = GameAccounts.name(n)
+                FwChip(name, current.equals(name, ignoreCase = true), { pick(name) })
+            }
+        }
+        Text(
+            stringResource(R.string.fw_game_account_custom_explanation),
+            style = Fw.Secondary,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(
+                typed,
+                { typed = it.take(GameAccounts.MAX_NAME_LENGTH) },
+                singleLine = true,
+                isError = typed.isNotBlank() && typedName == null,
+                label = { Text(stringResource(R.string.fw_game_account_name)) },
+                textStyle = Fw.Text,
+                modifier = Modifier.weight(1f),
+            )
+            FwButton(
+                stringResource(R.string.fw_apply),
+                { typedName?.let(::pick) },
+                enabled = typedName != null && !typedName.equals(current, ignoreCase = true),
+            )
         }
     }
 }
