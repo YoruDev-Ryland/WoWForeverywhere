@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-15T06:26:20+00:00",
+ "generated": "2026-11-16T06:41:52+00:00",
  "addons": [
   {
    "repo": "Questie/Questie",
@@ -9,8 +9,8 @@
    "author": "Questie",
    "icon": "https://avatars.githubusercontent.com/u/75445548?v=4",
    "website": "https://github.com/Questie/Questie",
-   "stars": 1154,
-   "downloads": 25640,
+   "stars": 1159,
+   "downloads": 37849,
    "updated": "2026-11-14T00:31:36Z",
    "requires": [],
    "files": {
@@ -48,8 +48,8 @@
    "author": "RestedXP",
    "icon": "https://avatars.githubusercontent.com/u/84252897?v=4",
    "website": "https://github.com/RestedXP/RXPGuides",
-   "stars": 200,
-   "downloads": 25766,
+   "stars": 202,
+   "downloads": 33470,
    "updated": "2026-11-11T23:32:25Z",
    "requires": [],
    "files": {
@@ -93,8 +93,8 @@
    "author": "DeadlyBossMods",
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DeadlyBossMods",
-   "stars": 283,
-   "downloads": 2236,
+   "stars": 284,
+   "downloads": 3183,
    "updated": "2026-11-13T06:44:43Z",
    "requires": [],
    "files": {
@@ -139,7 +139,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DBM-Dungeons",
    "stars": 33,
-   "downloads": 2082,
+   "downloads": 2622,
    "updated": "2026-11-12T05:39:38Z",
    "requires": [
     "DeadlyBossMods/DeadlyBossMods"
@@ -186,7 +186,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/BigWigs",
    "stars": 276,
-   "downloads": 4848,
+   "downloads": 5578,
    "updated": "2026-11-08T20:38:50Z",
    "requires": [],
    "files": {
@@ -231,7 +231,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/LittleWigs",
    "stars": 116,
-   "downloads": 5645,
+   "downloads": 6181,
    "updated": "2026-11-04T18:52:31Z",
    "requires": [
     "BigWigsMods/BigWigs"
@@ -278,38 +278,38 @@
    "icon": "https://avatars.githubusercontent.com/u/9000280?v=4",
    "website": "https://github.com/Tercioo/Plater-Nameplates",
    "stars": 107,
-   "downloads": 5480,
-   "updated": "2026-11-04T20:04:30Z",
+   "downloads": 499,
+   "updated": "2026-11-15T12:11:41Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "710754751",
-     "version": "Plater-v663",
-     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v663/Plater-v663.zip",
+     "fileId": "750888120",
+     "version": "Plater-v664",
+     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v664/Plater-v664.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "710754751",
-     "version": "Plater-v663",
-     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v663/Plater-v663.zip",
+     "fileId": "750888120",
+     "version": "Plater-v664",
+     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v664/Plater-v664.zip",
      "interface": 120105
     },
     "classic": {
-     "fileId": "710754751",
-     "version": "Plater-v663",
-     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v663/Plater-v663.zip",
+     "fileId": "750888120",
+     "version": "Plater-v664",
+     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v664/Plater-v664.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "710754751",
-     "version": "Plater-v663",
-     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v663/Plater-v663.zip",
+     "fileId": "750888120",
+     "version": "Plater-v664",
+     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v664/Plater-v664.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "710754751",
-     "version": "Plater-v663",
-     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v663/Plater-v663.zip",
+     "fileId": "750888120",
+     "version": "Plater-v664",
+     "url": "https://github.com/Tercioo/Plater-Nameplates/releases/download/Plater-v664/Plater-v664.zip",
      "interface": 16001
     }
    }
@@ -323,7 +323,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/ShadowedUnitFrames",
    "stars": 58,
-   "downloads": 26195,
+   "downloads": 26429,
    "updated": "2026-01-18T18:37:26Z",
    "requires": [],
    "files": {
@@ -356,38 +356,38 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/Dominos",
    "stars": 83,
-   "downloads": 67,
-   "updated": "2026-11-15T00:46:31Z",
+   "downloads": 173,
+   "updated": "2026-11-15T19:00:40Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "749303805",
-     "version": "12.0.1",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.1/Dominos-12.0.1.zip",
+     "fileId": "752019692",
+     "version": "12.0.3",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "749303805",
-     "version": "12.0.1",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.1/Dominos-12.0.1.zip",
+     "fileId": "752019692",
+     "version": "12.0.3",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
      "interface": 120107
     },
     "classic": {
-     "fileId": "749303805",
-     "version": "12.0.1",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.1/Dominos-12.0.1.zip",
+     "fileId": "752019692",
+     "version": "12.0.3",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "749303805",
-     "version": "12.0.1",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.1/Dominos-12.0.1.zip",
+     "fileId": "752019692",
+     "version": "12.0.3",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "749303805",
-     "version": "12.0.1",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.1/Dominos-12.0.1.zip",
+     "fileId": "752019692",
+     "version": "12.0.3",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
      "interface": 16001
     }
    }
@@ -401,7 +401,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Bartender4",
    "stars": 77,
-   "downloads": 266,
+   "downloads": 756,
    "updated": "2026-11-14T18:58:10Z",
    "requires": [],
    "files": {
@@ -446,7 +446,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/OmniCC",
    "stars": 107,
-   "downloads": 24110,
+   "downloads": 24343,
    "updated": "2025-12-14T21:07:04Z",
    "requires": [],
    "files": {
@@ -485,7 +485,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9121773?v=4",
    "website": "https://github.com/WeakAuras/WeakAuras2",
    "stars": 1449,
-   "downloads": 15416,
+   "downloads": 15838,
    "updated": "2026-10-10T17:21:31Z",
    "requires": [],
    "files": {
@@ -518,7 +518,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Mapster",
    "stars": 21,
-   "downloads": 4174,
+   "downloads": 4333,
    "updated": "2026-10-03T14:08:46Z",
    "requires": [],
    "files": {
@@ -545,7 +545,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/HandyNotes",
    "stars": 20,
-   "downloads": 3500,
+   "downloads": 3824,
    "updated": "2026-11-03T05:03:38Z",
    "requires": [],
    "files": {
@@ -590,38 +590,38 @@
    "icon": "https://avatars.githubusercontent.com/u/2187?v=4",
    "website": "https://github.com/kemayo/wow-silverdragon",
    "stars": 28,
-   "downloads": 3754,
-   "updated": "2026-10-24T16:50:54Z",
+   "downloads": 18,
+   "updated": "2026-11-16T05:04:41Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "672792658",
-     "version": "v2026.41",
-     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.41/SilverDragon-v2026.41.zip",
+     "fileId": "753529690",
+     "version": "v2026.42.1",
+     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.42.1/SilverDragon-v2026.42.1.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "672792658",
-     "version": "v2026.41",
-     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.41/SilverDragon-v2026.41.zip",
+     "fileId": "753529690",
+     "version": "v2026.42.1",
+     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.42.1/SilverDragon-v2026.42.1.zip",
      "interface": 120105
     },
     "classic": {
-     "fileId": "672792658",
-     "version": "v2026.41",
-     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.41/SilverDragon-v2026.41.zip",
+     "fileId": "753529690",
+     "version": "v2026.42.1",
+     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.42.1/SilverDragon-v2026.42.1.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "672792658",
-     "version": "v2026.41",
-     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.41/SilverDragon-v2026.41.zip",
+     "fileId": "753529690",
+     "version": "v2026.42.1",
+     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.42.1/SilverDragon-v2026.42.1.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "672792658",
-     "version": "v2026.41",
-     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.41/SilverDragon-v2026.41.zip",
+     "fileId": "753529690",
+     "version": "v2026.42.1",
+     "url": "https://github.com/kemayo/wow-silverdragon/releases/download/v2026.42.1/SilverDragon-v2026.42.1.zip",
      "interface": 16001
     }
    }
@@ -635,7 +635,7 @@
    "icon": "https://avatars.githubusercontent.com/u/45636893?v=4",
    "website": "https://github.com/Hoizame/AtlasLootClassic",
    "stars": 91,
-   "downloads": 129973,
+   "downloads": 130109,
    "updated": "2023-10-22T14:37:24Z",
    "requires": [],
    "files": {
@@ -662,7 +662,7 @@
    "icon": "https://avatars.githubusercontent.com/u/19425199?v=4",
    "website": "https://github.com/AdiAddons/AdiBags",
    "stars": 152,
-   "downloads": 100834,
+   "downloads": 101005,
    "updated": "2024-09-08T02:20:23Z",
    "requires": [],
    "files": {
@@ -695,7 +695,7 @@
    "icon": "https://avatars.githubusercontent.com/u/69928556?v=4",
    "website": "https://github.com/SFX-WoW/Masque",
    "stars": 54,
-   "downloads": 7416,
+   "downloads": 7847,
    "updated": "2026-11-02T17:54:22Z",
    "requires": [],
    "files": {
