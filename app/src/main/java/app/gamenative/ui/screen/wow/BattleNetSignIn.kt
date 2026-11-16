@@ -111,23 +111,12 @@ object BattleNetSignIn {
     }
 
     /**
-     * Wipes login.txt as soon as it has done its job. The game reads it once at start-up, so the file
-     * is wiped [AFTER_READ_MS] after its contents are first read. The original triggers stay as a backstop: a
-     * large Hotfix.log (the client is past login) or [MAX_LIFETIME_MS] at most.
+     * Wipes login.txt once the login has gone through: a large Hotfix.log means the client is past login.
+     * Leaving the game wipes it too, and [MAX_LIFETIME_MS] is the last resort. It can't go sooner, because the
+     * game goes back to the file after the first read, and with an authenticator that can be long after start-up
+     * (#57: wiping it 20 s after the first read ended in BLZ51914400 once the code was typed).
      */
     fun startLoginWatcher(gameRoot: File, product: WowProduct) {
-        val dir = File(gameRoot, product.flavorDir)
-        val readObserver = object : android.os.FileObserver(dir, ACCESS) {
-            override fun onEvent(event: Int, path: String?) {
-                if (path != "login.txt") return
-                stopWatching()
-                CoroutineScope(Dispatchers.IO).launch {
-                    delay(AFTER_READ_MS)
-                    removeLoginFile(gameRoot)
-                }
-            }
-        }
-        runCatching { readObserver.startWatching() }.onFailure { Timber.w(it, "Can't watch login.txt; using timers only") }
         CoroutineScope(Dispatchers.IO).launch {
             val hotfixLog = File(File(gameRoot, product.flavorDir), "Logs/Hotfix.log")
             hotfixLog.delete()
@@ -140,7 +129,6 @@ object BattleNetSignIn {
                 }
             }
             removeLoginFile(gameRoot)
-            readObserver.stopWatching()
         }
     }
 
@@ -149,9 +137,8 @@ object BattleNetSignIn {
     private const val PREFS = "battle_net_login"
     private const val KEY_EMAIL = "email"
     private const val KEY_PASSWORD = "password"
-    private const val AFTER_READ_MS = 20_000L
     // A fresh install's first start streams game data and plays the intro before the login screen, which
-    // can take over three minutes (found on device by upstream). The file is still wiped 20 s after it's read.
+    // can take over three minutes (found on device by upstream).
     private const val MAX_LIFETIME_MS = 600_000L
 }
 
