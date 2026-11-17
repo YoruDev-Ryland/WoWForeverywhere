@@ -1,6 +1,7 @@
 package app.gamenative.ui.screen.wow
 
 import android.content.Context
+import app.gamenative.ui.screen.wow.auth.BattleNetBrowserLogin
 import android.os.Build
 import android.os.Environment
 import android.view.WindowManager
@@ -1006,9 +1007,14 @@ internal fun prepareLaunch(
     }
 
     val arm64Exe = File(gameRoot, "${product.flavorDir}/${product.armExe}")
-    BattleNetSignIn.load(context)?.let { login ->
-        BattleNetSignIn.writeLoginFile(gameRoot, product, login)
-        BattleNetSignIn.startLoginWatcher(gameRoot, product)
+    if (BattleNetBrowserLogin.enabled(context)) {
+        // Even an empty login.txt can select the password path instead of the launcher session.
+        BattleNetSignIn.removeLoginFile(gameRoot)
+    } else {
+        BattleNetSignIn.load(context)?.let { login ->
+            BattleNetSignIn.writeLoginFile(gameRoot, product, login)
+            BattleNetSignIn.startLoginWatcher(gameRoot, product)
+        }
     }
     if (!arm64Exe.exists()) {
         try {
