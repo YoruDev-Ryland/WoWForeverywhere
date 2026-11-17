@@ -993,6 +993,7 @@ internal fun prepareLaunch(
     product: WowProduct,
     gpu: GpuProfile,
     screenSize: String,
+    target: LaunchTarget = LaunchTarget.GAME,
     onStatus: (String) -> Unit,
 ): String {
     installBundledComponents(context, onStatus)
@@ -1006,9 +1007,14 @@ internal fun prepareLaunch(
     }
 
     val arm64Exe = File(gameRoot, "${product.flavorDir}/${product.armExe}")
-    BattleNetSignIn.load(context)?.let { login ->
-        BattleNetSignIn.writeLoginFile(gameRoot, product, login)
-        BattleNetSignIn.startLoginWatcher(gameRoot, product)
+    // Battle.net signs in itself and hands the game a launcher token, so the game gets no login.txt.
+    if (target == LaunchTarget.GAME) {
+        BattleNetSignIn.load(context)?.let { login ->
+            BattleNetSignIn.writeLoginFile(gameRoot, product, login)
+            BattleNetSignIn.startLoginWatcher(gameRoot, product)
+        }
+    } else {
+        BattleNetSignIn.removeLoginFile(gameRoot)
     }
     if (!arm64Exe.exists()) {
         try {
@@ -1021,16 +1027,23 @@ internal fun prepareLaunch(
 
     onStatus("Configuring ${gpu.label} container...")
     val containerManager = ContainerManager(context)
-    val config = containerConfig(gameRoot, product, gpu, screenSize)
+    val config = containerConfig(gameRoot, product, gpu, screenSize, target)
     val container = containerManager.getContainerById(CONTAINER_ID)
     if (container == null) {
         onStatus("Creating prefix environment (first boot)...")
         containerManager.createContainer(CONTAINER_ID, config)
     } else {
+        // A Battle.net session changes two settings the config above doesn't carry; a game start puts them back.
+        val leftByBattleNet = container.executablePath.let { it == BattleNet.LAUNCHER_WINDOWS_PATH || it == BattleNet.INSTALLER_WINDOWS_PATH }
         container.loadData(config)
+        if (target == LaunchTarget.GAME && leftByBattleNet) {
+            container.emulator = Container.DEFAULT_EMULATOR
+            container.setFEXCorePreset(com.winlator.fexcore.FEXCorePreset.INTERMEDIATE)
+        }
         container.saveData()
     }
     check(containerManager.hasContainer(CONTAINER_ID)) { "Container creation failed. Check system storage and logs." }
+    if (target == LaunchTarget.BATTLE_NET) prepareBattleNet(context, containerManager, gameRoot, product, onStatus)
     // Frame generation follows Settings; the in-game menu's own LSFG choices stay in the container.
     containerManager.getContainerById(CONTAINER_ID)?.apply {
         // A Lossless.dll without the shaders would make the frame-generation layer close the game, so it's left out.
@@ -1054,7 +1067,60 @@ internal fun prepareLaunch(
     return CONTAINER_ID
 }
 
-private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile, screenSize: String): JSONObject {
+/**
+ * Points the WoW container at the Battle.net desktop app (or its installer) for this start. Everything here is
+ * written to the container after the regular config, and the next game start loads that config again, so a normal
+ * game start is not affected.
+ */
+private fun prepareBattleNet(context: Context, containerManager: ContainerManager, gameRoot: File, product: WowProduct, onStatus: (String) -> Unit) {
+    containerManager.getContainerById(CONTAINER_ID)?.apply {
+        val exe = checkNotNull(BattleNet.executable(rootDir)) {
+            "Battle.net isn't installed yet. Download Blizzard's Windows installer and save it as Download/${BattleNet.INSTALLER_NAME}, then try again."
+        }
+        onStatus(if (exe == BattleNet.INSTALLER_WINDOWS_PATH) "Starting the Battle.net installer..." else "Starting Battle.net...")
+        // For the installer too: "Locate the game" needs both.
+        runCatching { Timber.i("Drive H: as FAT32: %s", BattleNet.markGameDriveFat32(context, rootDir)) }
+            .onFailure { Timber.w(it, "Couldn't mark drive H: as FAT32") }
+        runCatching { Timber.i("Game .product.db: %s", BattleNet.writeProductDb(gameRoot)) }
+            .onFailure { Timber.w(it, "Couldn't write the game's .product.db") }
+        if (exe == BattleNet.LAUNCHER_WINDOWS_PATH) {
+            runCatching { BattleNet.applyClientSettings(rootDir) }
+                .onFailure { Timber.w(it, "Couldn't write Battle.net's settings") }
+            runCatching { installPortal(gameRoot, product) }.getOrNull()?.let { portal ->
+                runCatching { if (BattleNet.setLoginRegion(rootDir, portal)) Timber.i("Battle.net login region set to %s", portal) }
+                    .onFailure { Timber.w(it, "Couldn't set Battle.net's login region") }
+            }
+        }
+        // 32-bit emulator per program. The installer needs Box64 (FEX's libwow64fex overflowed its stack on it), but
+        // Battle.net itself deadlocked inside wowbox64 with its main thread holding a Box64 lock, so it uses FEX.
+        emulator = if (exe == BattleNet.INSTALLER_WINDOWS_PATH) "Box64" else "FEXCore"
+        // Upstream FEX's libwow64fex overflowed the 64-bit stack inside wow64.dll on Battle.net.exe's main thread too.
+        // WoW Box's FEX carries Battle.net-specific fixes, so Battle.net uses that build.
+        setFEXCoreVersion(BattleNet.FEX_VERSION)
+        // Full x86 memory ordering for Battle.net. With multiblock JIT on (COMPATIBILITY, INTERMEDIATE) its login page
+        // stopped loading every time, while STABILITY got through. Only Battle.net runs through FEX; the game is
+        // native ARM64, so this costs the game nothing.
+        setFEXCorePreset(com.winlator.fexcore.FEXCorePreset.STABILITY)
+        if (exe == BattleNet.LAUNCHER_WINDOWS_PATH) {
+            // Battle.net's main thread died right after Qt loaded Wine's directmanipulation.dll, with both emulators.
+            // Disabling the DLL makes Qt's DirectManipulation setup fail cleanly so it skips it.
+            setEnvVars("$envVars WINEDLLOVERRIDES=directmanipulation=d")
+            runCatching { Timber.i("Battle.net fonts: %s", BattleNet.installFonts(context, rootDir)) }
+                .onFailure { Timber.w(it, "Couldn't install Battle.net's fonts") }
+        }
+        executablePath = exe
+        execArgs = ""
+        saveData()
+    }
+}
+
+private fun containerConfig(
+    gameRoot: File,
+    product: WowProduct,
+    gpu: GpuProfile,
+    screenSize: String,
+    target: LaunchTarget = LaunchTarget.GAME,
+): JSONObject {
     val samsungEnv = if (Build.MANUFACTURER.equals("samsung", ignoreCase = true)) " FD_DEV_FEATURES=enable_tp_ubwc_flag_hint=1" else ""
     val envVars = "WRAPPER_MAX_IMAGE_COUNT=0 ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact,deck_emu MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=0 MESA_VK_WSI_PRESENT_MODE=mailbox${if (gpu.tuDebug.isNotEmpty()) " TU_DEBUG=${gpu.tuDebug}" else ""} VKD3D_SHADER_MODEL=6_0 PULSE_LATENCY_MSEC=144$samsungEnv"
     return JSONObject().apply {
@@ -1071,7 +1137,9 @@ private fun containerConfig(gameRoot: File, product: WowProduct, gpu: GpuProfile
         put("wineVersion", "$PROTON_VERSION-1")
         put("containerVariant", "bionic")
         put("fexcoreVersion", "2609-0")
-        put("drives", "D:/storage/emulated/0/DownloadE:/data/data/${BuildConfig.APPLICATION_ID}/storageG:${gameRoot.path}")
+        // H: is only for Battle.net, which must see the game as a plain folder (BattleNet.gameDrive).
+        val battleNetDrive = if (target == LaunchTarget.BATTLE_NET) BattleNet.gameDrive(gameRoot) else ""
+        put("drives", "D:/storage/emulated/0/DownloadE:/data/data/${BuildConfig.APPLICATION_ID}/storageG:${gameRoot.path}$battleNetDrive")
         put("executablePath", "G:\\${product.flavorDir}\\${product.armExe}")
         put("execArgs", "-d3d11")
         put("showFPS", true)

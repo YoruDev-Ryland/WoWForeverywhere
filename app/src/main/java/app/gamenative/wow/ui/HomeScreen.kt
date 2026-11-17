@@ -187,6 +187,10 @@ private fun PlayTile(launcher: LauncherController, onOpenGame: () -> Unit, modif
             }
             !launcher.hasSavedLogin -> Text(stringResource(R.string.fw_no_saved_login_you_ll_sign_in), style = Fw.Secondary)
         }
+        // Experimental: start the official Battle.net app, which signs in and starts the game like on a PC.
+        if (!launcher.filesMissing && !launcher.busy) {
+            FwButton(stringResource(R.string.fw_battle_net_beta), launcher::launchBattleNet, kind = FwButtonKind.Ghost, enabled = launcher.canPlay)
+        }
     }
 }
 
