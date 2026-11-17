@@ -140,7 +140,7 @@ public class Keyboard {
             // and stops them when the key is released or focus moves away. The X server's own
             // repeat timer is left off here so a held key isn't repeated twice, and a release
             // that never reaches us (e.g. focus moved mid-press) can't repeat a key forever.
-            boolean syntheticShift = needsSyntheticShift(event);
+            boolean syntheticShift = needsSyntheticShift(event, xKeycode);
             if (syntheticShift) xServer.injectKeyPress(XKeycode.KEY_SHIFT_L, 0, false);
             xServer.injectKeyPress(xKeycode, printableKeysym(event), false);
             if (syntheticShift) xServer.injectKeyRelease(XKeycode.KEY_SHIFT_L);
@@ -151,7 +151,13 @@ public class Keyboard {
         return true;
     }
 
-    private boolean needsSyntheticShift(KeyEvent event) {
+    /**
+     * Whether [event] needs a shift tapped around it, for symbols like @ typed while Android reports shift held.
+     * Never for a modifier itself: a left shift press would be wrapped in a press and release of left shift, so the
+     * game saw it let go at once and shift modifiers only worked with right shift (#61).
+     */
+    private boolean needsSyntheticShift(KeyEvent event, XKeycode xKeycode) {
+        if (isModifier(xKeycode.getId())) return false;
         if (pressedKeys.contains(XKeycode.KEY_SHIFT_L.getId()) || pressedKeys.contains(XKeycode.KEY_SHIFT_R.getId())) return false;
         int keyCode = event.getKeyCode();
         return event.isShiftPressed() || keyCode == KeyEvent.KEYCODE_AT || keyCode == KeyEvent.KEYCODE_STAR || keyCode == KeyEvent.KEYCODE_POUND || keyCode == KeyEvent.KEYCODE_PLUS;
