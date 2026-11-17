@@ -91,7 +91,10 @@ internal fun BattleNetWebDialog(
                         if (completed.compareAndSet(false, true)) ticketCallback(ticket) else ticket.fill(0)
                         return true
                     }
+                    // WebView reports about:blank as a page start while it sets up; that isn't a navigation away.
+                    if (address == "about:blank") return true
                     if (!BrowserAuthUrl.isNavigationUrl(address)) {
+                        BattleNetBrowserLogin.note("sign-in page refused ${BrowserAuthUrl.describe(address)}")
                         fail(view, "Sign-in tried to open an unsupported address. Cancel and try again.")
                         return true
                     }

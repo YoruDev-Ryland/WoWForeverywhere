@@ -108,7 +108,8 @@ class BattleNetBrowserLoginTest {
         val command = BattleNetBrowserLogin.start(RuntimeEnvironment.getApplication(), container)
         val request = request(container)
 
-        // The launcher splits the command with ProcessHelper.splitCommand, which keeps quote characters.
+        // The launcher splits the command with ProcessHelper.splitCommand, which keeps quote characters. The
+        // container's own arguments (-d3d11) are appended by XServerScreen, as for a direct start.
         val arguments = com.winlator.core.ProcessHelper.splitCommand(command).toList()
 
         org.junit.Assert.assertEquals(
@@ -119,7 +120,6 @@ class BattleNetBrowserLoginTest {
                 "-launcherlogin",
                 "-uid",
                 "wowf",
-                "-d3d11",
             ),
             arguments,
         )

@@ -53,14 +53,14 @@ class BgsClient internal constructor(
     }
 
     /** Obtain the service's sign-in URL. Close this connection while the person uses the browser. */
-    fun webChallenge(device: ByteArray, build: Int): String = safe {
+    fun webChallenge(device: ByteArray, build: Int, locale: String = "enUS"): String = safe {
         checkState(State.CONNECTED)
         if (device.isEmpty() || device.size > 8192 || build <= 0) {
             throw BgsException("The installed client or device identity is unavailable.")
         }
         val options = BgsProtocol.bytes(3, device)
         val request = BgsProtocol.integer(1, WOW_TITLE) + BgsProtocol.text(2, platform) +
-            BgsProtocol.text(3, "enUS") + BgsProtocol.integer(4, build.toLong()) + BgsProtocol.bytes(10, options)
+            BgsProtocol.text(3, locale) + BgsProtocol.integer(4, build.toLong()) + BgsProtocol.bytes(10, options)
         call(AUTHENTICATION_SERVICE, 1, request)
         var deadline = afterSeconds(30)
         repeat(MAX_NOTIFICATIONS) {

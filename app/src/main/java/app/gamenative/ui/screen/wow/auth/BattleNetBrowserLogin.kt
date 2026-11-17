@@ -10,8 +10,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.gamenative.PluviaApp
 import app.gamenative.events.AndroidEvent
 import app.gamenative.ui.screen.wow.BattleNetSignIn
-import app.gamenative.ui.screen.wow.GameRegion
-import app.gamenative.ui.screen.wow.WowClientDownloader
+import app.gamenative.ui.screen.wow.configPortal
+import app.gamenative.ui.screen.wow.installLocale
+import app.gamenative.ui.screen.wow.installPortal
+import app.gamenative.wow.product.BuildInfo
+import app.gamenative.wow.product.WowProduct
+import app.gamenative.wow.product.detectProduct
 import com.winlator.container.Container
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -62,12 +66,18 @@ internal object BattleNetBrowserLogin {
         val gameRoot = Container.drivesIterator(container.drives).asSequence()
             .firstOrNull { it[0].equals("G", ignoreCase = true) }?.let { File(it[1]) }
             ?: throw IOException("Cannot locate the game drive for browser login")
-        val build = WowClientDownloader.readBuildInfo(File(gameRoot, WowClientDownloader.BUILD_INFO))
+        // The session is for WoW Forever's title, which the other products don't share.
+        val product = detectProduct(gameRoot)?.takeIf { it == WowProduct.FOREVER }
+            ?: throw IOException("Browser login only works for WoW Forever")
+        val build = BuildInfo.read(gameRoot)?.active(product)
             ?.get("Version")?.substringAfterLast('.')?.toIntOrNull()?.takeIf { it > 0 }
             ?: throw IOException("Cannot read the installed game build for browser login")
-        val region = GameRegion.current(context, gameRoot.path)
+        // The portal the game itself logs into (Config.wtf, written just before), so Taiwan uses the Korean one (#35).
+        val portal = runCatching { configPortal(File(gameRoot, "${product.flavorDir}/WTF/Config.wtf").readLines()) }.getOrNull()
+            ?.takeIf { it.isNotBlank() } ?: installPortal(gameRoot, product)
+        val locale = installLocale(gameRoot, product)
         BattleNetSignIn.removeLoginFile(gameRoot)
-        check(!File(gameRoot, "${WowClientDownloader.FLAVOR_DIR}/login.txt").exists()) {
+        check(!File(gameRoot, "${product.flavorDir}/login.txt").exists()) {
             "Remove the old login.txt before using browser login"
         }
 
@@ -85,9 +95,9 @@ internal object BattleNetBrowserLogin {
             check(request.setReadable(true, true) && request.setWritable(true, true)) {
                 "Cannot protect the browser login request"
             }
-            val log = File(gameRoot, "${WowClientDownloader.FLAVOR_DIR}/Logs/BrowserLogin.log")
-            val attempt = Attempt(bridge, request, "${region.name}.actual.battle.net", build, log)
-            diag(attempt, "browser login started (app ${app.gamenative.BuildConfig.VERSION_NAME}, ${region.name}, build $build)")
+            val log = File(gameRoot, "${product.flavorDir}/Logs/BrowserLogin.log")
+            val attempt = Attempt(bridge, request, "${portal.lowercase()}.actual.battle.net", build, locale, log)
+            diag(attempt, "browser login started (app ${app.gamenative.BuildConfig.VERSION_NAME}, portal $portal, $locale, build $build)")
             active = attempt
             mutableUi.value = Ui.Waiting("Starting Battle.net browser login…")
             // One deadline covers Wine startup, queues and browser interaction, below the helper's 15 minutes.
@@ -102,7 +112,7 @@ internal object BattleNetBrowserLogin {
             val gamePath = container.executablePath
             check(' ' !in gamePath) { "The game path can't contain spaces for browser login" }
             return "C:\\wow-session\\$ASSET C:\\wow-session\\${request.name} " +
-                "$gamePath -launcherlogin -uid ${WowClientDownloader.TARGET_PRODUCT} -d3d11"
+                "$gamePath -launcherlogin -uid ${product.code}"
         } catch (error: Exception) {
             bridge.close()
             request.delete()
@@ -119,7 +129,7 @@ internal object BattleNetBrowserLogin {
                 validateDevice(device)
                 val url = withClient(attempt) { client ->
                     client.connect()
-                    client.webChallenge(device, attempt.build)
+                    client.webChallenge(device, attempt.build, attempt.locale)
                 }
                 diag(attempt, "showing the Battle.net sign-in page")
                 publish(attempt, Ui.Browser(url))
@@ -130,7 +140,7 @@ internal object BattleNetBrowserLogin {
                     // A fresh connection avoids holding a BGS socket open while the user handles CAPTCHA or 2FA.
                     val token = withClient(attempt) { client ->
                         client.connect()
-                        client.webChallenge(device, attempt.build)
+                        client.webChallenge(device, attempt.build, attempt.locale)
                         client.verifyAndGenerateGameToken(ticket)
                     }
                     try {
@@ -211,6 +221,11 @@ internal object BattleNetBrowserLogin {
         }
     }
 
+    /** Logs a step from the sign-in page to the running attempt's BrowserLogin.log. Never pass a URL or a value. */
+    fun note(message: String) {
+        active?.let { diag(it, message) }
+    }
+
     @Synchronized
     fun cancel(preserveFailure: Boolean = false) {
         active?.let { attempt ->
@@ -255,7 +270,7 @@ internal object BattleNetBrowserLogin {
         if (attempt != null && mutableUi.value !is Ui.Idle && mutableUi.value !is Ui.Failed) {
             diag(attempt, "the Wine side exited before sign-in completed")
             mutableUi.value = Ui.Failed(
-                "The Wine login helper stopped before sign-in completed. Details are in _forever_/Logs/BrowserLogin.log.",
+                "The Wine login helper stopped before sign-in completed. Details are in _forever_/Logs/BrowserLogin.log in your game folder.",
             )
         }
         cancel(preserveFailure = true)
@@ -266,6 +281,7 @@ internal object BattleNetBrowserLogin {
         val request: File,
         val host: String,
         val build: Int,
+        val locale: String,
         val log: File,
     ) {
         val ticket = CompletableDeferred<ByteArray>()

@@ -1,7 +1,5 @@
 package app.gamenative.ui.screen.xserver
 
-import app.gamenative.ui.screen.wow.auth.BattleNetBrowserLogin
-
 import android.app.Activity
 import android.content.Context
 import android.graphics.Color
@@ -108,6 +106,7 @@ import app.gamenative.ui.data.PerformanceHudConfig
 import app.gamenative.ui.data.PerformanceHudSize
 import app.gamenative.ui.data.XServerState
 import app.gamenative.GameSessionService
+import app.gamenative.ui.screen.wow.auth.BattleNetBrowserLogin
 import app.gamenative.ui.widget.PerformanceHudView
 import app.gamenative.utils.AssetUtils
 import app.gamenative.utils.ContainerUtils
@@ -3660,10 +3659,12 @@ private fun setupXEnvironment(
         val wow64Mode = container.isWoW64Mode
         guestProgramLauncherComponent.setContainer(container)
         guestProgramLauncherComponent.setWineInfo(xServerState.value.wineInfo)
-        val directCommand = getWineStartCommand(context, appId, container, envVars, guestProgramLauncherComponent) +
-            (if (container.execArgs.isNotEmpty()) " " + container.execArgs else "")
+        val execArgs = if (container.execArgs.isNotEmpty()) " " + container.execArgs else ""
+        // Always built: it also sets up the environment the game runs in.
+        val directCommand = getWineStartCommand(context, appId, container, envVars, guestProgramLauncherComponent) + execArgs
+        // Browser login starts the game through its helper, with the same arguments (-d3d11 and any others) after its own.
         val launchCommand = if (BattleNetBrowserLogin.enabled(context)) {
-            BattleNetBrowserLogin.start(context, container)
+            BattleNetBrowserLogin.start(context, container) + execArgs
         } else {
             directCommand
         }

@@ -44,6 +44,20 @@ class BrowserAuthUrlTest {
     }
 
     @Test
+    fun takesTheTicketWhenBattleNetAddsOtherParameters() {
+        assertEquals("EU-ABC-123", BrowserAuthUrl.ticket("http://localhost:0/?ST=EU-ABC-123&accountId=1")?.decodeToString())
+        assertEquals("EU-ABC-123", BrowserAuthUrl.ticket("http://localhost:0/?region=EU&ST=EU-ABC-123")?.decodeToString())
+    }
+
+    @Test
+    fun describeGivesTheShapeOfARefusedAddressWithoutValues() {
+        val shape = BrowserAuthUrl.describe("https://eu.example.com:8443/secret/path?ref=secret-value&ST=ticket-secret#frag")
+        assertEquals("https://eu.example.com:8443, a path, query names ref,ST, a fragment", shape)
+        assertEquals("http://localhost:0, no path, query names ST", BrowserAuthUrl.describe("http://localhost:0/?ST=ticket-secret"))
+        assertEquals("intent: address", BrowserAuthUrl.describe("intent:secret#Intent;scheme=x;end"))
+    }
+
+    @Test
     fun rejectsRedirectLookalikesAndAmbiguousParameters() {
         listOf(
             "https://localhost:0/?ST=x",
@@ -55,7 +69,7 @@ class BrowserAuthUrlTest {
             "http://localhost:0/other?ST=x",
             "http://localhost:0/?ST=x#fragment",
             "http://localhost:0/?ST=x&ST=y",
-            "http://localhost:0/?ST=x&other=y",
+            "http://localhost:0/?other=y&ST=x&ST=z",
             "http://localhost:0/?ST=x;ST=y",
             "http://localhost:0/?%53T=x",
             "http://localhost:0/?st=x",

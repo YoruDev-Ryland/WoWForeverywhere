@@ -24,15 +24,36 @@ internal object BrowserAuthUrl {
             uri.port != 0 || uri.rawUserInfo != null || uri.rawFragment != null || uri.rawPath !in listOf("", "/")
         ) return null
         val query = uri.rawQuery ?: return null
-        // A single, exact parameter avoids duplicate-key and alternate-decoding ambiguity.
-        if (!query.startsWith("ST=") || '&' in query || ';' in query) return null
+        if (';' in query) return null
+        // Battle.net can add parameters next to the ticket, so others are ignored. Exactly one ST avoids
+        // duplicate-key ambiguity.
+        val tickets = query.split('&').filter { it.startsWith("ST=") }
+        if (tickets.size != 1) return null
         val decoded = try {
-            URLDecoder.decode(query.substring(3), StandardCharsets.UTF_8.name())
+            URLDecoder.decode(tickets.single().substring(3), StandardCharsets.UTF_8.name())
         } catch (_: IllegalArgumentException) {
             return null
         }
         if (decoded.isEmpty() || decoded.length > MAX_TICKET_LENGTH || decoded.any { it.code !in 33..126 }) return null
         return decoded.toByteArray(StandardCharsets.US_ASCII)
+    }
+
+    /**
+     * The shape of an address the dialog refused, for BrowserLogin.log: its scheme, host, port, whether it has a path,
+     * and the query parameter names. Never values or path segments, which can carry tickets or account details.
+     */
+    fun describe(value: String): String {
+        val uri = try {
+            URI(value.take(MAX_URL_LENGTH))
+        } catch (_: Exception) {
+            return "unparsable address (${value.substringBefore(':').take(16).filter { it.isLetterOrDigit() || it in "+-." }}:)"
+        }
+        if (uri.isOpaque) return "${uri.scheme}: address"
+        val names = uri.rawQuery?.split('&', ';')?.map { it.substringBefore('=').take(32) }?.filter { it.isNotEmpty() }.orEmpty()
+        val path = if (uri.rawPath.isNullOrEmpty() || uri.rawPath == "/") "no path" else "a path"
+        return "${uri.scheme}://${uri.host?.lowercase(Locale.ROOT)}${if (uri.port >= 0) ":" + uri.port else ""}, $path, " +
+            (if (names.isEmpty()) "no query" else "query names " + names.joinToString(",")) +
+            (if (uri.rawFragment != null) ", a fragment" else "")
     }
 
     /** The dialog shows the site's origin only. The path and query can contain sign-in credentials. */
