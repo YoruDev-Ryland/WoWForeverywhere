@@ -116,6 +116,7 @@ class PluviaApp : Application() {
             radialMenuCoordinator = null
             keepAlive = false
             clearActiveSuspendState()
+            GameSessionService.stop(instance)
         }
 
         fun clearActiveSuspendState() {
