@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-16T06:41:52+00:00",
+ "generated": "2026-11-17T06:29:07+00:00",
  "addons": [
   {
    "repo": "Questie/Questie",
@@ -9,8 +9,8 @@
    "author": "Questie",
    "icon": "https://avatars.githubusercontent.com/u/75445548?v=4",
    "website": "https://github.com/Questie/Questie",
-   "stars": 1159,
-   "downloads": 37849,
+   "stars": 1160,
+   "downloads": 46203,
    "updated": "2026-11-14T00:31:36Z",
    "requires": [],
    "files": {
@@ -48,8 +48,8 @@
    "author": "RestedXP",
    "icon": "https://avatars.githubusercontent.com/u/84252897?v=4",
    "website": "https://github.com/RestedXP/RXPGuides",
-   "stars": 202,
-   "downloads": 33470,
+   "stars": 203,
+   "downloads": 39926,
    "updated": "2026-11-11T23:32:25Z",
    "requires": [],
    "files": {
@@ -94,7 +94,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DeadlyBossMods",
    "stars": 284,
-   "downloads": 3183,
+   "downloads": 4052,
    "updated": "2026-11-13T06:44:43Z",
    "requires": [],
    "files": {
@@ -139,7 +139,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DBM-Dungeons",
    "stars": 33,
-   "downloads": 2622,
+   "downloads": 3211,
    "updated": "2026-11-12T05:39:38Z",
    "requires": [
     "DeadlyBossMods/DeadlyBossMods"
@@ -186,7 +186,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/BigWigs",
    "stars": 276,
-   "downloads": 5578,
+   "downloads": 6359,
    "updated": "2026-11-08T20:38:50Z",
    "requires": [],
    "files": {
@@ -231,7 +231,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/LittleWigs",
    "stars": 116,
-   "downloads": 6181,
+   "downloads": 6775,
    "updated": "2026-11-04T18:52:31Z",
    "requires": [
     "BigWigsMods/BigWigs"
@@ -278,7 +278,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9000280?v=4",
    "website": "https://github.com/Tercioo/Plater-Nameplates",
    "stars": 107,
-   "downloads": 499,
+   "downloads": 1064,
    "updated": "2026-11-15T12:11:41Z",
    "requires": [],
    "files": {
@@ -323,7 +323,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/ShadowedUnitFrames",
    "stars": 58,
-   "downloads": 26429,
+   "downloads": 26624,
    "updated": "2026-01-18T18:37:26Z",
    "requires": [],
    "files": {
@@ -356,38 +356,38 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/Dominos",
    "stars": 83,
-   "downloads": 173,
-   "updated": "2026-11-15T19:00:40Z",
+   "downloads": 102,
+   "updated": "2026-11-17T00:46:52Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "752019692",
-     "version": "12.0.3",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
+     "fileId": "757051123",
+     "version": "12.0.4",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.4/Dominos-12.0.4.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "752019692",
-     "version": "12.0.3",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
+     "fileId": "757051123",
+     "version": "12.0.4",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.4/Dominos-12.0.4.zip",
      "interface": 120107
     },
     "classic": {
-     "fileId": "752019692",
-     "version": "12.0.3",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
+     "fileId": "757051123",
+     "version": "12.0.4",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.4/Dominos-12.0.4.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "752019692",
-     "version": "12.0.3",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
+     "fileId": "757051123",
+     "version": "12.0.4",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.4/Dominos-12.0.4.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "752019692",
-     "version": "12.0.3",
-     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.3/Dominos-12.0.3.zip",
+     "fileId": "757051123",
+     "version": "12.0.4",
+     "url": "https://github.com/tullamods/Dominos/releases/download/12.0.4/Dominos-12.0.4.zip",
      "interface": 16001
     }
    }
@@ -401,38 +401,38 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Bartender4",
    "stars": 77,
-   "downloads": 756,
-   "updated": "2026-11-14T18:58:10Z",
+   "downloads": 244,
+   "updated": "2026-11-16T21:09:45Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "748464160",
-     "version": "4.18.4.1",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.18.4.1/Bartender4-4.18.4.1.zip",
+     "fileId": "756460332",
+     "version": "4.19.0",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "748464160",
-     "version": "4.18.4.1",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.18.4.1/Bartender4-4.18.4.1.zip",
+     "fileId": "756460332",
+     "version": "4.19.0",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
      "interface": 120100
     },
     "classic": {
-     "fileId": "748464160",
-     "version": "4.18.4.1",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.18.4.1/Bartender4-4.18.4.1.zip",
+     "fileId": "756460332",
+     "version": "4.19.0",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "748464160",
-     "version": "4.18.4.1",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.18.4.1/Bartender4-4.18.4.1.zip",
+     "fileId": "756460332",
+     "version": "4.19.0",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "748464160",
-     "version": "4.18.4.1",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.18.4.1/Bartender4-4.18.4.1.zip",
+     "fileId": "756460332",
+     "version": "4.19.0",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
      "interface": 16001
     }
    }
@@ -446,7 +446,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/OmniCC",
    "stars": 107,
-   "downloads": 24343,
+   "downloads": 24566,
    "updated": "2025-12-14T21:07:04Z",
    "requires": [],
    "files": {
@@ -485,7 +485,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9121773?v=4",
    "website": "https://github.com/WeakAuras/WeakAuras2",
    "stars": 1449,
-   "downloads": 15838,
+   "downloads": 16222,
    "updated": "2026-10-10T17:21:31Z",
    "requires": [],
    "files": {
@@ -518,7 +518,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Mapster",
    "stars": 21,
-   "downloads": 4333,
+   "downloads": 4543,
    "updated": "2026-10-03T14:08:46Z",
    "requires": [],
    "files": {
@@ -545,7 +545,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/HandyNotes",
    "stars": 20,
-   "downloads": 3824,
+   "downloads": 4215,
    "updated": "2026-11-03T05:03:38Z",
    "requires": [],
    "files": {
@@ -590,7 +590,7 @@
    "icon": "https://avatars.githubusercontent.com/u/2187?v=4",
    "website": "https://github.com/kemayo/wow-silverdragon",
    "stars": 28,
-   "downloads": 18,
+   "downloads": 341,
    "updated": "2026-11-16T05:04:41Z",
    "requires": [],
    "files": {
@@ -635,7 +635,7 @@
    "icon": "https://avatars.githubusercontent.com/u/45636893?v=4",
    "website": "https://github.com/Hoizame/AtlasLootClassic",
    "stars": 91,
-   "downloads": 130109,
+   "downloads": 130251,
    "updated": "2023-10-22T14:37:24Z",
    "requires": [],
    "files": {
@@ -662,7 +662,7 @@
    "icon": "https://avatars.githubusercontent.com/u/19425199?v=4",
    "website": "https://github.com/AdiAddons/AdiBags",
    "stars": 152,
-   "downloads": 101005,
+   "downloads": 101169,
    "updated": "2024-09-08T02:20:23Z",
    "requires": [],
    "files": {
@@ -695,7 +695,7 @@
    "icon": "https://avatars.githubusercontent.com/u/69928556?v=4",
    "website": "https://github.com/SFX-WoW/Masque",
    "stars": 54,
-   "downloads": 7847,
+   "downloads": 8261,
    "updated": "2026-11-02T17:54:22Z",
    "requires": [],
    "files": {
