@@ -41,8 +41,8 @@ class GameSessionService : Service() {
     private fun buildNotification(): Notification {
         val manager = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Game running", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Shown while World of Warcraft is running, so it keeps running when you switch apps."
+            val channel = NotificationChannel(CHANNEL_ID, getString(R.string.fw_game_session_channel), NotificationManager.IMPORTANCE_LOW).apply {
+                description = getString(R.string.fw_game_session_channel_description)
                 setShowBadge(false)
             }
             manager.createNotificationChannel(channel)
@@ -56,8 +56,8 @@ class GameSessionService : Service() {
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Notification.Builder(this, CHANNEL_ID) else @Suppress("DEPRECATION") Notification.Builder(this)
         return builder
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("World of Warcraft is running")
-            .setContentText("Tap to return to the game")
+            .setContentTitle(getString(R.string.fw_game_session_title))
+            .setContentText(getString(R.string.fw_game_session_text))
             .setContentIntent(openApp)
             .setOngoing(true)
             .setShowWhen(false)

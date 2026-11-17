@@ -1034,4 +1034,8 @@
     <string name="fw_region_eu">Europe</string>
     <string name="fw_region_kr">Korea</string>
     <string name="fw_region_tw">Taiwan</string>
+    <string name="fw_game_session_channel">Game running</string>
+    <string name="fw_game_session_channel_description">Shown while World of Warcraft is running, so it keeps running when you switch apps.</string>
+    <string name="fw_game_session_title">World of Warcraft is running</string>
+    <string name="fw_game_session_text">Tap to return to the game</string>
 </resources>
