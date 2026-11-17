@@ -160,6 +160,7 @@ Because the game needs the password in plain text for those few seconds, any app
 - **Clear game data** deletes the world data so the game downloads it again the next time you press **Play**, about 67 GB. Your settings, addons and login stay.
 - **Settings** shows the app version and checks for app updates. It also holds:
   - **Game version** and **Region** (Americas, Europe, Korea or Taiwan).
+  - **Game language**: the language of the game's text and voices. A language the install doesn't have yet is downloaded first.
   - **Addon sources**, showing which addon sites this build can use.
   - **Device**, showing the graphics profile picked for your chip.
   - **Resolution**, which is set for your device by default. A higher resolution looks sharper but is harder on the device.
