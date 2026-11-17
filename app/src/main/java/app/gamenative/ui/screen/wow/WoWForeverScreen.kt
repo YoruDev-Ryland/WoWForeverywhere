@@ -1197,6 +1197,9 @@ internal fun buildConfigWtf(
         existing.none { it.trim().startsWith("SET $WORK_OPTIMS_KEY ", ignoreCase = true) }
     val accountLine = gameAccount?.let { account -> accountListLine(existing.lastOrNull { it.startsWith(ACCOUNT_LIST, ignoreCase = true) }, account) }
     val staleAccount = accountLine != null && existing.none { it == accountLine }
+    // Without a pick the game's saved list goes, so it picks again: a saved list broke the next login with
+    // BLZ51914400, and clearing it (by editing the username) let the same login through (#62).
+    val savedAccountList = gameAccount == null && existing.any { it.startsWith(ACCOUNT_LIST, ignoreCase = true) }
     val staleResolutionKeys = RESOLUTION_KEYS.filter { key -> existing.none { it == "SET $key \"$screenSize\"" } }
     // A config carried over from another product (e.g. beta to launch) gets this product's portal and agent.
     // Once the player has picked a region ([forcePortal]) the portal follows it; before that a hand-edited one stays.
@@ -1210,12 +1213,12 @@ internal fun buildConfigWtf(
     val wrongAgent = existing.any { it.startsWith("SET agentUID ", ignoreCase = true) && it != agentLine }
     val missingNarrator = NARRATOR_KEYS.filter { key -> existing.none { it.startsWith("SET $key ", ignoreCase = true) } }
     val brokenText = configTextLocale(existing)?.equals(BROKEN_TEXT_LOCALE, ignoreCase = true) == true
-    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongPortal && !wrongAgent && missingNarrator.isEmpty() && !staleAccount && !brokenText && !missingWorkOptims) return null
+    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongPortal && !wrongAgent && missingNarrator.isEmpty() && !staleAccount && !savedAccountList && !brokenText && !missingWorkOptims) return null
     return existing.filterNot { line ->
         line.startsWith("SET gxApi ", ignoreCase = true) ||
             (wrongPortal && line.startsWith("SET portal ", ignoreCase = true)) ||
             (wrongAgent && line.startsWith("SET agentUID ", ignoreCase = true)) ||
-            (staleAccount && line.startsWith(ACCOUNT_LIST, ignoreCase = true)) ||
+            ((staleAccount || savedAccountList) && line.startsWith(ACCOUNT_LIST, ignoreCase = true)) ||
             (brokenText && line.trim().startsWith(TEXT_LOCALE, ignoreCase = true)) ||
             staleResolutionKeys.any { line.startsWith("SET $it ", ignoreCase = true) }
     } + listOfNotNull(

@@ -261,7 +261,7 @@ class GameConfigTest {
     }
 
     @Test
-    fun gameAccountIsWrittenOnlyWhenPickedAndOnlyOnce() {
+    fun gameAccountIsWrittenOnlyWhenPickedAndTheGamesListGoesWithoutAPick() {
         assertTrue(buildConfigWtf(null, WowProduct.FOREVER, "1920x1080")!!.none { it.startsWith("SET accountList") })
         assertTrue("SET accountList \"!WoW2|\"" in buildConfigWtf(null, WowProduct.FOREVER, "1920x1080", gameAccount = "WoW2")!!)
 
@@ -270,8 +270,10 @@ class GameConfigTest {
             "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
             "SET accountList \"!WoW1|WoW2|\"", WORK_OPTIMS_LINE,
         )
-        // Without a pick, the game's own list stays as it is.
-        assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080"))
+        // Without a pick, the game's saved list is removed so it chooses again (#62), and then nothing changes.
+        val unpicked = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080")!!
+        assertTrue(unpicked.none { it.startsWith("SET accountList") })
+        assertNull(buildConfigWtf(unpicked, WowProduct.FOREVER, "1920x1080"))
         val picked = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", gameAccount = "WoW2")!!
         assertEquals(listOf("SET accountList \"WoW1|!WoW2|\""), picked.filter { it.startsWith("SET accountList") })
         assertNull(buildConfigWtf(picked, WowProduct.FOREVER, "1920x1080", gameAccount = "WoW2"))
