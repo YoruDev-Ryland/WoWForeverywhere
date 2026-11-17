@@ -1030,4 +1030,5 @@
     <string name="fw_region_eu">歐洲</string>
     <string name="fw_region_kr">韓國</string>
     <string name="fw_region_tw">台灣</string>
+    <string name="fw_battle_net_beta">戰網（測試版）</string>
 </resources>

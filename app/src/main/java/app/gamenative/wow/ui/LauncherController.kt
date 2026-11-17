@@ -28,6 +28,7 @@ import app.gamenative.wow.install.InstallProgress
 import app.gamenative.wow.install.InstallRequest
 import app.gamenative.wow.install.InstallUiState
 import app.gamenative.ui.screen.wow.isPermissionDenied
+import app.gamenative.ui.screen.wow.LaunchTarget
 import app.gamenative.ui.screen.wow.prepareLaunch
 import app.gamenative.utils.AppUpdater
 import app.gamenative.utils.StorageUtils
@@ -274,9 +275,17 @@ class LauncherController(
         scope.launch { fetchAppUpdate() }
     }
 
-    fun launchGame(confirmedUnsupported: Boolean = false, confirmedRestart: Boolean = false) {
+    /** Starts the official Battle.net app (experimental), which signs in and starts the game itself. */
+    fun launchBattleNet() = launchGame(target = LaunchTarget.BATTLE_NET)
+
+    /** What to start once the player confirms a launch warning (unsupported GPU, restart reminder). */
+    var pendingTarget = LaunchTarget.GAME
+        private set
+
+    fun launchGame(confirmedUnsupported: Boolean = false, confirmedRestart: Boolean = false, target: LaunchTarget = LaunchTarget.GAME) {
         val product = files.product
         if (isLaunching || product == null) return
+        pendingTarget = target
         if (!supportedGpu && !confirmedUnsupported) {
             unsupportedDeviceWarning = true
             return
@@ -296,7 +305,7 @@ class LauncherController(
             try {
                 val screenSize = fitScreenSizeToWindow(context, gpu.screenSize)
                 val containerId = withContext(Dispatchers.IO) {
-                    prepareLaunch(context, File(gamePath), product, gpu, screenSize) { msg ->
+                    prepareLaunch(context, File(gamePath), product, gpu, screenSize, target) { msg ->
                         scope.launch(Dispatchers.Main) { statusText = msg }
                     }
                 }

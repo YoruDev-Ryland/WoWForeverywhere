@@ -224,7 +224,7 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 confirm = stringResource(R.string.fw_play_anyway),
                 onConfirm = {
                     launcher.restartWarningDays = null
-                    launcher.launchGame(confirmedUnsupported = true, confirmedRestart = true)
+                    launcher.launchGame(confirmedUnsupported = true, confirmedRestart = true, target = launcher.pendingTarget)
                 },
                 onDismiss = { launcher.restartWarningDays = null },
                 dismiss = stringResource(R.string.fw_not_now),
@@ -237,7 +237,7 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 confirm = stringResource(R.string.fw_try_anyway),
                 onConfirm = {
                     launcher.unsupportedDeviceWarning = false
-                    launcher.launchGame(confirmedUnsupported = true)
+                    launcher.launchGame(confirmedUnsupported = true, target = launcher.pendingTarget)
                 },
                 onDismiss = { launcher.unsupportedDeviceWarning = false },
             )
