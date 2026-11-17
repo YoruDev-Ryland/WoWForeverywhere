@@ -1046,4 +1046,10 @@
     <string name="fw_game_session_channel_description">Shown while World of Warcraft is running, so it keeps running when you switch apps.</string>
     <string name="fw_game_session_title">World of Warcraft is running</string>
     <string name="fw_game_session_text">Tap to return to the game</string>
+    <string name="fw_sign_in_method">Sign-in method</string>
+    <string name="fw_sign_in_method_explanation">How the game signs in to Battle.net. If you keep getting BLZ51914400 or “You have been disconnected” right after the login, try the Battle.net sign-in page.</string>
+    <string name="fw_sign_in_saved_login">Saved login (email and password)</string>
+    <string name="fw_sign_in_browser">Battle.net sign-in page (experimental)</string>
+    <string name="fw_browser_login_note">When you press Play, Battle.net\'s own sign-in page opens. Sign in there and finish any code or check it asks for, and the game starts signed in. Each step is written to _forever_/Logs/BrowserLogin.log in your game folder.</string>
+    <string name="fw_browser_login_forever_only">The sign-in page only works for WoW Forever, not the other game versions.</string>
 </resources>

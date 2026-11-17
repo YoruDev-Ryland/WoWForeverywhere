@@ -1,5 +1,6 @@
 package app.gamenative.wow.ui
 
+import app.gamenative.ui.screen.wow.auth.BattleNetBrowserLogin
 import androidx.compose.ui.res.stringResource
 import app.gamenative.R
 import androidx.compose.foundation.background
@@ -108,6 +109,7 @@ fun AccountScreen(launcher: LauncherController, onBack: () -> Unit, onEditLogin:
             }
         }
         GameAccountSection(launcher)
+        BrowserLoginSection(launcher)
         BlockedLoginSection()
         FwSection(stringResource(R.string.fw_how_it_works)) {
             Text(
@@ -122,6 +124,35 @@ fun AccountScreen(launcher: LauncherController, onBack: () -> Unit, onEditLogin:
  * Account, Can't log in: Blizzard locks direct game logins from a network the account hasn't used (BLZ51914400,
  * after any CAPTCHA), and one sign-in on the web lifts it. BLZ51914500 is a password that didn't match.
  */
+/**
+ * How the game signs in: the saved email and password (the game's own login form), or Battle.net's sign-in page, which
+ * gets the game a launcher session like the Battle.net app does. Battle.net rejects the password login on devices it
+ * hasn't confirmed (BLZ51914400, upstream #57). Experimental and off by default.
+ */
+@Composable
+private fun BrowserLoginSection(launcher: LauncherController) {
+    val context = LocalContext.current
+    var browser by remember { mutableStateOf(BattleNetBrowserLogin.enabled(context)) }
+    FwSection(stringResource(R.string.fw_sign_in_method)) {
+        Text(stringResource(R.string.fw_sign_in_method_explanation), style = Fw.Secondary)
+        if (launcher.files.product != app.gamenative.wow.product.WowProduct.FOREVER) {
+            Text(stringResource(R.string.fw_browser_login_forever_only), style = Fw.Secondary.copy(color = Fw.Warn))
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(false to stringResource(R.string.fw_sign_in_saved_login), true to stringResource(R.string.fw_sign_in_browser)).forEach { (option, label) ->
+                FwRow(selected = browser == option, onClick = {
+                    BattleNetBrowserLogin.setEnabled(context, option)
+                    browser = option
+                }) {
+                    Text(label, style = Fw.Text, modifier = Modifier.weight(1f))
+                    if (browser == option) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
+                }
+            }
+        }
+        if (browser) Text(stringResource(R.string.fw_browser_login_note), style = Fw.Secondary)
+    }
+}
+
 @Composable
 private fun BlockedLoginSection() {
     val context = LocalContext.current
