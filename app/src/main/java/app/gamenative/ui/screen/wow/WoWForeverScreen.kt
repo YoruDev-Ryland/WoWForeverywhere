@@ -910,9 +910,16 @@ internal data class GpuProfile(
          */
         val QUEST = GpuProfile("System", "", "1280x720", "Meta Quest 3", "Meta Quest 3 / XR2 Gen 2", maxDeviceMemory = 1536)
 
+        /**
+         * Adreno 722 (Retroid Pocket Duo's CQ7790S): the device's own driver ("System"), because the Turnip builds
+         * we ship don't see this GPU at all, so WoW found no usable graphics card (#65).
+         */
+        val ADRENO_722 = GpuProfile("System", "", "1280x720", "Adreno 722", "Adreno 722")
+
         fun detect(context: Context) = when {
             isMetaQuest3(Build.MANUFACTURER, Build.MODEL, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else "") -> QUEST
             isAdreno8xxDevice(context) -> ADRENO_8XX
+            isAdreno722(runCatching { GPUInformation.getRenderer(context) }.getOrNull().orEmpty()) -> ADRENO_722
             else -> ADRENO_740
         }
 
@@ -942,6 +949,9 @@ internal fun isAdreno8xx(renderer: String, socModel: String, hardware: String): 
     Regex("""adreno\D*8\d\d""", RegexOption.IGNORE_CASE).containsMatchIn(renderer) ||
         listOf("SM8735", "SM8750", "SM8845", "SM8850").any { socModel.contains(it, ignoreCase = true) } ||
         hardware.contains("sun", ignoreCase = true)
+
+/** An Adreno 722, from the renderer name ("Adreno (TM) 722"). */
+internal fun isAdreno722(renderer: String): Boolean = Regex("""adreno\D*722\b""", RegexOption.IGNORE_CASE).containsMatchIn(renderer)
 
 /** Meta Quest 3 or 3S: Oculus hardware with the Snapdragon XR2 Gen 2 (SXR2230P). */
 internal fun isMetaQuest3(manufacturer: String, model: String, socModel: String): Boolean =
