@@ -65,14 +65,22 @@ static int append_character(wchar_t *command, size_t capacity, size_t *used, wch
     return 1;
 }
 
-/* Windows CommandLineToArgvW/CRT quoting: quote every argument, double trailing
- * backslashes and backslashes before quotes, and preserve empty arguments. */
+/* Windows CommandLineToArgvW/CRT quoting, only where an argument needs it: one with a
+ * space, tab or quote, or an empty one, is quoted with trailing backslashes and backslashes
+ * before quotes doubled. Others go as they are, like the Battle.net app passes them: WoW's
+ * own parser rejects a quoted switch ("CommandLine Parse Error: -launcherlogin(0): Invalid
+ * argument"). */
 int bridge_append_argument(wchar_t *command, size_t capacity, const wchar_t *argument) {
     size_t used = 0, slashes = 0;
     if (!command || !capacity || !argument) return 0;
     while (used < capacity && command[used]) used++;
     if (used == capacity) return 0;
     if (used && !append_character(command, capacity, &used, L' ')) return 0;
+    if (*argument && !wcspbrk(argument, L" \t\"")) {
+        for (const wchar_t *p = argument; *p; p++)
+            if (!append_character(command, capacity, &used, *p)) return 0;
+        return 1;
+    }
     if (!append_character(command, capacity, &used, L'"')) return 0;
     for (const wchar_t *p = argument;; p++) {
         if (*p == L'\\') { slashes++; continue; }
