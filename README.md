@@ -134,7 +134,7 @@ The app needs **All files access** to change addons in another app's folder. Fol
 - **Controls.** Use the D-pad or stick to move and **A** to select. **B** goes back. In the game, your handheld's controller works through WoW's own gamepad mode.
 - **Back to the launcher.** While the game is starting, hold **Start + Select + L2 + R2**, or tap the back arrow, to cancel and return to the home screen.
 - **In-game menu.** Press Back during play to open the sidebar with the on-screen keyboard, the performance overlay and **Exit**.
-- **More than one WoW account.** If your Battle.net login has several, such as WoW1 and WoW2, choose the one to play under **Account → Game account**.
+- **More than one WoW account.** If your Battle.net login has several, such as WoW1 and WoW2, choose the one to play under **Account → Game account**. If yours has its own name, type it there.
 - **Authenticator codes** are still typed in the game. The game keeps running when you switch apps, so you can get a code from an authenticator app on the same device.
 
 ### How your login is stored
@@ -144,7 +144,7 @@ Saving your login is optional, and you can remove it any time under **Account**.
 - The email and password are sealed together with AES-256-GCM using a key held by the Android Keystore. The key can't be exported, and it stays in the device's secure hardware where the device has it.
 - The saved login is excluded from cloud backups and from phone-to-phone transfers.
 - Screenshots and screen recordings of the login form are blocked.
-- To sign in, the game reads your login from a short-lived `login.txt` file in its own folder. This is how the WoW client accepts a login without the Battle.net app. Foreverywhere writes the file when you press Play and wipes it about 20 seconds after the game reads it, or within ten minutes at most (a first start can take several minutes to reach the login screen). It is also wiped when you leave or close the game.
+- To sign in, the game reads your login from a short-lived `login.txt` file in its own folder. This is how the WoW client accepts a login without the Battle.net app. Foreverywhere writes the file when you press Play and wipes it once the login has gone through, or within ten minutes at most (a first start can take several minutes to reach the login screen, and an authenticator code takes a while to type). It is also wiped when you leave or close the game.
 
 Because the game needs the password in plain text for those few seconds, any app with full storage access could read it in that window. If that is a concern, skip saving your login and sign in inside the game instead.
 
@@ -160,6 +160,7 @@ Because the game needs the password in plain text for those few seconds, any app
 - **Clear game data** deletes the world data so the game downloads it again the next time you press **Play**, about 67 GB. Your settings, addons and login stay.
 - **Settings** shows the app version and checks for app updates. It also holds:
   - **Game version** and **Region** (Americas, Europe, Korea or Taiwan).
+  - **Game language**: the language of the game's text and voices. A language the install doesn't have yet is downloaded first.
   - **Addon sources**, showing which addon sites this build can use.
   - **Device**, showing the graphics profile picked for your chip.
   - **Resolution**, which is set for your device by default. A higher resolution looks sharper but is harder on the device.

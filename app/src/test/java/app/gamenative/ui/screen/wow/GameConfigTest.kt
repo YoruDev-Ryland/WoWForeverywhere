@@ -257,10 +257,11 @@ class GameConfigTest {
         assertEquals("SET accountList \"WoW1|!WoW2|\"", accountListLine("SET accountList \"!WoW1|WoW2|\"", "WoW2"))
         assertEquals("SET accountList \"WoW1|!WoW3|\"", accountListLine("SET accountList \"!WoW1|\"", "WoW3"))
         assertEquals("SET accountList \"!wow2|WoW1|\"", accountListLine("SET accountList \"wow2|!WoW1|\"", "WoW2"))
+        assertEquals("SET accountList \"WoW1|!LELLON|\"", accountListLine("SET accountList \"!WoW1|\"", "LELLON"))
     }
 
     @Test
-    fun gameAccountIsWrittenOnlyWhenPickedAndOnlyOnce() {
+    fun gameAccountIsWrittenOnlyWhenPickedAndTheGamesListGoesWithoutAPick() {
         assertTrue(buildConfigWtf(null, WowProduct.FOREVER, "1920x1080")!!.none { it.startsWith("SET accountList") })
         assertTrue("SET accountList \"!WoW2|\"" in buildConfigWtf(null, WowProduct.FOREVER, "1920x1080", gameAccount = "WoW2")!!)
 
@@ -269,11 +270,32 @@ class GameConfigTest {
             "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
             "SET accountList \"!WoW1|WoW2|\"", WORK_OPTIMS_LINE,
         )
-        // Without a pick, the game's own list stays as it is.
-        assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080"))
+        // Without a pick, the game's saved list is removed so it chooses again (#62), and then nothing changes.
+        val unpicked = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080")!!
+        assertTrue(unpicked.none { it.startsWith("SET accountList") })
+        assertNull(buildConfigWtf(unpicked, WowProduct.FOREVER, "1920x1080"))
         val picked = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", gameAccount = "WoW2")!!
         assertEquals(listOf("SET accountList \"WoW1|!WoW2|\""), picked.filter { it.startsWith("SET accountList") })
         assertNull(buildConfigWtf(picked, WowProduct.FOREVER, "1920x1080", gameAccount = "WoW2"))
+    }
+
+    @Test
+    fun aPickedLanguageReplacesTheGamesTextAndAudioLanguage() {
+        val existing = listOf(
+            "SET gxApi \"D3D11\"", "SET portal \"EU\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"",
+            "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
+            "SET textLocale \"enUS\"", "SET audioLocale \"enUS\"", WORK_OPTIMS_LINE,
+        )
+        // Without a pick, the language in the config stays.
+        assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", locale = "deDE"))
+        val picked = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", locale = "deDE", forceLocale = true)!!
+        assertEquals(listOf("SET textLocale \"deDE\""), picked.filter { it.startsWith("SET textLocale") })
+        assertEquals(listOf("SET audioLocale \"deDE\""), picked.filter { it.startsWith("SET audioLocale") })
+        assertNull(buildConfigWtf(picked, WowProduct.FOREVER, "1920x1080", locale = "deDE", forceLocale = true))
+        // Italian text still stops the client at start-up (#22), so Italian gets English text and Italian audio.
+        val italian = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", locale = "itIT", forceLocale = true)!!
+        assertEquals(listOf("SET textLocale \"enUS\""), italian.filter { it.startsWith("SET textLocale") })
+        assertEquals(listOf("SET audioLocale \"itIT\""), italian.filter { it.startsWith("SET audioLocale") })
     }
 
     @Test

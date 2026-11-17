@@ -223,7 +223,7 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
     var rootIndex by remember { mutableStateOf(if (roots.size > 1) 1 else 0) }
     var product by remember { mutableStateOf<WowProduct?>(null) }
     var region by remember { mutableStateOf(GameRegions.effective(null)) }
-    val locale = remember { deviceLocale() }
+    val locale = remember { app.gamenative.wow.product.GameLanguages.chosen?.code ?: deviceLocale() }
     // Android 13+ hides the progress notification unless the app may post notifications. The download
     // starts either way; this only asks once per screen visit.
     val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -326,10 +326,8 @@ fun InstallStep(launcher: LauncherController, onDone: () -> Unit, onBack: () -> 
 /** The device language if WoW ships it, else English (spec §6.6). */
 private fun deviceLocale(): String {
     val tag = Locale.getDefault().let { it.language + it.country }
-    return WOW_LOCALES.firstOrNull { it.equals(tag, ignoreCase = true) } ?: "enUS"
+    return app.gamenative.wow.product.GameLanguage.fromCode(tag)?.code ?: "enUS"
 }
-
-private val WOW_LOCALES = listOf("enUS", "enGB", "deDE", "esES", "esMX", "frFR", "itIT", "koKR", "ptBR", "ruRU", "zhCN", "zhTW")
 
 @Composable
 private fun SignIn(launcher: LauncherController, onEditLogin: () -> Unit, onDone: () -> Unit, installedFresh: Boolean) {

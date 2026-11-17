@@ -58,4 +58,14 @@ class GpuProfileTest {
         assertFalse(isAdreno8xx("Adreno (TM) 750", "SM8650", "pineapple"))
         assertFalse(isAdreno8xx("Adreno (TM) 735", "SM7675", "qcom"))
     }
+
+    @Test
+    fun onlyTheAdreno722GetsTheDeviceDriverProfile() {
+        // Retroid Pocket Duo, issue #65.
+        assertTrue(isAdreno722("Adreno (TM) 722"))
+        assertFalse(isAdreno722("Adreno (TM) 720"))
+        assertFalse(isAdreno722("Adreno (TM) 740"))
+        assertFalse(isAdreno722("Adreno (TM) 7220"))
+        assertFalse(isAdreno722(""))
+    }
 }

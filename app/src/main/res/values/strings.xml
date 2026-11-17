@@ -976,6 +976,9 @@
     <string name="fw_login_blocked_step_three">3. Come back to the app and start the game again.</string>
     <string name="fw_login_blocked_step_four">4. Still getting BLZ51914500? Your password didn\'t match. Re-enter it with Change login.</string>
     <string name="fw_game_account_explanation">If your Battle.net login has more than one WoW account, such as WoW1 and WoW2, choose the one to play. The Battle.net app lists them in its account menu. A change applies the next time you start the game.</string>
+    <string name="fw_game_account_type_it">If yours has its own name and isn\'t listed, type it below.</string>
+    <string name="fw_account_name">Account name</string>
+    <string name="fw_use">Use</string>
     <string name="fw_debug_report_explanation">For other problems, turn on debug logging, make the problem happen again, then share a debug report on your GitHub issue. The game won\'t start by itself while logging is on, so opening the app doesn\'t replace the game\'s logs. The report holds your device details, settings and logs. Email addresses and your saved login are removed from it.</string>
     <string name="fw_frame_generation_explanation">Lossless Scaling\'s frame generation (LSFG) can raise the frame rate by adding generated frames, at the cost of a little input delay. It needs Lossless.dll from your own copy of Lossless Scaling on Steam: on your PC it\'s in Steam/steamapps/common/Lossless Scaling. Copy it to this device and choose it here. The in-game menu (Back) then has an LSFG tab to set it up.</string>
     <string name="fw_frame_generation_missing_shaders">This Lossless.dll doesn\'t have the frame generation shaders, so the game starts without frame generation. Choose the one from a current Steam install of Lossless Scaling.</string>
@@ -992,6 +995,11 @@
     <string name="fw_updating_game_progress">Updating game files %1$d%%</string>
     <string name="fw_updating_game">Updating game files...</string>
     <string name="fw_finishing_update">Finishing update...</string>
+    <string name="fw_game_language">Game language</string>
+    <string name="fw_game_language_explanation">The language of the game\'s text and voices. A language the game doesn\'t have yet needs a download first, then the game starts in it.</string>
+    <string name="fw_download_language">Download %1$s</string>
+    <string name="fw_downloading_language">Downloading language files...</string>
+    <string name="fw_downloading_language_progress">Downloading language files... %1$d%%</string>
     <string name="fw_update_failed">Update failed: %1$s</string>
     <string name="fw_switching_release">Switching to the launch version...</string>
     <string name="fw_switch_release_failed">Couldn\'t switch to the launch version: %1$s</string>
