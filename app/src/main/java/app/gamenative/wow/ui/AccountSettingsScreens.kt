@@ -31,6 +31,8 @@ import androidx.compose.runtime.setValue
 import app.gamenative.wow.addons.AddonMode
 import app.gamenative.wow.install.InstallController
 import app.gamenative.wow.install.InstallUiState
+import app.gamenative.wow.product.GameLanguage
+import app.gamenative.wow.product.GameLanguages
 import app.gamenative.wow.product.GameRegion
 import app.gamenative.wow.product.GameRegions
 import app.gamenative.wow.product.GameAccounts
@@ -240,6 +242,7 @@ fun SettingsScreen(
         if (addonFolder == null) {
             GameVersionSection(launcher, onVersionChanged)
             RegionSection(launcher)
+            LanguageSection(launcher)
         }
         FwSection(stringResource(R.string.fw_support_foreverywhere)) {
             val context = LocalContext.current
@@ -457,6 +460,40 @@ private fun RegionSection(launcher: LauncherController) {
                 }
             }
         }
+    }
+}
+
+/**
+ * Settings, Game language: the language of the game's text and voices (#63). A pick the install doesn't have yet
+ * offers a download, a repair in that language; the game starts in it once that's done.
+ */
+@Composable
+private fun LanguageSection(launcher: LauncherController) {
+    val context = LocalContext.current
+    val installed = remember(launcher.gamePath, launcher.files.product, launcher.isUpdating) { launcher.installedLanguage() }
+    var current by remember(installed) { mutableStateOf(GameLanguages.chosen ?: GameLanguage.fromCode(installed)) }
+    val needsDownload = current != null && !current!!.code.equals(installed, ignoreCase = true)
+    FwSection(stringResource(R.string.fw_game_language)) {
+        Text(stringResource(R.string.fw_game_language_explanation), style = Fw.Secondary)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            GameLanguage.entries.forEach { l ->
+                FwRow(selected = l == current, onClick = {
+                    if (launcher.isUpdating) return@FwRow
+                    GameLanguages.save(context, l)
+                    current = l
+                }) {
+                    Text(l.label, style = Fw.Text, modifier = Modifier.weight(1f))
+                    Text(l.code, style = Fw.Data.copy(color = Fw.Ash))
+                    if (l == current) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
+                }
+            }
+        }
+        if (launcher.isUpdating) {
+            Text(launcher.updateStatusText, style = Fw.Secondary)
+        } else if (needsDownload) {
+            FwButton(stringResource(R.string.fw_download_language, current!!.label), { launcher.downloadLanguage() }, enabled = !launcher.busy)
+        }
+        launcher.errorMessage?.let { Text(it, style = Fw.Secondary.copy(color = Fw.Warn)) }
     }
 }
 

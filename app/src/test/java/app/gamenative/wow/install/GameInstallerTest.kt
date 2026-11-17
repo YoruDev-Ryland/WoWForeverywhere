@@ -245,6 +245,33 @@ class GameInstallerTest {
     }
 
     @Test
+    fun localeTagsChangeOnlyTheLanguage() {
+        assertEquals(
+            "Windows arm64 US? acct-USA? geoip-US? frFR speech?:Windows arm64 US? frFR text?",
+            GameInstaller.localeTags("Windows arm64 US? acct-USA? geoip-US? enUS speech?:Windows arm64 US? enUS text?", "frFR"),
+        )
+    }
+
+    @Test
+    fun repairAfterALanguagePickDownloadsItAndMovesTheInstallToIt() = runBlocking {
+        val tags = "Windows arm64 EU? acct-EUA? geoip-EU? deDE speech?:Windows arm64 EU? deDE text?"
+        File(root, ".build.info").writeText(
+            BuildInfo(GameInstaller.BUILD_INFO_HEADER, listOf(mapOf("Branch" to "eu", "Active" to "1", "Tags" to tags, "Version" to "old", "Product" to "wowf"))).serialize(),
+        )
+        try {
+            app.gamenative.wow.product.GameLanguages.chosen = app.gamenative.wow.product.GameLanguage.EN_US
+            assertEquals("enUS", InstallRequest(root, WowProduct.FOREVER, "deDE").keepingInstallRegion().locale)
+            installer().run(InstallRequest(root, WowProduct.FOREVER, "deDE")) {}
+        } finally {
+            app.gamenative.wow.product.GameLanguages.chosen = null
+        }
+        val row = BuildInfo.read(root)!!.active(WowProduct.FOREVER)!!
+        assertEquals("eu", row["Branch"])
+        assertEquals("Windows arm64 EU? acct-EUA? geoip-EU? enUS speech?:Windows arm64 EU? enUS text?", row["Tags"])
+        assertTrue("the enUS-only file comes down with the new language", File(root, "_forever_/Utils/loader.dll").isFile)
+    }
+
+    @Test
     fun repairReplacesDamagedFile() = runBlocking {
         installer().run(req) {}
         File(root, "_forever_/Wow-arm64.exe").writeText("damaged")

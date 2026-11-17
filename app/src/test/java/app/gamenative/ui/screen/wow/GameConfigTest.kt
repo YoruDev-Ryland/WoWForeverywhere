@@ -280,6 +280,25 @@ class GameConfigTest {
     }
 
     @Test
+    fun aPickedLanguageReplacesTheGamesTextAndAudioLanguage() {
+        val existing = listOf(
+            "SET gxApi \"D3D11\"", "SET portal \"EU\"", "SET agentUID \"wowf\"", "SET gxFullscreenResolution \"1920x1080\"",
+            "SET gxWindowedResolution \"1920x1080\"", "SET showScreenNarrationDialog \"0\"", "SET accessibilityScreenNarrationEnabled \"0\"",
+            "SET textLocale \"enUS\"", "SET audioLocale \"enUS\"", WORK_OPTIMS_LINE,
+        )
+        // Without a pick, the language in the config stays.
+        assertNull(buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", locale = "deDE"))
+        val picked = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", locale = "deDE", forceLocale = true)!!
+        assertEquals(listOf("SET textLocale \"deDE\""), picked.filter { it.startsWith("SET textLocale") })
+        assertEquals(listOf("SET audioLocale \"deDE\""), picked.filter { it.startsWith("SET audioLocale") })
+        assertNull(buildConfigWtf(picked, WowProduct.FOREVER, "1920x1080", locale = "deDE", forceLocale = true))
+        // Italian text still stops the client at start-up (#22), so Italian gets English text and Italian audio.
+        val italian = buildConfigWtf(existing, WowProduct.FOREVER, "1920x1080", locale = "itIT", forceLocale = true)!!
+        assertEquals(listOf("SET textLocale \"enUS\""), italian.filter { it.startsWith("SET textLocale") })
+        assertEquals(listOf("SET audioLocale \"itIT\""), italian.filter { it.startsWith("SET audioLocale") })
+    }
+
+    @Test
     fun flavorInfoNamesProduct() {
         assertEquals("Product Flavor!STRING:0\nwowf\n", flavorInfoText(WowProduct.FOREVER))
     }

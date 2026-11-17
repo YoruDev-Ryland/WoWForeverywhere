@@ -1113,6 +1113,7 @@ internal fun gameTextLocale(locale: String) = if (locale.equals(BROKEN_TEXT_LOCA
 
 private const val BROKEN_TEXT_LOCALE = "itIT"
 private const val TEXT_LOCALE = "SET textLocale "
+private const val AUDIO_LOCALE = "SET audioLocale "
 
 /** The text language set in Config.wtf [lines], or null if there is none. */
 internal fun configTextLocale(lines: List<String>): String? = configValue(lines, TEXT_LOCALE)
@@ -1174,6 +1175,7 @@ private fun ensureGameConfig(root: File, product: WowProduct, screenSize: String
         installPortal(root, product),
         forcePortal = GameRegions.chosen != null,
         gameAccount = app.gamenative.wow.product.GameAccounts.chosen,
+        forceLocale = app.gamenative.wow.product.GameLanguages.chosen != null,
     ) ?: return
     configWtf.parentFile?.mkdirs()
     configWtf.writeText(updated.joinToString("\n") + "\n")
@@ -1196,6 +1198,7 @@ internal fun buildConfigWtf(
     portal: String = product.portal,
     forcePortal: Boolean = false,
     gameAccount: String? = null,
+    forceLocale: Boolean = false,
 ): List<String>? {
     if (existing == null) {
         val defaults = configDefaults(product, locale, portal) + RESOLUTION_KEYS.associateWith { "\"$screenSize\"" }
@@ -1223,13 +1226,19 @@ internal fun buildConfigWtf(
     val wrongAgent = existing.any { it.startsWith("SET agentUID ", ignoreCase = true) && it != agentLine }
     val missingNarrator = NARRATOR_KEYS.filter { key -> existing.none { it.startsWith("SET $key ", ignoreCase = true) } }
     val brokenText = configTextLocale(existing)?.equals(BROKEN_TEXT_LOCALE, ignoreCase = true) == true
-    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongPortal && !wrongAgent && missingNarrator.isEmpty() && !staleAccount && !savedAccountList && !brokenText && !missingWorkOptims) return null
+    // Once a language is picked in Settings, the game's text and audio follow the install's language, which a repair
+    // moved to the pick (#63). Until then a language set in the game stays.
+    val textLine = "$TEXT_LOCALE\"${gameTextLocale(locale)}\""
+    val audioLine = "$AUDIO_LOCALE\"$locale\""
+    val wrongLocale = forceLocale && (existing.none { it.trim() == textLine } || existing.none { it.trim() == audioLine })
+    if (existing.any { it == GX_API_LINE } && staleResolutionKeys.isEmpty() && !missingPortal && !wrongPortal && !wrongAgent && missingNarrator.isEmpty() && !staleAccount && !savedAccountList && !brokenText && !wrongLocale && !missingWorkOptims) return null
     return existing.filterNot { line ->
         line.startsWith("SET gxApi ", ignoreCase = true) ||
             (wrongPortal && line.startsWith("SET portal ", ignoreCase = true)) ||
             (wrongAgent && line.startsWith("SET agentUID ", ignoreCase = true)) ||
             ((staleAccount || savedAccountList) && line.startsWith(ACCOUNT_LIST, ignoreCase = true)) ||
-            (brokenText && line.trim().startsWith(TEXT_LOCALE, ignoreCase = true)) ||
+            ((brokenText || wrongLocale) && line.trim().startsWith(TEXT_LOCALE, ignoreCase = true)) ||
+            (wrongLocale && line.trim().startsWith(AUDIO_LOCALE, ignoreCase = true)) ||
             staleResolutionKeys.any { line.startsWith("SET $it ", ignoreCase = true) }
     } + listOfNotNull(
         GX_API_LINE,
@@ -1237,7 +1246,9 @@ internal fun buildConfigWtf(
         newPortalLine.takeIf { wrongPortal },
         agentLine.takeIf { wrongAgent },
         accountLine.takeIf { staleAccount },
-        "$TEXT_LOCALE\"${gameTextLocale(BROKEN_TEXT_LOCALE)}\"".takeIf { brokenText },
+        "$TEXT_LOCALE\"${gameTextLocale(BROKEN_TEXT_LOCALE)}\"".takeIf { brokenText && !wrongLocale },
+        textLine.takeIf { wrongLocale },
+        audioLine.takeIf { wrongLocale },
         WORK_OPTIMS_LINE.takeIf { missingWorkOptims },
     ) + staleResolutionKeys.map { "SET $it \"$screenSize\"" } + missingNarrator.map { "SET $it \"0\"" }
 }

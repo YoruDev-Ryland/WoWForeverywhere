@@ -995,6 +995,11 @@
     <string name="fw_updating_game_progress">Updating game files %1$d%%</string>
     <string name="fw_updating_game">Updating game files...</string>
     <string name="fw_finishing_update">Finishing update...</string>
+    <string name="fw_game_language">Game language</string>
+    <string name="fw_game_language_explanation">The language of the game\'s text and voices. A language the game doesn\'t have yet needs a download first, then the game starts in it.</string>
+    <string name="fw_download_language">Download %1$s</string>
+    <string name="fw_downloading_language">Downloading language files...</string>
+    <string name="fw_downloading_language_progress">Downloading language files... %1$d%%</string>
     <string name="fw_update_failed">Update failed: %1$s</string>
     <string name="fw_switching_release">Switching to the launch version...</string>
     <string name="fw_switch_release_failed">Couldn\'t switch to the launch version: %1$s</string>

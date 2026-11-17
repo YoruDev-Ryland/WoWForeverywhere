@@ -361,6 +361,48 @@ class LauncherController(
         }
     }
 
+    /** The language the install has now, from its `.build.info`, for Settings to show (#63). */
+    fun installedLanguage(): String? = files.product?.let { installLocale(File(gamePath), it) }
+
+    /**
+     * Downloads the language picked in Settings with a repair, which also moves the install's language tag; the
+     * game's text and audio follow it at the next start (#63). Doesn't start the game.
+     */
+    fun downloadLanguage() {
+        val product = files.product ?: return
+        if (busy) return
+        if (!files.hasStorageAccess) {
+            needsStoragePermission = true
+            return
+        }
+        isUpdating = true
+        updateStatusText = context.getString(R.string.fw_connecting_blizzard)
+        errorMessage = null
+        scope.launch {
+            try {
+                val root = File(gamePath)
+                GameInstaller().run(InstallRequest(root, product, installLocale(root, product))) { p ->
+                    scope.launch(Dispatchers.Main) {
+                        updateStatusText = when (p.phase) {
+                            InstallProgress.Phase.DOWNLOADING -> p.fraction?.let { context.getString(R.string.fw_downloading_language_progress, (it * 100).toInt()) }
+                                ?: context.getString(R.string.fw_downloading_language)
+                            InstallProgress.Phase.RESOLVING -> context.getString(R.string.fw_connecting_blizzard)
+                            else -> context.getString(R.string.fw_finishing_update)
+                        }
+                    }
+                }
+                checkFiles()
+                isUpdating = false
+                checkVersionStatus()
+            } catch (e: Exception) {
+                Timber.e(e, "Error downloading the game language")
+                if (e.isPermissionDenied()) needsStoragePermission = true
+                errorMessage = context.getString(R.string.fw_update_failed, e.message)
+                isUpdating = false
+            }
+        }
+    }
+
     /** Adds the launch product to a beta install, reusing its Data/, then downloads the launch client. */
     fun convertToLaunch() {
         if (busy || files.product != WowProduct.BETA) return
