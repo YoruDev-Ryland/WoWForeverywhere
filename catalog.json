@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-18T06:28:54+00:00",
+ "generated": "2026-11-19T06:29:31+00:00",
  "addons": [
   {
    "repo": "Questie/Questie",
@@ -9,33 +9,33 @@
    "author": "Questie",
    "icon": "https://avatars.githubusercontent.com/u/75445548?v=4",
    "website": "https://github.com/Questie/Questie",
-   "stars": 1161,
-   "downloads": 19592,
-   "updated": "2026-11-17T10:15:42Z",
+   "stars": 1163,
+   "downloads": 14236,
+   "updated": "2026-11-18T17:32:49Z",
    "requires": [],
    "files": {
     "classic": {
-     "fileId": "758567868",
-     "version": "bundle/v12.10.0+v1.1.2",
-     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.10.0%2Bv1.1.2/Questie-v12.10.0%2Bv1.1.2.zip",
+     "fileId": "764328249",
+     "version": "bundle/v12.11.0+v1.1.3",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.11.0%2Bv1.1.3/Questie-v12.11.0%2Bv1.1.3.zip",
      "interface": 11508
     },
     "bcc": {
-     "fileId": "758567868",
-     "version": "bundle/v12.10.0+v1.1.2",
-     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.10.0%2Bv1.1.2/Questie-v12.10.0%2Bv1.1.2.zip",
+     "fileId": "764328249",
+     "version": "bundle/v12.11.0+v1.1.3",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.11.0%2Bv1.1.3/Questie-v12.11.0%2Bv1.1.3.zip",
      "interface": 20506
     },
     "mists": {
-     "fileId": "758567868",
-     "version": "bundle/v12.10.0+v1.1.2",
-     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.10.0%2Bv1.1.2/Questie-v12.10.0%2Bv1.1.2.zip",
+     "fileId": "764328249",
+     "version": "bundle/v12.11.0+v1.1.3",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.11.0%2Bv1.1.3/Questie-v12.11.0%2Bv1.1.3.zip",
      "interface": 50503
     },
     "forever": {
-     "fileId": "758567868",
-     "version": "bundle/v12.10.0+v1.1.2",
-     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.10.0%2Bv1.1.2/Questie-v12.10.0%2Bv1.1.2.zip",
+     "fileId": "764328249",
+     "version": "bundle/v12.11.0+v1.1.3",
+     "url": "https://github.com/Questie/Questie/releases/download/bundle/v12.11.0%2Bv1.1.3/Questie-v12.11.0%2Bv1.1.3.zip",
      "interface": 16001
     }
    }
@@ -48,39 +48,39 @@
    "author": "RestedXP",
    "icon": "https://avatars.githubusercontent.com/u/84252897?v=4",
    "website": "https://github.com/RestedXP/RXPGuides",
-   "stars": 204,
-   "downloads": 45996,
-   "updated": "2026-11-11T23:32:25Z",
+   "stars": 206,
+   "downloads": 1766,
+   "updated": "2026-11-18T23:26:39Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "737296217",
-     "version": "v4.11.36",
-     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.36/RXPGuides-v4.11.36.zip",
+     "fileId": "765400592",
+     "version": "v4.11.37",
+     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.37/RXPGuides-v4.11.37.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "737296217",
-     "version": "v4.11.36",
-     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.36/RXPGuides-v4.11.36.zip",
+     "fileId": "765400592",
+     "version": "v4.11.37",
+     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.37/RXPGuides-v4.11.37.zip",
      "interface": 120007
     },
     "classic": {
-     "fileId": "737296217",
-     "version": "v4.11.36",
-     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.36/RXPGuides-v4.11.36.zip",
+     "fileId": "765400592",
+     "version": "v4.11.37",
+     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.37/RXPGuides-v4.11.37.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "737296217",
-     "version": "v4.11.36",
-     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.36/RXPGuides-v4.11.36.zip",
+     "fileId": "765400592",
+     "version": "v4.11.37",
+     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.37/RXPGuides-v4.11.37.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "737296217",
-     "version": "v4.11.36",
-     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.36/RXPGuides-v4.11.36.zip",
+     "fileId": "765400592",
+     "version": "v4.11.37",
+     "url": "https://github.com/RestedXP/RXPGuides/releases/download/v4.11.37/RXPGuides-v4.11.37.zip",
      "interface": 16001
     }
    }
@@ -94,7 +94,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DeadlyBossMods",
    "stars": 284,
-   "downloads": 5156,
+   "downloads": 5933,
    "updated": "2026-11-13T06:44:43Z",
    "requires": [],
    "files": {
@@ -139,7 +139,7 @@
    "icon": "https://avatars.githubusercontent.com/u/23584625?v=4",
    "website": "https://github.com/DeadlyBossMods/DBM-Dungeons",
    "stars": 33,
-   "downloads": 3984,
+   "downloads": 4533,
    "updated": "2026-11-12T05:39:38Z",
    "requires": [
     "DeadlyBossMods/DeadlyBossMods"
@@ -185,8 +185,8 @@
    "author": "BigWigsMods",
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/BigWigs",
-   "stars": 276,
-   "downloads": 7190,
+   "stars": 277,
+   "downloads": 7906,
    "updated": "2026-11-08T20:38:50Z",
    "requires": [],
    "files": {
@@ -231,7 +231,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17016343?v=4",
    "website": "https://github.com/BigWigsMods/LittleWigs",
    "stars": 116,
-   "downloads": 7436,
+   "downloads": 8025,
    "updated": "2026-11-04T18:52:31Z",
    "requires": [
     "BigWigsMods/BigWigs"
@@ -278,7 +278,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9000280?v=4",
    "website": "https://github.com/Tercioo/Plater-Nameplates",
    "stars": 107,
-   "downloads": 1776,
+   "downloads": 2323,
    "updated": "2026-11-15T12:11:41Z",
    "requires": [],
    "files": {
@@ -323,7 +323,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/ShadowedUnitFrames",
    "stars": 58,
-   "downloads": 26812,
+   "downloads": 27004,
    "updated": "2026-01-18T18:37:26Z",
    "requires": [],
    "files": {
@@ -356,7 +356,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/Dominos",
    "stars": 83,
-   "downloads": 519,
+   "downloads": 848,
    "updated": "2026-11-17T00:46:52Z",
    "requires": [],
    "files": {
@@ -401,38 +401,38 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Bartender4",
    "stars": 76,
-   "downloads": 815,
-   "updated": "2026-11-16T21:09:45Z",
+   "downloads": 215,
+   "updated": "2026-11-18T21:23:37Z",
    "requires": [],
    "files": {
     "mists": {
-     "fileId": "756460332",
-     "version": "4.19.0",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
+     "fileId": "765055881",
+     "version": "4.19.1",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.1/Bartender4-4.19.1.zip",
      "interface": 50504
     },
     "mainline": {
-     "fileId": "756460332",
-     "version": "4.19.0",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
+     "fileId": "765055881",
+     "version": "4.19.1",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.1/Bartender4-4.19.1.zip",
      "interface": 120100
     },
     "classic": {
-     "fileId": "756460332",
-     "version": "4.19.0",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
+     "fileId": "765055881",
+     "version": "4.19.1",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.1/Bartender4-4.19.1.zip",
      "interface": 11509
     },
     "bcc": {
-     "fileId": "756460332",
-     "version": "4.19.0",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
+     "fileId": "765055881",
+     "version": "4.19.1",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.1/Bartender4-4.19.1.zip",
      "interface": 20506
     },
     "forever": {
-     "fileId": "756460332",
-     "version": "4.19.0",
-     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.0/Bartender4-4.19.0.zip",
+     "fileId": "765055881",
+     "version": "4.19.1",
+     "url": "https://github.com/Nevcairiel/Bartender4/releases/download/4.19.1/Bartender4-4.19.1.zip",
      "interface": 16001
     }
    }
@@ -446,7 +446,7 @@
    "icon": "https://avatars.githubusercontent.com/u/318039?v=4",
    "website": "https://github.com/tullamods/OmniCC",
    "stars": 107,
-   "downloads": 24795,
+   "downloads": 25004,
    "updated": "2025-12-14T21:07:04Z",
    "requires": [],
    "files": {
@@ -485,7 +485,7 @@
    "icon": "https://avatars.githubusercontent.com/u/9121773?v=4",
    "website": "https://github.com/WeakAuras/WeakAuras2",
    "stars": 1449,
-   "downloads": 16563,
+   "downloads": 16873,
    "updated": "2026-10-10T17:21:31Z",
    "requires": [],
    "files": {
@@ -518,7 +518,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/Mapster",
    "stars": 20,
-   "downloads": 4826,
+   "downloads": 5051,
    "updated": "2026-10-03T14:08:46Z",
    "requires": [],
    "files": {
@@ -545,7 +545,7 @@
    "icon": "https://avatars.githubusercontent.com/u/17890?v=4",
    "website": "https://github.com/Nevcairiel/HandyNotes",
    "stars": 20,
-   "downloads": 4706,
+   "downloads": 5137,
    "updated": "2026-11-03T05:03:38Z",
    "requires": [],
    "files": {
@@ -590,7 +590,7 @@
    "icon": "https://avatars.githubusercontent.com/u/2187?v=4",
    "website": "https://github.com/kemayo/wow-silverdragon",
    "stars": 28,
-   "downloads": 743,
+   "downloads": 1040,
    "updated": "2026-11-16T05:04:41Z",
    "requires": [],
    "files": {
@@ -635,7 +635,7 @@
    "icon": "https://avatars.githubusercontent.com/u/45636893?v=4",
    "website": "https://github.com/Hoizame/AtlasLootClassic",
    "stars": 91,
-   "downloads": 130373,
+   "downloads": 130514,
    "updated": "2023-10-22T14:37:24Z",
    "requires": [],
    "files": {
@@ -662,7 +662,7 @@
    "icon": "https://avatars.githubusercontent.com/u/19425199?v=4",
    "website": "https://github.com/AdiAddons/AdiBags",
    "stars": 152,
-   "downloads": 101331,
+   "downloads": 101504,
    "updated": "2024-09-08T02:20:23Z",
    "requires": [],
    "files": {
@@ -695,7 +695,7 @@
    "icon": "https://avatars.githubusercontent.com/u/69928556?v=4",
    "website": "https://github.com/SFX-WoW/Masque",
    "stars": 54,
-   "downloads": 8763,
+   "downloads": 9141,
    "updated": "2026-11-02T17:54:22Z",
    "requires": [],
    "files": {
