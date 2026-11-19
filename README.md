@@ -16,10 +16,10 @@ Install the app, let it download the game from Blizzard's servers, pick your add
 </div>
 
 > [!TIP]
-> ### Version 1.0 for WoW Forever's launch
-> Foreverywhere 1.0 lets you choose which WoW account to play when your Battle.net login has more than one. Recent versions added **Download all game data** with **Overnight mode** for slow connections, and **Addon manager mode** for WoW installs you run some other way.
+> ### Can't log in? Version 1.2 adds Battle.net's own sign-in page
+> If the game keeps disconnecting you with **BLZ51914400** ("You have been disconnected"), open **Account**, set **Sign-in method** to **Battle.net sign-in page**, and press **Play**. Battle.net's sign-in page opens, where you can confirm the device or enter a code, and the game then starts signed in, the same way the Battle.net app starts it on a PC. It's new and only for WoW Forever, so if it fails, please open an issue with `_forever_/Logs/BrowserLogin.log` from your game folder.
 >
-> **[Download the latest release](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/latest)** · [What's new in 1.0.0](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/tag/v1.0.0)
+> **[Download the latest release](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/latest)** · [What's new in 1.2.0](https://github.com/YoruDev-Ryland/WoWForeverywhere/releases/tag/v1.2.0)
 
 ## Features
 
@@ -196,7 +196,7 @@ These versions are experimental and get little support. They may run poorly or n
 | The keyboard doesn't appear in the game | Force-stop Gboard under **Settings → Apps → Gboard** and open the keyboard again. |
 | The app returns to the home screen after "Starting World of Warcraft" | Check the files in the game's `Errors` folder (`_forever_/Errors` or `_classic_beta_/Errors`). |
 | "This device can't run the game" | The device has no Adreno GPU. The game needs a Snapdragon chip. |
-| *You have been disconnected (BLZ51914400)* right after logging in, often after a CAPTCHA | Blizzard blocks game logins from a network your account hasn't used, such as mobile data or a new Wi-Fi. First turn off any phone setting that sends traffic over Wi-Fi and mobile data together, such as *Optimize network for speed* in **Settings → System → Network**; that fixed it for one player. Otherwise sign in once at [battle.net](https://account.battle.net/) in your browser on the same connection, then start the game again. **Account → Fix a blocked login** walks you through it. |
+| *You have been disconnected (BLZ51914400)* right after logging in, often after a CAPTCHA | Blizzard blocks game logins from a network or device your account hasn't used. The most reliable fix is **Account → Sign-in method → Battle.net sign-in page** (1.2.0 or later), which signs you in through Battle.net's own page instead of your saved password. Otherwise, turn off any phone setting that sends traffic over Wi-Fi and mobile data together, such as *Optimize network for speed* in **Settings → System → Network**; that fixed it for one player. Otherwise sign in once at [battle.net](https://account.battle.net/) in your browser on the same connection, then start the game again. **Account → Fix a blocked login** walks you through it. |
 | *You have been disconnected (BLZ51914500)* | The password didn't match. Re-enter it under **Account → Change login**. |
 | Login error with more than one WoW account on your Battle.net login | Choose the account under **Account → Game account**. Auto-login skips the game's own account picker. |
 | Stuck on "Launching game..." on Android 17 | Update the app to 1.0.1 or later, which fixes a hang at start on Android 17. |
