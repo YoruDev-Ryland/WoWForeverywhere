@@ -25,10 +25,14 @@ internal object BrowserAuthUrl {
         ) return null
         val query = uri.rawQuery ?: return null
         if (';' in query) return null
-        // Battle.net can add parameters next to the ticket, so others are ignored. Exactly one ST avoids
-        // duplicate-key ambiguity.
-        val tickets = query.split('&').filter { it.startsWith("ST=") }
-        if (tickets.size != 1) return null
+        // Battle.net can add parameters next to the ticket, so others are ignored. Exactly one parameter may be named
+        // ST, spelled that way: a second or an encoded one (%53T) is ambiguous between decoders and is refused.
+        val tickets = try {
+            query.split('&').filter { URLDecoder.decode(it.substringBefore('='), StandardCharsets.UTF_8.name()) == "ST" }
+        } catch (_: IllegalArgumentException) {
+            return null
+        }
+        if (tickets.size != 1 || !tickets.single().startsWith("ST=")) return null
         val decoded = try {
             URLDecoder.decode(tickets.single().substring(3), StandardCharsets.UTF_8.name())
         } catch (_: IllegalArgumentException) {

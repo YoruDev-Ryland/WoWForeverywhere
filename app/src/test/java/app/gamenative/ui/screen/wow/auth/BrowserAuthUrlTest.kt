@@ -47,6 +47,14 @@ class BrowserAuthUrlTest {
     fun takesTheTicketWhenBattleNetAddsOtherParameters() {
         assertEquals("EU-ABC-123", BrowserAuthUrl.ticket("http://localhost:0/?ST=EU-ABC-123&accountId=1")?.decodeToString())
         assertEquals("EU-ABC-123", BrowserAuthUrl.ticket("http://localhost:0/?region=EU&ST=EU-ABC-123")?.decodeToString())
+        assertEquals("EU-ABC-123", BrowserAuthUrl.ticket("http://localhost:0/?ST=EU-ABC-123&flowTrackingId=")?.decodeToString())
+    }
+
+    @Test
+    fun refusesAnEncodedSecondTicketName() {
+        assertNull(BrowserAuthUrl.ticket("http://localhost:0/?ST=x&%53T=y"))
+        assertNull(BrowserAuthUrl.ticket("http://localhost:0/?%53T=x"))
+        assertNull(BrowserAuthUrl.ticket("http://localhost:0/?flowTrackingId=0f8b1c2d"))
     }
 
     @Test
