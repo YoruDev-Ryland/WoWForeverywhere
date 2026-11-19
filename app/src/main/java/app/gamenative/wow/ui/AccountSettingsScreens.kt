@@ -150,6 +150,8 @@ private fun BrowserLoginSection(launcher: LauncherController) {
             }
         }
         if (browser) Text(stringResource(R.string.fw_browser_login_note), style = Fw.Secondary)
+        // The sign-in page never uses the saved password, but it stays stored until the player forgets it (upstream #97).
+        if (browser && launcher.hasSavedLogin) Text(stringResource(R.string.fw_browser_login_saved_password), style = Fw.Secondary)
     }
 }
 
