@@ -559,6 +559,7 @@ class LauncherController(
     /** Settings, Share debug report: this launcher's state as "label: value" lines. */
     fun debugSummary(): List<String> = listOf(
         "GPU profile: ${gpu.edition}, driver ${gpu.driver}, ${gpu.screenSize}",
+        "Graphics driver: ${app.gamenative.wow.GraphicsDrivers.chosen(context) ?: "automatic"}",
         "GPU renderer: ${runCatching { com.winlator.core.GPUInformation.getRenderer(context) }.getOrNull() ?: "unknown"}",
         "Game version: ${version.displayName}" + if (version == GameVersion.FOREVER) ", ${foreverTrack.label}" else "",
         "Region: ${GameRegions.chosen?.label ?: "not chosen (default)"}",

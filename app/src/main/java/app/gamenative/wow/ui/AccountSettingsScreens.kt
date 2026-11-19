@@ -52,6 +52,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.rememberCoroutineScope
 import app.gamenative.wow.FrameGeneration
+import app.gamenative.wow.GraphicsDrivers
 import app.gamenative.wow.debug.DebugLog
 import app.gamenative.wow.debug.DebugReport
 import java.io.File
@@ -294,6 +295,7 @@ fun SettingsScreen(
                 Text(stringResource(R.string.fw_gpu_profile, launcher.gpu.edition), style = Fw.Data)
             }
             ResolutionSection(launcher)
+            GraphicsDriverSection(launcher)
             FrameGenerationSection()
             TroubleshootingSection(launcher, onOpenControllerTest)
             AddonModeSection(null, onOpenAddonMode, onDisableAddonMode)
@@ -461,6 +463,77 @@ private fun ResolutionSection(launcher: LauncherController) {
                 }
             }
         }
+    }
+}
+
+/** Settings, Graphics driver (#68): the device profile's driver, another built-in one, or an added adrenotools zip. */
+@Composable
+private fun GraphicsDriverSection(launcher: LauncherController) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var drivers by remember { mutableStateOf(GraphicsDrivers.list(context)) }
+    var current by remember { mutableStateOf(GraphicsDrivers.chosen(context)) }
+    var message by remember { mutableStateOf<String?>(null) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val (result, name) = withContext(Dispatchers.IO) {
+                runCatching { context.contentResolver.openInputStream(uri) }.getOrNull()
+                    ?.let { GraphicsDrivers.import(context, it) } ?: (GraphicsDrivers.ImportResult.FAILED to null)
+            }
+            message = when (result) {
+                GraphicsDrivers.ImportResult.OK -> null
+                GraphicsDrivers.ImportResult.NOT_A_DRIVER -> context.getString(R.string.fw_graphics_driver_invalid)
+                GraphicsDrivers.ImportResult.NAME_TAKEN -> context.getString(R.string.fw_graphics_driver_name_taken, name.orEmpty())
+                GraphicsDrivers.ImportResult.TOO_LARGE -> context.getString(R.string.fw_graphics_driver_too_large)
+                GraphicsDrivers.ImportResult.FAILED -> context.getString(R.string.fw_graphics_driver_read_failed)
+            }
+            drivers = GraphicsDrivers.list(context)
+            if (result == GraphicsDrivers.ImportResult.OK && name != null) {
+                GraphicsDrivers.choose(context, name)
+                current = name
+            }
+        }
+    }
+    FwSection(stringResource(R.string.fw_graphics_driver)) {
+        Text(stringResource(R.string.fw_graphics_driver_explanation), style = Fw.Secondary)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FwRow(selected = current == null, onClick = {
+                GraphicsDrivers.choose(context, null)
+                current = null
+            }) {
+                Text(stringResource(R.string.fw_automatic_for_this_device), style = Fw.Text, modifier = Modifier.weight(1f))
+                Text(launcher.gpu.driver, style = Fw.Data.copy(color = Fw.Ash))
+                if (current == null) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
+            }
+            drivers.forEach { d ->
+                FwRow(selected = d.name == current, onClick = {
+                    GraphicsDrivers.choose(context, d.name)
+                    current = d.name
+                }) {
+                    Text(
+                        if (d.name == GraphicsDrivers.SYSTEM) stringResource(R.string.fw_graphics_driver_system) else d.name,
+                        style = Fw.Text,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (d.version.isNotEmpty()) Text(d.version, style = Fw.Data.copy(color = Fw.Ash))
+                    if (d.name == current) Text(stringResource(R.string.fw_selected), style = Fw.Data.copy(color = Fw.Brass))
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FwButton(stringResource(R.string.fw_graphics_driver_add), { picker.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }, kind = FwButtonKind.Ghost)
+            drivers.firstOrNull { it.added && it.name == current }?.let { picked ->
+                FwButton(stringResource(R.string.fw_remove), {
+                    scope.launch {
+                        withContext(Dispatchers.IO) { GraphicsDrivers.remove(context, picked.name) }
+                        drivers = GraphicsDrivers.list(context)
+                        current = GraphicsDrivers.chosen(context)
+                    }
+                }, kind = FwButtonKind.Ghost)
+            }
+        }
+        message?.let { Text(it, style = Fw.Secondary.copy(color = Fw.Warn)) }
     }
 }
 

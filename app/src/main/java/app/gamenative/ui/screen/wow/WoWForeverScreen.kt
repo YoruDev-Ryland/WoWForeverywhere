@@ -886,8 +886,8 @@ internal class StorageAccessDeniedException(cause: Throwable) : Exception(cause)
 internal fun Throwable.isPermissionDenied() =
     message?.let { "EPERM" in it || "Operation not permitted" in it } == true
 
-private const val DEFAULT_DRIVER = "Turnip-WoW-scheduler-test"
-private const val ADRENO_8XX_DRIVER = "Turnip-V32-RP6sched"
+internal const val DEFAULT_DRIVER = "Turnip-WoW-scheduler-test"
+internal const val ADRENO_8XX_DRIVER = "Turnip-V32-RP6sched"
 
 private const val PROTON_VERSION = "proton-11.0-90624-arm64ec"
 private const val DXVK_VERSION = "2.4.1-wow-aarch64-test"
@@ -1027,7 +1027,9 @@ internal fun prepareLaunch(
 
     onStatus("Configuring ${gpu.label} container...")
     val containerManager = ContainerManager(context)
-    val config = containerConfig(gameRoot, product, gpu, screenSize)
+    val launchGpu = app.gamenative.wow.GraphicsDrivers.applyTo(context, gpu)
+    Timber.i("Graphics driver: ${launchGpu.driver}${if (launchGpu.driver != gpu.driver) " (picked in Settings)" else ""}")
+    val config = containerConfig(gameRoot, product, launchGpu, screenSize)
     val container = containerManager.getContainerById(CONTAINER_ID)
     if (container == null) {
         onStatus("Creating prefix environment (first boot)...")

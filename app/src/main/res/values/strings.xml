@@ -801,6 +801,14 @@
     <string name="fw_remove">Remove</string>
     <string name="fw_choose_lossless_dll">Choose Lossless.dll</string>
     <string name="fw_resolution">Resolution</string>
+    <string name="fw_graphics_driver">Graphics driver</string>
+    <string name="fw_graphics_driver_explanation">The Vulkan driver the game runs on. Automatic picks the one that works best on this device. If the game won\'t start or looks wrong after a change, go back to Automatic. Changes apply the next time you press Play.</string>
+    <string name="fw_graphics_driver_system">This device\'s own driver</string>
+    <string name="fw_graphics_driver_add">Add a driver (.zip)</string>
+    <string name="fw_graphics_driver_invalid">That file isn\'t a driver: it needs to be an adrenotools driver zip with a meta.json inside.</string>
+    <string name="fw_graphics_driver_name_taken">A built-in driver is already called %1$s. Change the name in the zip\'s meta.json and add it again.</string>
+    <string name="fw_graphics_driver_too_large">That zip is too large to be a driver.</string>
+    <string name="fw_graphics_driver_read_failed">Couldn\'t read that file. Try copying it to your device first.</string>
     <string name="fw_automatic_for_this_device">Automatic, for this device</string>
     <string name="fw_wow_forever_build">WoW Forever build</string>
     <string name="fw_finish_or_cancel_the_current_download_before">Finish or cancel the current download before switching.</string>
