@@ -1,20 +1,19 @@
-A way past the "You have been disconnected" / BLZ51914400 login block, plus a pile of keyboard and login fixes.
+Addon installs and updates you can actually watch, a graphics driver picker, and fixes for newer phones.
 
 ## Added
 
-- **Sign in through Battle.net's own page.** If the game keeps rejecting your saved login with BLZ51914400, go to **Account settings → Sign-in method** and pick **Battle.net sign-in page**. When you press Play, Battle.net's sign-in page opens, where you can confirm the device or enter a code, and the game then starts with a one-time session the way the Battle.net app starts it on a PC. Your password isn't used for this, but a saved one stays on the device until you tap **Forget login**. Only for WoW Forever, and still new, so if it fails please post `_forever_/Logs/BrowserLogin.log` from your game folder.
-- **The game keeps running when you switch apps,** like to an authenticator app for a code. A quiet "World of Warcraft is running" notification shows while it's open.
-- **Pick the game's language in Settings → Game language.** The app downloads that language's files with a repair (#63).
-- **Type your game account name** when Battle.net has several WoW accounts on one login (#25).
+- **Addons install and update side by side, with progress.** Up to three download at once, and each addon shows Queued, how far along it is, Unpacking, or Failed. A bar over the list counts the batch, and when it's done it tells you what updated and what failed, with **Retry**. **Update all** is faster too: it no longer looks every addon up a second time.
+- **The app update shows its download.** After **Update now** the dialog stays open with the download in MB, so a slow connection doesn't look like a failure. You can hide it and keep using the app; the Settings tile shows the percentage, and Android's install prompt opens when it's done.
+- **Pick the graphics driver in Settings → Graphics driver** (#68). Automatic stays the default. You can also pick one of the built-in Turnip drivers, your device's own driver, or add an adrenotools driver zip. If the game won't start after a change, switch back to Automatic.
+- **Sign out of Battle.net** under **Account → Sign-in method** when you use the sign-in page, so another account can sign in next time. **Forget login** signs out too.
 
 ## Fixed
 
-- **Left Shift stays held for the game,** so Shift keybinds no longer only worked with right Shift (#61).
-- **Shift+number keybinds work on a physical keyboard.** Shift+1 used to reach the game as a different key.
-- **MMO mouse side buttons** and other key devices that aren't full keyboards now reach the game.
-- **The game's saved account list is cleared when no account is picked,** which fixes logging into the wrong account (#62, #56).
-- **Adreno 722 devices** (like the Retroid Pocket Duo) use the device's own graphics driver, so the game finds the GPU (#65).
-- **Smaller download.** Proton ships without its unused 32-bit Windows files, about 60 MB less. Those were also what some antivirus apps flagged.
+- **Adreno 850 phones** (like the RedMagic 12 Pro) use the device's own driver, since the built-in Turnip doesn't recognise that GPU and WoW said the 3D accelerator wasn't supported (#76, #78).
+- **Apps on an SD card set up as internal storage** now get a clear message at Play instead of the game closing as it opens. Move the app to the phone's own storage to play (#70).
+- **QuestieDB installs under the right folder name,** fixing "QuestieDB not installed" in game. Thanks @donghyeon-dev (#75).
+- **Re-importing an addon zip** no longer lists the addon twice, and importing one module of a multi-folder addon like DBM keeps the rest of it.
+- **Shift+number keybinds work from MMO mouse side buttons** and other keypads.
 
 ## Install
 
