@@ -144,12 +144,17 @@ class AddonManager(
     /**
      * Installs the addons in a zip already on the device. They're recorded like addons copied in by hand, from their
      * TOCs, so one whose TOC names its CurseForge or Wago project still gets update checks. A record whose folders
-     * the zip all replaced is dropped first, since it describes the copy that was overwritten.
+     * the zip all replaced is dropped first, since it describes the copy that was overwritten. So is an older record
+     * with the same id as an addon in the zip, such as one installed under another folder name, and its old folders.
      */
     suspend fun installFromZip(zip: File): List<InstalledAddon> = lock.withLock {
         val folders = withContext(Dispatchers.IO) { AddonArchive.install(zip, addonsDir) }.toSet()
         val records = db.load()
         db.save(records.filterNot { folders.containsAll(it.folders) })
+        val synced = syncDb()
+        val ids = synced.filter { folders.containsAll(it.folders) }.map { it.id }.toSet()
+        val replaced = synced.filter { it.id in ids }
+        if (replaced.any { !folders.containsAll(it.folders) }) db.save(dropReplaced(synced, replaced, folders))
         syncDb().filter { record -> record.folders.any { it in folders } }
     }
 
@@ -301,11 +306,19 @@ class AddonManager(
         val records = syncDb()
         val newFolders = record.folders.toSet()
         val replaced = records.filter { it.id == record.id || newFolders.containsAll(it.folders) }
+        db.save(dropReplaced(records, replaced, newFolders) + record)
+        return record
+    }
+
+    /**
+     * Returns [records] without [replaced], after deleting the replaced records' folders that aren't in [newFolders]
+     * or listed by a remaining record.
+     */
+    private fun dropReplaced(records: List<InstalledAddon>, replaced: List<InstalledAddon>, newFolders: Set<String>): List<InstalledAddon> {
         val kept = records - replaced.toSet()
         val owned = kept.flatMap { it.folders }.toSet() + newFolders
         replaced.flatMap { it.folders }.filter { it !in owned }.distinct().forEach { deleteFolder(it) }
-        db.save(kept + record)
-        return record
+        return kept
     }
 
     private suspend fun downloadAndExtract(url: String): List<String> = withContext(Dispatchers.IO) {

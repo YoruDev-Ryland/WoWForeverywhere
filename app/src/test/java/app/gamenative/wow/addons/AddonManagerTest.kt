@@ -387,4 +387,25 @@ class AddonManagerTest {
         manager().installFromZip(zip)
         assertEquals(listOf("local:Hello"), db.load().map { it.id })
     }
+
+    @Test
+    fun installFromZipFileReplacesTheSameAddonInAnOldFolder() = runBlocking {
+        val toc = "## Interface: 16001\n## Title: Foo\n## X-Curse-Project-ID: 123\n"
+        // An earlier import installed Foo/Foo_Forever.toc as Foo_Forever.
+        File(addonsDir, "Foo_Forever").mkdirs()
+        File(addonsDir, "Foo_Forever/Foo_Forever.toc").writeText(toc)
+        installedOnDisk(record("local:Other", listOf("Other"), AddonFlavor.MAIN, null))
+        manager().installed()
+        assertEquals(listOf("Foo_Forever"), db.load().single { it.id == "curseforge:123" }.folders)
+
+        val zip = TestZips.write(File(root, "picked.zip"), TestZips.text("Foo/Foo_Forever.toc" to toc, "Foo/core.lua" to "--"))
+        val result = manager().installFromZip(zip).single()
+
+        assertEquals("curseforge:123", result.id)
+        assertEquals(listOf("Foo"), result.folders)
+        assertFalse(File(addonsDir, "Foo_Forever").exists())
+        assertTrue(File(addonsDir, "Other").isDirectory)
+        assertEquals(setOf("local:Other", "curseforge:123"), db.load().map { it.id }.toSet())
+        assertEquals(2, manager().installed().size)
+    }
 }
