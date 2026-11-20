@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.gamenative.BuildConfig
+import app.gamenative.R
 import app.gamenative.PluviaApp
 import app.gamenative.events.AndroidEvent
 import app.gamenative.ui.screen.wow.WowClientDownloader.BUILD_INFO
@@ -917,8 +918,15 @@ internal data class GpuProfile(
          */
         val ADRENO_722 = GpuProfile("System", "", "1280x720", "Adreno 722", "Adreno 722")
 
+        /**
+         * Adreno 850 and newer (RedMagic 12 Pro): the device's own driver ("System"). Turnip V32 doesn't know these GPUs,
+         * so WoW said the 3D accelerator isn't supported (#76, #78); the Adreno 840 still runs on V32.
+         */
+        val ADRENO_85X = GpuProfile("System", "", "1280x720", "Adreno 850", "Adreno 850 or newer")
+
         fun detect(context: Context) = when {
             isMetaQuest3(Build.MANUFACTURER, Build.MODEL, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else "") -> QUEST
+            isAdreno85x(runCatching { GPUInformation.getRenderer(context) }.getOrNull().orEmpty()) -> ADRENO_85X
             isAdreno8xxDevice(context) -> ADRENO_8XX
             isAdreno722(runCatching { GPUInformation.getRenderer(context) }.getOrNull().orEmpty()) -> ADRENO_722
             else -> ADRENO_740
@@ -950,6 +958,15 @@ internal fun isAdreno8xx(renderer: String, socModel: String, hardware: String): 
     Regex("""adreno\D*8\d\d""", RegexOption.IGNORE_CASE).containsMatchIn(renderer) ||
         listOf("SM8735", "SM8750", "SM8845", "SM8850").any { socModel.contains(it, ignoreCase = true) } ||
         hardware.contains("sun", ignoreCase = true)
+
+/** The display socket Wine connects to: TMPDIR (imagefs/usr/tmp) + /.X11-unix/X0. */
+internal fun xSocketPath(imageFsRoot: File) = "${imageFsRoot.path}/usr/tmp/.X11-unix/X0"
+
+/** A Unix socket path has to fit in sun_path: 108 bytes with the closing NUL. */
+internal fun fitsSocketPath(path: String) = path.toByteArray(Charsets.UTF_8).size <= 107
+
+/** An Adreno 850 to 899, from the renderer name ("Adreno (TM) 850"). */
+internal fun isAdreno85x(renderer: String): Boolean = Regex("""adreno\D*8[5-9]\d\b""", RegexOption.IGNORE_CASE).containsMatchIn(renderer)
 
 /** An Adreno 722, from the renderer name ("Adreno (TM) 722"). */
 internal fun isAdreno722(renderer: String): Boolean = Regex("""adreno\D*722\b""", RegexOption.IGNORE_CASE).containsMatchIn(renderer)
@@ -996,6 +1013,9 @@ internal fun prepareLaunch(
     screenSize: String,
     onStatus: (String) -> Unit,
 ): String {
+    // On an SD card set up as internal storage (/mnt/expand/<id>/...) the game's display socket path is too long for
+    // Linux, so the game would close as it opens its window (#70). Say so instead.
+    check(fitsSocketPath(xSocketPath(ImageFs.find(context).rootDir))) { context.getString(R.string.fw_adopted_storage_path_too_long) }
     installBundledComponents(context, onStatus)
 
     check(File(gameRoot, BUILD_INFO).exists()) { "Missing $BUILD_INFO in $gameRoot. Copy it from your WoW install." }

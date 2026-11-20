@@ -53,6 +53,17 @@ class GpuProfileTest {
     }
 
     @Test
+    fun adreno850AndNewerGetTheirOwnProfile() {
+        // RedMagic 12 Pro, #76 and #78.
+        assertTrue(isAdreno85x("Adreno (TM) 850"))
+        assertTrue(isAdreno85x("Adreno (TM) 860"))
+        assertFalse(isAdreno85x("Adreno (TM) 840"))
+        assertFalse(isAdreno85x("Adreno (TM) 830"))
+        assertFalse(isAdreno85x("Adreno (TM) 8500"))
+        assertFalse(isAdreno85x(""))
+    }
+
+    @Test
     fun adreno7xxIsNot8xx() {
         assertFalse(isAdreno8xx("Adreno (TM) 740", "SM8550", "kalama"))
         assertFalse(isAdreno8xx("Adreno (TM) 750", "SM8650", "pineapple"))
@@ -67,5 +78,12 @@ class GpuProfileTest {
         assertFalse(isAdreno722("Adreno (TM) 740"))
         assertFalse(isAdreno722("Adreno (TM) 7220"))
         assertFalse(isAdreno722(""))
+    }
+
+    @Test
+    fun socketPathFitsOnBuiltInStorageButNotAnAdoptedSdCard() {
+        // #70: the Retroid Pocket Nova with the app on an SD card set up as internal storage.
+        assertTrue(fitsSocketPath(xSocketPath(java.io.File("/data/user/0/app.wowforeverywhere/files/imagefs"))))
+        assertFalse(fitsSocketPath(xSocketPath(java.io.File("/mnt/expand/daa02580-9885-4bde-b4ce-6073d0fc0351/user/0/app.wowforeverywhere/files/imagefs"))))
     }
 }
