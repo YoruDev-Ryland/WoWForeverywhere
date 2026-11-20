@@ -144,6 +144,33 @@ class AddonArchiveTest {
     }
 
     @Test
+    fun foreverOnlyTocKeepsTheFolderName() {
+        // QuestieDB's Forever package ships only QuestieDB/QuestieDB_Forever.toc; Questie looks the addon up as "QuestieDB"
+        val file = zip(TestZips.text("QuestieDB/QuestieDB_Forever.toc" to "## Title: QuestieDB", "QuestieDB/db.lua" to "--"))
+        assertEquals(listOf("QuestieDB"), AddonArchive.install(file, addons))
+        assertTrue(File(addons, "QuestieDB/QuestieDB_Forever.toc").isFile)
+        assertFalse(File(addons, "QuestieDB_Forever").exists())
+    }
+
+    @Test
+    fun addonNamedWithAVersionWordKeepsItsName() {
+        // Real addons whose name ends in a version word (Bagnon_Forever, GridStatusRD_MoP) must not be cut
+        val file = zip(
+            TestZips.text(
+                "Bagnon_Forever/Bagnon_Forever.toc" to "## Title: Bagnon Forever",
+                "GridStatusRD_MoP/GridStatusRD_MoP.toc" to "## Title: GridStatusRD",
+            ),
+        )
+        assertEquals(listOf("Bagnon_Forever", "GridStatusRD_MoP"), AddonArchive.install(file, addons))
+    }
+
+    @Test
+    fun gitHubDownloadOfAnAddonNamedWithAVersionWordKeepsTheTocName() {
+        val file = zip(TestZips.text("BLU_Forever-main/BLU_Forever.toc" to "## Title: BLU", "BLU_Forever-main/core.lua" to "--"))
+        assertEquals(listOf("BLU_Forever"), AddonArchive.install(file, addons))
+    }
+
+    @Test
     fun tocAtTheRootIsInstalledUnderItsName() {
         val file = zip(TestZips.text("Foo.toc" to "## Title: Foo", "core.lua" to "--", "libs/Lib.lua" to "--"))
         assertEquals(listOf("Foo"), AddonArchive.install(file, addons))

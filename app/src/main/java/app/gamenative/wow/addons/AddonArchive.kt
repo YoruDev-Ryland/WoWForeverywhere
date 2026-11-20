@@ -9,6 +9,11 @@ object AddonArchive {
     private const val TEMP_PREFIX = ".foreverywhere-extract-"
     private val driveLetter = Regex("^[A-Za-z]:")
     private val flavorSuffix = Regex("[_-](Mainline|Classic|Vanilla|TBC|BCC|Wrath|WOTLKC|Cata|Mists|Standard)$", RegexOption.IGNORE_CASE)
+    /** Every version suffix a client loads a TOC by, for telling whether a folder already matches its TOC. */
+    private val loadedSuffix = Regex(
+        "[_-](Mainline|Classic|Vanilla|TBC|BCC|Wrath|WOTLKC|Cata|Mists|MoP|Standard|Retail|Forever|Camelot)$",
+        RegexOption.IGNORE_CASE,
+    )
 
     /**
      * Extracts [zip] into [addonsDir] and returns the top-level addon folder names written, sorted.
@@ -85,7 +90,8 @@ object AddonArchive {
 
     /**
      * The folder name WoW needs for the addon in [dir]: [dir]'s own name when one of its TOCs is named after it
-     * ("Details" holding Details_Mainline.toc), otherwise its TOC's name without a flavor suffix. Null without a TOC.
+     * ("Details" holding Details_Mainline.toc, "QuestieDB" holding only QuestieDB_Forever.toc, "Bagnon_Forever" holding
+     * Bagnon_Forever.toc), otherwise its TOC's name without a flavor suffix. Null without a TOC.
      */
     private fun tocName(dir: File): String? {
         val tocs = dir.listFiles().orEmpty()
@@ -93,8 +99,11 @@ object AddonArchive {
             .map { it.name.substringBeforeLast('.') }
             .sorted()
         if (tocs.isEmpty()) return null
+        val matchesFolder = tocs.any {
+            it.equals(dir.name, ignoreCase = true) || it.replace(loadedSuffix, "").equals(dir.name, ignoreCase = true)
+        }
+        if (matchesFolder) return dir.name
         val bases = tocs.map { it.replace(flavorSuffix, "") }
-        if (bases.any { it.equals(dir.name, ignoreCase = true) }) return dir.name
         return bases.groupingBy { it }.eachCount().maxBy { it.value }.key.takeIf(::plainName)
             ?: throw IOException("unsafe path")
     }
