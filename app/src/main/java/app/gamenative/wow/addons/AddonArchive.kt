@@ -16,6 +16,13 @@ object AddonArchive {
     )
 
     /**
+     * True when folder [old] is [new] with a version suffix added ("Foo_Forever" for "Foo"): the name an earlier
+     * install gave the same addon before its folder name was kept.
+     */
+    internal fun isSuffixedCopy(old: String, new: String): Boolean =
+        !old.equals(new, ignoreCase = true) && old.replace(loadedSuffix, "").equals(new, ignoreCase = true)
+
+    /**
      * Extracts [zip] into [addonsDir] and returns the top-level addon folder names written, sorted.
      *
      * - The zip is fully extracted into a hidden staging dir inside [addonsDir] first (same

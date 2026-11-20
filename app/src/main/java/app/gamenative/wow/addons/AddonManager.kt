@@ -144,13 +144,40 @@ class AddonManager(
     /**
      * Installs the addons in a zip already on the device. They're recorded like addons copied in by hand, from their
      * TOCs, so one whose TOC names its CurseForge or Wago project still gets update checks. A record whose folders
-     * the zip all replaced is dropped first, since it describes the copy that was overwritten.
+     * the zip all replaced is dropped first, since it describes the copy that was overwritten. A zip addon with the
+     * same id as an older record is folded into it, see [mergeSameId].
      */
     suspend fun installFromZip(zip: File): List<InstalledAddon> = lock.withLock {
         val folders = withContext(Dispatchers.IO) { AddonArchive.install(zip, addonsDir) }.toSet()
         val records = db.load()
         db.save(records.filterNot { folders.containsAll(it.folders) })
+        val synced = syncDb()
+        val merged = mergeSameId(synced, folders)
+        if (merged != synced) db.save(merged)
         syncDb().filter { record -> record.folders.any { it in folders } }
+    }
+
+    /**
+     * Two records with one id would show the same addon twice (and crash the Installed list), so a record the zip just
+     * added is folded into an older one with its id. The older record keeps every folder it had: addons such as DBM
+     * ship several folders under one project, and a zip may hold only one of them. The only folders removed are
+     * suffixed copies of a folder the zip brought in ("Foo_Forever" when "Foo" arrived), left by older installs.
+     * When that leaves nothing of the older record outside the zip, the zip's record replaces it.
+     */
+    private fun mergeSameId(records: List<InstalledAddon>, folders: Set<String>): List<InstalledAddon> {
+        val fresh = records.filter { folders.containsAll(it.folders) }
+        val older = (records - fresh.toSet()).associateBy { it.id }
+        val folded = fresh.filter { it.id in older }
+        if (folded.isEmpty()) return records
+        val replacements = folded.groupBy { it.id }.mapValues { (id, news) ->
+            val old = older.getValue(id)
+            val newFolders = news.flatMap { it.folders }.distinct()
+            val stale = old.folders.filter { o -> o !in folders && newFolders.any { AddonArchive.isSuffixedCopy(o, it) } }
+            stale.forEach { deleteFolder(it) }
+            val outside = old.folders.filter { it !in stale && it !in folders }
+            if (outside.isEmpty() && news.size == 1) news.single() else old.copy(folders = (old.folders - stale.toSet() + newFolders).distinct())
+        }
+        return records.filterNot { it in folded }.map { replacements[it.id] ?: it }
     }
 
     // --- browsing -------------------------------------------------------------------------------

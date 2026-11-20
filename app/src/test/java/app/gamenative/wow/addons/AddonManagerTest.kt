@@ -387,4 +387,41 @@ class AddonManagerTest {
         manager().installFromZip(zip)
         assertEquals(listOf("local:Hello"), db.load().map { it.id })
     }
+
+    @Test
+    fun installFromZipFileReplacesTheSameAddonInAnOldFolder() = runBlocking {
+        val toc = "## Interface: 16001\n## Title: Foo\n## X-Curse-Project-ID: 123\n"
+        // An earlier import installed Foo/Foo_Forever.toc as Foo_Forever.
+        File(addonsDir, "Foo_Forever").mkdirs()
+        File(addonsDir, "Foo_Forever/Foo_Forever.toc").writeText(toc)
+        installedOnDisk(record("local:Other", listOf("Other"), AddonFlavor.MAIN, null))
+        manager().installed()
+        assertEquals(listOf("Foo_Forever"), db.load().single { it.id == "curseforge:123" }.folders)
+
+        val zip = TestZips.write(File(root, "picked.zip"), TestZips.text("Foo/Foo_Forever.toc" to toc, "Foo/core.lua" to "--"))
+        val result = manager().installFromZip(zip).single()
+
+        assertEquals("curseforge:123", result.id)
+        assertEquals(listOf("Foo"), result.folders)
+        assertFalse(File(addonsDir, "Foo_Forever").exists())
+        assertTrue(File(addonsDir, "Other").isDirectory)
+        assertEquals(setOf("local:Other", "curseforge:123"), db.load().map { it.id }.toSet())
+        assertEquals(2, manager().installed().size)
+    }
+
+    @Test
+    fun installFromZipFileOfOneModuleKeepsTheRestOfTheAddon() = runBlocking {
+        // DBM ships several folders under one CurseForge project; a zip may hold only one of them.
+        installedOnDisk(record("curseforge:3358", listOf("DBM-Core", "DBM-GUI"), AddonFlavor.MAIN, SourceRef("curseforge", "3358")))
+        val toc = "## Interface: 16001\n## Title: DBM Raids\n## X-Curse-Project-ID: 3358\n"
+        val zip = TestZips.write(File(root, "module.zip"), TestZips.text("DBM-Raids/DBM-Raids.toc" to toc, "DBM-Raids/core.lua" to "--"))
+
+        manager().installFromZip(zip)
+
+        assertTrue(File(addonsDir, "DBM-Core").isDirectory)
+        assertTrue(File(addonsDir, "DBM-GUI").isDirectory)
+        val dbm = db.load().single { it.id == "curseforge:3358" }
+        assertEquals(setOf("DBM-Core", "DBM-GUI", "DBM-Raids"), dbm.folders.toSet())
+        assertEquals(1, manager().installed().size)
+    }
 }
