@@ -63,6 +63,7 @@ import app.gamenative.wow.ui.components.icon
 import app.gamenative.wow.ui.components.Links
 import app.gamenative.wow.ui.components.ForeverArt
 import app.gamenative.wow.ui.components.FwButton
+import app.gamenative.wow.ui.components.FwProgress
 import app.gamenative.wow.ui.components.FwChip
 import app.gamenative.wow.ui.components.FwButtonKind
 import app.gamenative.wow.ui.components.FwDialog
@@ -108,7 +109,7 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
             FwChip(stringResource(R.string.fw_browse), c.mode == AddonsController.Mode.BROWSE, { c.switchMode(AddonsController.Mode.BROWSE) })
         }
         val updateAll: @Composable () -> Unit = {
-            c.updates?.takeIf { it > 0 }?.let { FwButton(stringResource(R.string.fw_update_all_count, it), c::updateAll, enabled = c.working == null) }
+            c.updates?.takeIf { it > 0 }?.let { FwButton(stringResource(R.string.fw_update_all_count, it), c::updateAll, enabled = c.jobs.values.none { j -> j.active && j.update }) }
         }
         val addAddon: @Composable () -> Unit = { FwButton(stringResource(R.string.fw_add_addon), { showUrlDialog = true }, kind = FwButtonKind.Ghost) }
         if (wideBar) {
@@ -157,6 +158,7 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
             item { FwChip(stringResource(R.string.fw_all_categories), c.category == null, { c.selectCategory(null) }) }
             items(AddonCategory.entries) { cat -> FwChip(categoryLabel(cat), c.category == cat, { c.selectCategory(cat) }) }
         }
+        if (c.jobs.isNotEmpty()) JobStrip(c)
         (c.working ?: c.message)?.let {
             Text(it, style = Fw.Secondary.copy(color = if (c.working != null) Fw.Brass else Fw.Ash), modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
         }
@@ -244,12 +246,17 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
                                 maxLines = 1,
                             )
                         }
+                        val job = c.jobFor(listing)
                         val (state, color) = when {
+                            job != null && job.state != AddonJob.State.DONE -> jobLabel(job) to (if (job.state == AddonJob.State.FAILED) Fw.Warn else Fw.Brass)
                             listing.updateAvailable -> stringResource(R.string.fw_update) to Fw.Warn
                             listing.installed != null -> stringResource(R.string.fw_installed) to Fw.Ok
                             else -> stringResource(R.string.fw_get) to Fw.Ash
                         }
-                        Text(state, style = Fw.Data.copy(color = color))
+                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(state, style = Fw.Data.copy(color = color))
+                            if (job?.state == AddonJob.State.DOWNLOADING) FwProgress(job.fraction, Modifier.width(72.dp))
+                        }
                     }
                 }
             }
@@ -285,7 +292,13 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
                 FlavorMark(listing.bestFlavor, c.version, size = 22)
                 Text(flavorLabel(listing.bestFlavor, c.version), style = Fw.Secondary.copy(color = if (listing.bestFlavor == AddonFlavor.MAIN) Fw.Gem else Fw.Ash))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val job = c.jobFor(listing)
+            if (job != null && job.active) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FwProgress(if (job.state == AddonJob.State.QUEUED) 0f else if (job.state == AddonJob.State.UNPACKING) 1f else job.fraction)
+                    Text(jobDetail(job), style = Fw.Data)
+                }
+            } else Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 val idle = c.working == null
                 when {
                     listing.installed == null -> FwButton(stringResource(R.string.fw_install), { c.install(listing) }, enabled = idle && file?.installable == true)
@@ -297,6 +310,9 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
                     else -> FwButton(stringResource(R.string.fw_installed), {}, enabled = false)
                 }
                 if (listing.installed != null) FwButton(stringResource(R.string.fw_remove), { c.remove(listing) }, kind = FwButtonKind.Danger, enabled = idle)
+            }
+            if (job?.state == AddonJob.State.FAILED) {
+                Text(stringResource(R.string.fw_addon_job_failed_because, job.error.orEmpty()), style = Fw.Secondary.copy(color = Fw.Warn))
             }
             if (file != null && !file.installable) {
                 Text(stringResource(R.string.fw_the_author_doesn_t_allow_downloads_through), style = Fw.Secondary.copy(color = Fw.Warn))
@@ -352,6 +368,65 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
         }
     }
 }
+
+/**
+ * The strip over the list while installs and updates run: what's happening, how many are done, and one bar for them all.
+ * Once they've all finished it says how it went and stays until closed, with Retry when something failed.
+ */
+@Composable
+private fun JobStrip(c: AddonsController) {
+    val jobs = c.jobs.values.toList()
+    val running = jobs.count { it.active }
+    val failed = jobs.filter { it.state == AddonJob.State.FAILED }
+    val done = jobs.count { it.state == AddonJob.State.DONE }
+    val updating = jobs.all { it.update }
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp).clip(Fw.Shape).background(Fw.Stone).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val text = if (running > 0) {
+                val single = jobs.singleOrNull()
+                when {
+                    single != null -> stringResource(if (single.update) R.string.fw_addon_updating else R.string.fw_addon_installing, single.name) + " · " + jobLabel(single)
+                    updating -> stringResource(R.string.fw_addon_jobs_updating, jobs.size - running, jobs.size)
+                    else -> stringResource(R.string.fw_addon_jobs_installing, jobs.size - running, jobs.size)
+                }
+            } else {
+                listOfNotNull(
+                    done.takeIf { it > 0 }?.let { stringResource(if (updating) R.string.fw_addon_jobs_updated else R.string.fw_addon_jobs_installed, it) },
+                    failed.takeIf { it.isNotEmpty() }?.let { f -> stringResource(R.string.fw_addon_jobs_failed, f.size, f.joinToString(", ") { it.name }) },
+                ).joinToString(" · ")
+            }
+            Text(text, style = Fw.Text.copy(color = if (running == 0 && failed.isNotEmpty()) Fw.Warn else Fw.Bone), modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (running == 0) {
+                if (failed.isNotEmpty()) FwButton(stringResource(R.string.fw_retry), c::retryFailed, kind = FwButtonKind.Ghost)
+                FwButton(stringResource(R.string.fw_close), c::closeJobs, kind = FwButtonKind.Ghost)
+            }
+        }
+        if (running > 0) FwProgress(jobs.sumOf { it.share.toDouble() }.toFloat() / jobs.size)
+    }
+}
+
+/** A job's state in a few characters, for the list: Queued, 62%, 3.1 MB, Unpacking, Failed. */
+@Composable
+private fun jobLabel(job: AddonJob): String = when (job.state) {
+    AddonJob.State.QUEUED -> stringResource(R.string.fw_addon_job_queued)
+    AddonJob.State.DOWNLOADING -> job.fraction?.let { stringResource(R.string.fw_addon_job_percent, (it * 100).toInt()) } ?: megabytes(job.bytes) + " MB"
+    AddonJob.State.UNPACKING -> stringResource(R.string.fw_addon_job_unpacking)
+    AddonJob.State.DONE -> stringResource(R.string.fw_installed)
+    AddonJob.State.FAILED -> stringResource(R.string.fw_addon_job_failed)
+}
+
+/** A running job for the detail panel: "Downloading 3.1 of 7.4 MB". */
+@Composable
+private fun jobDetail(job: AddonJob): String = when (job.state) {
+    AddonJob.State.DOWNLOADING -> job.total?.let { stringResource(R.string.fw_addon_job_downloading_of, megabytes(job.bytes), megabytes(it)) }
+        ?: stringResource(R.string.fw_addon_job_downloading, megabytes(job.bytes))
+    else -> jobLabel(job)
+}
+
+private fun megabytes(bytes: Long) = String.format(java.util.Locale.ROOT, "%.1f", bytes / 1_048_576.0)
 
 /** The addon's own icon from its source; falls back to the Forever/Classic mark. */
 @Composable

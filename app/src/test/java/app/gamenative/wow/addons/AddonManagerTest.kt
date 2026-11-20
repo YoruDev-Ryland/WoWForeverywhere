@@ -424,4 +424,35 @@ class AddonManagerTest {
         assertEquals(setOf("DBM-Core", "DBM-GUI", "DBM-Raids"), dbm.folders.toSet())
         assertEquals(1, manager().installed().size)
     }
+
+    @Test
+    fun updateWithTheListedVersionSkipsAnotherLookupAndReportsProgress() = runBlocking {
+        val a = installedOnDisk(InstalledAddon("curseforge:1", "A", listOf("A"), "v1", AddonFlavor.MAIN, SourceRef("curseforge", "1", "1"), 1))
+        cf.addons = listOf(remote("curseforge", "1", "A", latest = mapOf(AddonFlavor.MAIN to file("2", serveAddon("A")))))
+        val listing = manager().checkUpdates().single()
+        val steps = mutableListOf<AddonManager.Step>()
+
+        val updated = manager().update(a, listing.remote) { steps += it }
+
+        assertEquals("2", updated.source!!.fileId)
+        assertTrue("asked the source again: ${cf.gets}", cf.gets.isEmpty())
+        val downloads = steps.filterIsInstance<AddonManager.Step.Downloading>()
+        assertTrue(downloads.isNotEmpty())
+        assertEquals(downloads.last().total, downloads.last().bytes)
+        assertEquals(AddonManager.Step.Unpacking, steps.last())
+    }
+
+    @Test
+    fun updateAllRunsSideBySideAndUpdatesEach() = runBlocking {
+        (1..5).forEach { n ->
+            installedOnDisk(InstalledAddon("curseforge:$n", "A$n", listOf("A$n"), "v1", AddonFlavor.MAIN, SourceRef("curseforge", "$n", "1"), 1))
+        }
+        cf.addons = (1..5).map { n -> remote("curseforge", "$n", "A$n", latest = mapOf(AddonFlavor.MAIN to file("2", serveAddon("A$n")))) }
+
+        val updated = manager().updateAll()
+
+        assertEquals((1..5).map { "curseforge:$it" }.toSet(), updated.map { it.id }.toSet())
+        assertTrue(db.load().all { it.source!!.fileId == "2" })
+        assertEquals(5, db.load().size)
+    }
 }

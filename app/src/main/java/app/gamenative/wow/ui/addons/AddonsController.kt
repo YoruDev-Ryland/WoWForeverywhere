@@ -26,8 +26,34 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+
+/** One install or update the player started, and how far along it is. */
+data class AddonJob(
+    val name: String,
+    val update: Boolean,
+    val state: State = State.QUEUED,
+    val bytes: Long = 0,
+    val total: Long? = null,
+    val error: String? = null,
+) {
+    enum class State { QUEUED, DOWNLOADING, UNPACKING, DONE, FAILED }
+
+    val active get() = state == State.QUEUED || state == State.DOWNLOADING || state == State.UNPACKING
+
+    /** Share of the download done, or null while the size isn't known. */
+    val fraction: Float? get() = total?.takeIf { it > 0 }?.let { (bytes.toFloat() / it).coerceIn(0f, 1f) }
+
+    /** This job's part of the batch bar: a queued job counts nothing, a finished one all of its share. */
+    val share: Float get() = when (state) {
+        State.QUEUED -> 0f
+        State.DOWNLOADING -> (fraction ?: 0f) * 0.9f
+        State.UNPACKING -> 0.9f
+        State.DONE, State.FAILED -> 1f
+    }
+}
 
 /** UI state for the addon browser, bound to one `Interface/AddOns` folder whose addons are for [version]. */
 class AddonsController(val addonsDir: File, val version: GameVersion, private val scope: CoroutineScope, private val context: Context) {
@@ -83,7 +109,28 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
         private set
     var message by mutableStateOf<String?>(null)
 
+    /** Installs and updates started since the strip was last closed, by addon key, in the order they started. */
+    var jobs by mutableStateOf<Map<String, AddonJob>>(emptyMap())
+        private set
+    private val retries = mutableMapOf<String, () -> Unit>()
+
+    /** Downloads at once: enough to keep a phone's connection busy without starving each one. */
+    private val gate = kotlinx.coroutines.sync.Semaphore(3)
+
     val updates get() = installed?.count { it.updateAvailable }
+
+    fun jobFor(listing: AddonListing): AddonJob? = jobs[keyOf(listing)]
+
+    /** Clears the finished jobs from the strip; ones still running stay. */
+    fun closeJobs() {
+        jobs = jobs.filterValues { it.active }
+        retries.keys.retainAll(jobs.keys)
+    }
+
+    /** Starts every failed job again. */
+    fun retryFailed() {
+        jobs.filterValues { it.state == AddonJob.State.FAILED }.keys.mapNotNull { retries[it] }.forEach { it() }
+    }
     val sources = listOf("curseforge", "wago", "wowinterface", "github")
 
     private var loadJob: Job? = null
@@ -169,12 +216,71 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
         selected = selected?.let { sel -> listings.firstOrNull { it.remote.projectId == sel.remote.projectId } } ?: listings.firstOrNull()
     }
 
-    fun install(listing: AddonListing) = act(context.getString(R.string.fw_addon_installing, listing.remote.name)) { markInstalled(listing, manager.install(listing.remote)) }
+    fun install(listing: AddonListing) {
+        startJob(keyOf(listing), listing.remote.name, update = false, retry = { install(listing) }) { step ->
+            markInstalled(listing, manager.install(listing.remote, step))
+        }
+    }
 
-    fun update(listing: AddonListing) = act(context.getString(R.string.fw_addon_updating, listing.remote.name)) {
-        val record = listing.installed ?: return@act
-        val updated = if (record.flavor == AddonFlavor.FALLBACK && listing.bestFlavor == AddonFlavor.MAIN) manager.install(listing.remote) else manager.update(record)
-        markInstalled(listing, updated)
+    fun update(listing: AddonListing) {
+        val record = listing.installed ?: return
+        startJob(keyOf(listing), listing.remote.name, update = true, retry = { update(listing) }) { step ->
+            val updated = if (record.flavor == AddonFlavor.FALLBACK && listing.bestFlavor == AddonFlavor.MAIN) {
+                manager.install(listing.remote, step)
+            } else {
+                manager.update(record, listing.remote, step)
+            }
+            markInstalled(listing, updated)
+        }
+    }
+
+    /**
+     * Runs one install or update as a job: queued until one of the [gate]'s slots is free, then downloading with
+     * progress and unpacking. Starting the same addon again while it runs does nothing. When the last running job
+     * finishes, the installed list is read again once.
+     */
+    private fun startJob(key: String, name: String, update: Boolean, retry: () -> Unit, block: suspend ((AddonManager.Step) -> Unit) -> Unit) {
+        if (jobs[key]?.active == true) return
+        // A new round starts with an empty strip once everything before it has finished.
+        if (jobs.values.none { it.active }) closeJobs()
+        retries[key] = retry
+        message = null
+        put(key, AddonJob(name, update))
+        scope.launch {
+            try {
+                gate.withPermit {
+                    put(key, AddonJob(name, update, AddonJob.State.DOWNLOADING))
+                    var shown = AddonJob(name, update, AddonJob.State.DOWNLOADING)
+                    withContext(Dispatchers.IO) {
+                        block { step ->
+                            val next = when (step) {
+                                is AddonManager.Step.Downloading -> shown.copy(state = AddonJob.State.DOWNLOADING, bytes = step.bytes, total = step.total)
+                                AddonManager.Step.Unpacking -> shown.copy(state = AddonJob.State.UNPACKING)
+                            }
+                            // Every 64 KB would redraw the list hundreds of times; a whole percent or 256 KB is enough.
+                            val moved = next.state != shown.state || next.fraction?.let { f -> (f * 100).toInt() != ((shown.fraction ?: 0f) * 100).toInt() }
+                                ?: (next.bytes - shown.bytes >= 256 * 1024)
+                            if (moved) {
+                                shown = next
+                                scope.launch(Dispatchers.Main) { if (jobs[key]?.active == true) put(key, next) }
+                            }
+                        }
+                    }
+                }
+                put(key, (jobs[key] ?: AddonJob(name, update)).copy(state = AddonJob.State.DONE))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Addon job $name")
+                put(key, (jobs[key] ?: AddonJob(name, update)).copy(state = AddonJob.State.FAILED, error = e.message ?: context.getString(R.string.fw_unknown_error)))
+            } finally {
+                if (jobs.values.none { it.active }) refreshAfterChange()
+            }
+        }
+    }
+
+    private fun put(key: String, job: AddonJob) {
+        jobs = jobs + (key to job)
     }
 
     /** Shows the new state right away; the full refresh after the action fills in the rest. */
@@ -187,9 +293,17 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
 
     fun remove(listing: AddonListing) = act(context.getString(R.string.fw_addon_removing, listing.remote.name)) { listing.installed?.let { manager.remove(it) } }
 
-    fun updateAll() = act(context.getString(R.string.fw_addons_updating_all)) { manager.updateAll() }
+    /** Starts an update for every addon with one, from the versions the installed list already fetched. */
+    fun updateAll() {
+        installed.orEmpty().filter { it.updateAvailable && it.installed != null }.forEach { update(it) }
+    }
 
-    fun installFromUrl(url: String) = act(context.getString(R.string.fw_addon_installing_link)) { manager.installFromUrl(url.trim()) }
+    fun installFromUrl(url: String) {
+        val link = url.trim()
+        startJob("url:$link", context.getString(R.string.fw_addon_installing_link), update = false, retry = { installFromUrl(link) }) { step ->
+            manager.installFromUrl(link, step)
+        }
+    }
 
     /** Installs the addons in a .zip the player picked on the device, copied to the cache first. */
     fun installFromFile(uri: android.net.Uri) {
@@ -224,9 +338,15 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
                 message = context.getString(R.string.fw_addon_action_failed, label, e.message ?: context.getString(R.string.fw_unknown_error))
             } finally {
                 working = null
-                installed = runCatching { withContext(Dispatchers.IO) { manager.installed() } }.getOrDefault(installed.orEmpty())
-                if (mode == Mode.INSTALLED) show(installed.orEmpty()) else show(listings.map { l -> refreshed(l) })
+                refreshAfterChange()
             }
+        }
+    }
+
+    private fun refreshAfterChange() {
+        scope.launch {
+            installed = runCatching { withContext(Dispatchers.IO) { manager.installed() } }.getOrDefault(installed.orEmpty())
+            if (mode == Mode.INSTALLED) show(installed.orEmpty()) else show(listings.map { l -> refreshed(l) })
         }
     }
 

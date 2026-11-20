@@ -110,6 +110,9 @@ class LauncherController(
         private set
     var appUpdateProgress by mutableFloatStateOf(0f)
         private set
+
+    /** Why the last app update download failed, until the player retries or closes it. */
+    var appUpdateError by mutableStateOf<String?>(null)
     var downloadedApk by mutableStateOf<File?>(null)
         private set
     var needsInstallPermission by mutableStateOf(false)
@@ -454,7 +457,7 @@ class LauncherController(
         }
         isDownloadingAppUpdate = true
         appUpdateProgress = 0f
-        errorMessage = null
+        appUpdateError = null
         scope.launch {
             try {
                 val apk = AppUpdater.download(context, target) { appUpdateProgress = it }
@@ -463,7 +466,7 @@ class LauncherController(
                 installOrRequestPermission(apk)
             } catch (e: Exception) {
                 Timber.e(e, "Error downloading app update")
-                errorMessage = context.getString(R.string.fw_app_update_failed, e.message)
+                appUpdateError = e.message ?: context.getString(R.string.fw_unknown_error)
                 isDownloadingAppUpdate = false
             }
         }

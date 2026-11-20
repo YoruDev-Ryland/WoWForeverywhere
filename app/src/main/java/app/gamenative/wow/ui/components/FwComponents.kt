@@ -225,7 +225,8 @@ fun FwDialog(
     confirm: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    dismiss: String = stringResource(R.string.fw_cancel),
+    /** The second button's label; null leaves it out. */
+    dismiss: String? = stringResource(R.string.fw_cancel),
     extra: @Composable ColumnScope.() -> Unit = {},
 ) {
     AlertDialog(
@@ -238,7 +239,7 @@ fun FwDialog(
             }
         },
         confirmButton = { FwButton(confirm, onConfirm) },
-        dismissButton = { FwButton(dismiss, onDismiss, kind = FwButtonKind.Ghost) },
+        dismissButton = dismiss?.let { label -> { FwButton(label, onDismiss, kind = FwButtonKind.Ghost) } },
         containerColor = Fw.Stone,
         shape = RoundedCornerShape(20.dp),
     )

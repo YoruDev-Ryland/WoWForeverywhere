@@ -28,6 +28,8 @@ import app.gamenative.wow.ui.addons.AddonsRoute
 import app.gamenative.wow.ui.addons.AddonsScreen
 import app.gamenative.wow.ui.addons.addonsControllerFor
 import app.gamenative.wow.ui.components.FwDialog
+import app.gamenative.wow.ui.components.FwProgress
+import androidx.compose.material3.Text
 import app.gamenative.wow.ui.theme.Fw
 import app.gamenative.wow.ui.theme.ForeverywhereTheme
 import androidx.compose.runtime.getValue
@@ -74,6 +76,8 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
         }
     }
     var appUpdateDismissed by remember { mutableStateOf(false) }
+    // The download dialog hides on request; the download carries on and the Settings tile shows it.
+    var appUpdateHidden by remember { mutableStateOf(false) }
     // After a game version switch: that version's Home, or its first run when it has no install yet.
     val onVersionChanged = {
         val route = if (launcher.registry.active() == null && launcher.filesMissing) Routes.FIRST_RUN else Routes.HOME
@@ -195,10 +199,46 @@ fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
                 confirm = stringResource(R.string.fw_update_now),
                 onConfirm = {
                     appUpdateDismissed = true
+                    appUpdateHidden = false
                     launcher.performAppUpdate()
                 },
                 onDismiss = { appUpdateDismissed = true },
                 dismiss = stringResource(R.string.fw_later),
+            )
+        }
+        if (launcher.isDownloadingAppUpdate && !appUpdateHidden) {
+            val update = launcher.appUpdate
+            FwDialog(
+                title = stringResource(R.string.fw_app_update_downloading_title, update?.version.orEmpty()),
+                message = stringResource(R.string.fw_app_update_downloading_message),
+                confirm = stringResource(R.string.fw_hide),
+                onConfirm = { appUpdateHidden = true },
+                onDismiss = { appUpdateHidden = true },
+                dismiss = null,
+            ) {
+                FwProgress(launcher.appUpdateProgress)
+                val size = update?.sizeBytes?.takeIf { it > 0 }
+                Text(
+                    if (size != null) {
+                        stringResource(R.string.fw_app_update_megabytes, (launcher.appUpdateProgress * size / 1_048_576).toInt(), (size / 1_048_576).toInt())
+                    } else {
+                        stringResource(R.string.fw_app_update_progress, (launcher.appUpdateProgress * 100).toInt())
+                    },
+                    style = Fw.Data,
+                )
+            }
+        }
+        launcher.appUpdateError?.let { error ->
+            FwDialog(
+                title = stringResource(R.string.fw_app_update_download_failed),
+                message = error,
+                confirm = stringResource(R.string.fw_retry),
+                onConfirm = {
+                    appUpdateHidden = false
+                    launcher.performAppUpdate()
+                },
+                onDismiss = { launcher.appUpdateError = null },
+                dismiss = stringResource(R.string.fw_close),
             )
         }
         // A beta install once WoW Forever is out: asked on every app start until it's switched.

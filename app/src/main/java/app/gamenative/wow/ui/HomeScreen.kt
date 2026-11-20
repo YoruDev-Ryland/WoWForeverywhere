@@ -49,6 +49,7 @@ import app.gamenative.wow.ui.components.FwActionBar
 import app.gamenative.wow.ui.components.FwButton
 import app.gamenative.wow.ui.components.FwButtonKind
 import app.gamenative.wow.ui.components.FwTile
+import app.gamenative.wow.ui.components.FwProgress
 import app.gamenative.wow.ui.theme.Fw
 import java.io.File
 
@@ -231,7 +232,12 @@ private fun SmallTiles(
                 badge = launcher.appUpdate?.let { "NEW" },
                 onClick = onOpenSettings,
             ) {
-                Text(launcher.appUpdate?.let { stringResource(R.string.fw_app_1_s_available, it.version) } ?: stringResource(R.string.fw_app_v_1_s, BuildConfig.VERSION_NAME), style = Fw.Secondary)
+                if (launcher.isDownloadingAppUpdate) {
+                    Text(stringResource(R.string.fw_app_update_progress, (launcher.appUpdateProgress * 100).toInt()), style = Fw.Secondary.copy(color = Fw.Brass))
+                    FwProgress(launcher.appUpdateProgress, Modifier.padding(top = 6.dp))
+                } else {
+                    Text(launcher.appUpdate?.let { stringResource(R.string.fw_app_1_s_available, it.version) } ?: stringResource(R.string.fw_app_v_1_s, BuildConfig.VERSION_NAME), style = Fw.Secondary)
+                }
             }
         }
     }
