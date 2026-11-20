@@ -1059,6 +1059,8 @@
     <string name="fw_sign_in_saved_login">Saved login (email and password)</string>
     <string name="fw_sign_in_browser">Battle.net sign-in page (experimental)</string>
     <string name="fw_browser_login_note">When you press Play, Battle.net\'s own sign-in page opens. Sign in there and finish any code or check it asks for, and the game starts signed in. Each step is written to _forever_/Logs/BrowserLogin.log in your game folder.</string>
+    <string name="fw_browser_login_sign_out">Sign out of Battle.net</string>
+    <string name="fw_browser_login_signed_out">Signed out. The next time you press Play, the sign-in page asks which account to use.</string>
     <string name="fw_browser_login_saved_password">The sign-in page doesn\'t use your saved password, but it stays on this device until you tap Forget login under Battle.net login.</string>
     <string name="fw_browser_login_forever_only">The sign-in page only works for WoW Forever, not the other game versions.</string>
 </resources>

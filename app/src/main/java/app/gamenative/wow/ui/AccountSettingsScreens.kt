@@ -153,6 +153,15 @@ private fun BrowserLoginSection(launcher: LauncherController) {
         if (browser) Text(stringResource(R.string.fw_browser_login_note), style = Fw.Secondary)
         // The sign-in page never uses the saved password, but it stays stored until the player forgets it (upstream #97).
         if (browser && launcher.hasSavedLogin) Text(stringResource(R.string.fw_browser_login_saved_password), style = Fw.Secondary)
+        // The page's cookies keep the last account signed in; signing out lets another account sign in next time.
+        if (browser) {
+            var signedOut by remember { mutableStateOf(false) }
+            FwButton(stringResource(R.string.fw_browser_login_sign_out), {
+                BattleNetBrowserLogin.signOut()
+                signedOut = true
+            }, kind = FwButtonKind.Ghost)
+            if (signedOut) Text(stringResource(R.string.fw_browser_login_signed_out), style = Fw.Secondary)
+        }
     }
 }
 

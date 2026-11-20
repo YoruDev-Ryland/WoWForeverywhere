@@ -243,6 +243,7 @@ class LauncherController(
     fun forgetLogin() {
         BattleNetSignIn.forget(context)
         BattleNetSignIn.removeLoginFile(File(gamePath))
+        app.gamenative.ui.screen.wow.auth.BattleNetBrowserLogin.signOut()
         hasSavedLogin = false
     }
 
