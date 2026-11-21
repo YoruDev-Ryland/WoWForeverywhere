@@ -52,6 +52,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import app.gamenative.wow.product.DeviceClock
@@ -149,6 +151,8 @@ class LauncherController(
         private set
 
     private var launchJob: Job? = null
+    // A canceled preparation may still be finishing a blocking file operation.
+    private val launchPreparationLock = Mutex()
     private var pendingInstallPermission = false
 
     val filesMissing get() = !(files.dataExists && files.buildInfoExists)
@@ -308,12 +312,14 @@ class LauncherController(
             try {
                 val screenSize = fitScreenSizeToWindow(context, gpu.screenSize)
                 val containerId = withContext(Dispatchers.IO) {
-                    prepareLaunch(context, File(gamePath), product, gpu, screenSize) { message, fraction ->
-                        preparationJob.ensureActive()
-                        scope.launch(Dispatchers.Main) {
-                            if (preparationJob.isActive) {
-                                statusText = message
-                                onPreparation(message, fraction)
+                    launchPreparationLock.withLock {
+                        prepareLaunch(context, File(gamePath), product, gpu, screenSize) { message, fraction ->
+                            preparationJob.ensureActive()
+                            scope.launch(Dispatchers.Main) {
+                                if (preparationJob.isActive) {
+                                    statusText = message
+                                    onPreparation(message, fraction)
+                                }
                             }
                         }
                     }
