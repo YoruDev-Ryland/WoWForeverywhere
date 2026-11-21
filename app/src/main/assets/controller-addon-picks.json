@@ -1,0 +1,40 @@
+{
+  "_readme": "Add a project by provider and projectId. The author's documentation must describe a specific controller feature and the project must publish a WoW Forever file. Keep the public project URL and the reason for inclusion with each entry.",
+  "addons": [
+    {
+      "provider": "curseforge",
+      "projectId": "91376",
+      "name": "ConsolePort",
+      "evidence": "https://www.curseforge.com/wow/addons/console-port",
+      "reason": "A gamepad interface with controller navigation and radial menus."
+    },
+    {
+      "provider": "curseforge",
+      "projectId": "1715514",
+      "name": "Controller Forever",
+      "evidence": "https://www.curseforge.com/wow/addons/controllerforever",
+      "reason": "Adds controller bindings, trigger layers, targeting and wheels to Forever's native Gamepad UI."
+    },
+    {
+      "provider": "curseforge",
+      "projectId": "1717482",
+      "name": "Forever Gamepad UI: Questie (Fix)",
+      "evidence": "https://www.curseforge.com/wow/addons/questie-forever-gamepad",
+      "reason": "Adds controller navigation to Questie in Forever's native Gamepad UI."
+    },
+    {
+      "provider": "curseforge",
+      "projectId": "950246",
+      "name": "CouchMode",
+      "evidence": "https://www.curseforge.com/wow/addons/consolebags",
+      "reason": "Controller-oriented interface utilities for Forever's native Gamepad UI, with optional ConsolePort integration."
+    },
+    {
+      "provider": "curseforge",
+      "projectId": "1731245",
+      "name": "Improved Forever",
+      "evidence": "https://www.curseforge.com/wow/addons/improved-forever",
+      "reason": "A modular collection of gamepad features, including radial wheels and controller auction-house navigation."
+    }
+  ]
+}

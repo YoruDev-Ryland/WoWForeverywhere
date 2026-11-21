@@ -857,6 +857,8 @@
     <string name="fw_allow_app_installs">允許安裝應用</string>
     <string name="fw_browse">瀏覽</string>
     <string name="fw_forever_only">僅 Forever</string>
+    <string name="fw_controller_picks">手把推薦</string>
+    <string name="fw_no_controller_picks_found">找不到符合條件的手把推薦插件。請調整搜尋詞或篩選條件。</string>
     <string name="fw_all_sources">全部來源</string>
     <string name="fw_all_categories">全部分類</string>
     <string name="fw_back_to_list">返回列表</string>

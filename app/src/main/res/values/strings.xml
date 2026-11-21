@@ -869,6 +869,8 @@
     <string name="fw_add_addon_explanation">Paste a GitHub repository link or a direct link to an addon .zip, or choose a .zip on this device.</string>
     <string name="fw_choose_a_zip_file">Choose a .zip file</string>
     <string name="fw_forever_only">Forever only</string>
+    <string name="fw_controller_picks">Controller picks</string>
+    <string name="fw_no_controller_picks_found">No controller picks found. Try changing your search or filters.</string>
     <string name="fw_all_sources">All sources</string>
     <string name="fw_all_categories">All categories</string>
     <string name="fw_back_to_list">Back to list</string>

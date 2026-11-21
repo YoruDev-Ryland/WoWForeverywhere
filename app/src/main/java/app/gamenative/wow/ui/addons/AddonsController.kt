@@ -12,9 +12,11 @@ import app.gamenative.wow.addons.AddonDb
 import app.gamenative.wow.addons.AddonFlavor
 import app.gamenative.wow.addons.AddonListing
 import app.gamenative.wow.addons.AddonManager
+import app.gamenative.wow.addons.SourceRef
 import app.gamenative.wow.addons.addonTarget
 import app.gamenative.wow.addons.provider.CurseForgeProvider
 import app.gamenative.wow.addons.provider.GitHubProvider
+import app.gamenative.wow.addons.provider.ProviderJson
 import app.gamenative.wow.addons.provider.WagoProvider
 import app.gamenative.wow.addons.provider.WowInterfaceProvider
 import app.gamenative.wow.product.GameVersion
@@ -25,9 +27,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import timber.log.Timber
 
 /** One install or update the player started, and how far along it is. */
@@ -63,6 +67,15 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
 
     enum class Mode { INSTALLED, BROWSE }
 
+    @Serializable
+    private data class ControllerCatalog(val addons: List<SourceRef>)
+
+    private val controllerCatalog by lazy {
+        context.assets.open("controller-addon-picks.json").bufferedReader().use {
+            ProviderJson.decodeFromString<ControllerCatalog>(it.readText()).addons
+        }
+    }
+
     private val target = version.addonTarget()
     private val manager = AddonManager(
         addonsDir = addonsDir,
@@ -88,6 +101,8 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
     var query by mutableStateOf("")
         private set
     var includeClassic by mutableStateOf(true)
+        private set
+    var controllerPicksOnly by mutableStateOf(false)
         private set
     var source by mutableStateOf<String?>(null)
         private set
@@ -147,7 +162,13 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
     fun switchMode(newMode: Mode) {
         mode = newMode
         selected = null
-        if (newMode == Mode.INSTALLED) show(installed.orEmpty()) else load()
+        if (newMode == Mode.INSTALLED) {
+            loadJob?.cancel()
+            loading = false
+            show(installed.orEmpty())
+        } else {
+            load()
+        }
     }
 
     fun search(text: String) {
@@ -158,6 +179,12 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
     fun toggleClassic() {
         includeClassic = !includeClassic
         if (mode == Mode.INSTALLED) show(installed.orEmpty()) else load()
+    }
+
+    fun toggleControllerPicks() {
+        controllerPicksOnly = !controllerPicksOnly
+        selected = null
+        load()
     }
 
     fun selectCategory(value: AddonCategory?) {
@@ -186,12 +213,20 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
 
     private fun load(debounce: Boolean = false) {
         loadJob?.cancel()
+        loading = true
+        val searchQuery = query
+        val searchCategory = category
+        val searchClassic = includeClassic
+        val searchControllerPicks = controllerPicksOnly
         loadJob = scope.launch {
-            if (debounce) delay(400)
-            loading = true
             try {
+                if (debounce) delay(400)
                 val found = withContext(Dispatchers.IO) {
-                    if (query.isBlank()) manager.popular(includeClassic, category) else manager.search(query, includeClassic, category)
+                    when {
+                        searchControllerPicks -> manager.controllerPicks(controllerCatalog, searchQuery, searchCategory)
+                        searchQuery.isBlank() -> manager.popular(searchClassic, searchCategory)
+                        else -> manager.search(searchQuery, searchClassic, searchCategory)
+                    }
                 }
                 show(found)
             } catch (e: CancellationException) {
@@ -200,7 +235,7 @@ class AddonsController(val addonsDir: File, val version: GameVersion, private va
                 message = context.getString(R.string.fw_addon_sites_unreachable)
                 Timber.w(e, "Addon search failed")
             } finally {
-                loading = false
+                if (isActive) loading = false
             }
         }
     }

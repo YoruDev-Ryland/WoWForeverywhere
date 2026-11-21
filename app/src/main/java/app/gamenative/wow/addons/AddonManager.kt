@@ -64,6 +64,22 @@ class AddonManager(
     suspend fun popular(includeClassic: Boolean = true, category: AddonCategory? = null): List<AddonListing> =
         browse(includeClassic, category) { it.popular(0, category) }
 
+    /** Fetches curated projects directly so provider search ranking and paging cannot hide them. */
+    internal suspend fun controllerPicks(
+        projects: List<SourceRef>,
+        query: String,
+        category: AddonCategory?,
+    ): List<AddonListing> {
+        val idsByProvider = projects.groupBy({ it.provider }, { it.projectId })
+        val nameQuery = query.trim()
+        return browse(includeClassic = false, category = category) { provider ->
+            val ids = idsByProvider[provider.id].orEmpty()
+            if (ids.isEmpty()) emptyList() else provider.getMany(ids).filter {
+                it.projectId in ids && AddonFlavor.MAIN in it.latest && it.name.contains(nameQuery, ignoreCase = true)
+            }
+        }
+    }
+
     /** The long description from the first of [listing]'s sources that has one. */
     suspend fun description(listing: AddonListing): String? {
         val order = listOf(listing.remote.provider) + listing.sources
