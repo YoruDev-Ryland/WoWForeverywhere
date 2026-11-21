@@ -145,14 +145,17 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
                 addAddon()
             }
         }
-        // One scrolling row of filters: game version, source, then categories.
+        // One scrolling row of filters.
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(vertical = 10.dp),
         ) {
+            if (c.version == GameVersion.FOREVER && c.mode == AddonsController.Mode.BROWSE) {
+                item { FwChip(stringResource(R.string.fw_controller_picks), c.controllerPicksOnly, c::toggleControllerPicks) }
+            }
             // Only WoW Forever has a fallback version (Classic Era) to include or leave out.
-            if (c.version == GameVersion.FOREVER) item { FwChip(if (c.includeClassic) "Forever + Classic" else stringResource(R.string.fw_forever_only), false, c::toggleClassic) }
+            if (c.version == GameVersion.FOREVER && !(c.mode == AddonsController.Mode.BROWSE && c.controllerPicksOnly)) item { FwChip(if (c.includeClassic) "Forever + Classic" else stringResource(R.string.fw_forever_only), false, c::toggleClassic) }
             item { FwChip(c.source?.let { sourceName(it, localSource) } ?: stringResource(R.string.fw_all_sources), false, c::cycleSource) }
             item { Box(Modifier.width(1.dp).height(42.dp).background(Fw.Rule)) }
             item { FwChip(stringResource(R.string.fw_all_categories), c.category == null, { c.selectCategory(null) }) }
@@ -214,8 +217,11 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
             c.listings.isEmpty() -> Text(
                 when (c.mode) {
                     AddonsController.Mode.INSTALLED -> if (c.installed == null) stringResource(R.string.fw_reading_your_addons_folder) else stringResource(R.string.fw_no_addons_installed_yet_switch_to_browse)
-                    AddonsController.Mode.BROWSE ->
-                        if (c.version == GameVersion.FOREVER) stringResource(R.string.fw_nothing_found_try_another_name_or_include) else stringResource(R.string.fw_nothing_found_try_another_name)
+                    AddonsController.Mode.BROWSE -> when {
+                        c.controllerPicksOnly -> stringResource(R.string.fw_no_controller_picks_found)
+                        c.version == GameVersion.FOREVER -> stringResource(R.string.fw_nothing_found_try_another_name_or_include)
+                        else -> stringResource(R.string.fw_nothing_found_try_another_name)
+                    }
                 },
                 style = Fw.Secondary,
                 modifier = Modifier.padding(20.dp),

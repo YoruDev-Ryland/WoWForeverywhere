@@ -127,6 +127,27 @@ class AddonManagerTest {
     }
 
     @Test
+    fun controllerPicksMatchCuratedSourceAndProjectAndRequireForeverFiles() = runBlocking {
+        val foreverFile = mapOf(AddonFlavor.MAIN to file("forever"))
+        cf.addons = listOf(
+            remote("curseforge", "1", "Gamepad Quest Tracker", latest = foreverFile)
+                .copy(categories = setOf(AddonCategory.QUESTS)),
+            remote("curseforge", "2", "Gamepad Classic Only", latest = mapOf(AddonFlavor.FALLBACK to file("classic"))),
+            remote("curseforge", "3", "Unlisted Gamepad Addon", latest = foreverFile),
+        )
+        wago.addons = listOf(remote("wago", "1", "Unlisted Gamepad Addon With Same ID", latest = foreverFile))
+        val catalog = listOf(SourceRef("curseforge", "1"), SourceRef("curseforge", "2"))
+        val manager = manager()
+
+        val results = manager.controllerPicks(catalog, " QUEST ", AddonCategory.QUESTS)
+
+        assertEquals(listOf("1"), results.map { it.remote.projectId })
+        assertEquals(listOf("curseforge"), results.single().sources)
+        assertEquals(listOf("1"), manager.controllerPicks(catalog, "", null).map { it.remote.projectId })
+        assertTrue(manager.controllerPicks(catalog, "gamepad", AddonCategory.BAGS).isEmpty())
+    }
+
+    @Test
     fun searchMergesDuplicatesAcrossProviders() = runBlocking {
         cf.addons = listOf(
             remote("curseforge", "1", "Questie", "AeroScripts", 1_000, mapOf(AddonFlavor.FALLBACK to file("c1"))),
