@@ -128,9 +128,18 @@ class MainViewModel @Inject constructor(
         _state.update { it.copy(showBootingSplash = value, bootingSplashProgress = -1f) }
     }
 
+    fun setLaunchPreparation(text: String?, fraction: Float) {
+        _state.update { it.copy(launchPreparation = text?.let { message -> message to fraction }) }
+    }
+
     private fun updateBootingSplash(text: String, fraction: Float) {
         _state.update {
-            if (it.showBootingSplash) it.copy(bootingSplashText = text, bootingSplashProgress = fraction) else it
+            when {
+                it.showBootingSplash -> it.copy(bootingSplashText = text, bootingSplashProgress = fraction)
+                it.loadingDialogVisible -> it.copy(loadingDialogMessage = text, loadingDialogProgress = fraction)
+                it.launchPreparation != null -> it.copy(launchPreparation = text to fraction)
+                else -> it
+            }
         }
     }
 

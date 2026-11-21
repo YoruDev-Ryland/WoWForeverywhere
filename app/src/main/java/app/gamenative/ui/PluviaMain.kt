@@ -277,7 +277,6 @@ fun PluviaMain(
             var initialSplash by remember {
                 mutableStateOf(WoWLauncherState.shouldAutoLaunch && GamePath.isReady(context))
             }
-            var preparation by remember { mutableStateOf<Pair<String, Float>?>(null) }
             var preLaunchJob by remember { mutableStateOf<Job?>(null) }
 
             DisposableEffect(Unit) {
@@ -299,15 +298,15 @@ fun PluviaMain(
 
             Box(modifier = Modifier.zIndex(10f)) {
                 BootingSplash(
-                    visible = state.showBootingSplash || preparation != null || initialSplash,
+                    visible = state.showBootingSplash || state.launchPreparation != null || initialSplash,
                     text = when {
                         state.showBootingSplash -> state.bootingSplashText
-                        else -> preparation?.first ?: stringResource(R.string.fw_booting_game)
+                        else -> state.launchPreparation?.first ?: stringResource(R.string.fw_booting_game)
                     },
-                    progress = if (state.showBootingSplash) state.bootingSplashProgress else preparation?.second ?: -1f,
+                    progress = if (state.showBootingSplash) state.bootingSplashProgress else state.launchPreparation?.second ?: -1f,
                     onAbort = {
                         BattleNetBrowserLogin.cancel()
-                        preparation = null
+                        viewModel.setLaunchPreparation(null, -1f)
                         initialSplash = false
                         preLaunchJob?.cancel()
                         preLaunchJob = null
@@ -329,7 +328,7 @@ fun PluviaMain(
                     ForeverywhereApp(
                         onPreparation = { message, fraction ->
                             initialSplash = false
-                            preparation = message?.let { it to fraction }
+                            viewModel.setLaunchPreparation(message, fraction)
                         },
                         onLaunch = { appId ->
                             viewModel.setLaunchedAppId(appId)

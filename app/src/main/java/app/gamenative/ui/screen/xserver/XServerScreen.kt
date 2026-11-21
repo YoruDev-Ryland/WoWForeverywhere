@@ -106,6 +106,7 @@ import app.gamenative.ui.data.PerformanceHudConfig
 import app.gamenative.ui.data.PerformanceHudSize
 import app.gamenative.ui.data.XServerState
 import app.gamenative.GameSessionService
+import app.gamenative.ui.components.BootComponentProgress
 import app.gamenative.ui.screen.wow.auth.BattleNetBrowserLogin
 import app.gamenative.ui.widget.PerformanceHudView
 import app.gamenative.utils.AssetUtils
@@ -4204,23 +4205,12 @@ private suspend fun downloadBootComponent(
     download: suspend ((Float) -> Unit) -> File?,
 ): File? {
     val launchContext = currentCoroutineContext()
-    var lastPercent: Int? = null
+    val progress = BootComponentProgress(context, component)
     val file = download { fraction ->
         launchContext.ensureActive()
-        val percent = if (fraction < 0f) -1 else (fraction * 100).toInt().coerceIn(0, 100)
-        if (percent != lastPercent) {
-            lastPercent = percent
-            val label = if (percent < 0) {
-                context.getString(R.string.fw_launch_downloading_component, component)
-            } else {
-                context.getString(R.string.fw_launch_downloading_component_percent, component, percent)
-            }
-            PluviaApp.events.emit(AndroidEvent.SetBootingSplashText(label, if (percent < 0) -1f else percent / 100f))
-        }
+        progress.onProgress(fraction)
     }
-    if (lastPercent != null) {
-        PluviaApp.events.emit(AndroidEvent.SetBootingSplashText(context.getString(R.string.fw_launch_preparing_component, component)))
-    }
+    progress.prepare()
     return file
 }
 
