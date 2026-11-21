@@ -6,8 +6,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.gamenative.PluviaApp
+import app.gamenative.R
 import app.gamenative.events.AndroidEvent
 import app.gamenative.ui.screen.wow.BattleNetSignIn
 import app.gamenative.ui.screen.wow.configPortal
@@ -80,24 +82,24 @@ internal object BattleNetBrowserLogin {
         cancel()
         val gameRoot = Container.drivesIterator(container.drives).asSequence()
             .firstOrNull { it[0].equals("G", ignoreCase = true) }?.let { File(it[1]) }
-            ?: throw IOException("Cannot locate the game drive for browser login")
+            ?: throw IOException(context.getString(R.string.fw_browser_login_no_drive))
         // The session is for WoW Forever's title, which the other products don't share.
         val product = detectProduct(gameRoot)?.takeIf { it == WowProduct.FOREVER }
-            ?: throw IOException("Browser login only works for WoW Forever")
+            ?: throw IOException(context.getString(R.string.fw_browser_login_forever_only))
         val build = BuildInfo.read(gameRoot)?.active(product)
             ?.get("Version")?.substringAfterLast('.')?.toIntOrNull()?.takeIf { it > 0 }
-            ?: throw IOException("Cannot read the installed game build for browser login")
+            ?: throw IOException(context.getString(R.string.fw_browser_login_no_build))
         // The portal the game itself logs into (Config.wtf, written just before), so Taiwan uses the Korean one (#35).
         val portal = runCatching { configPortal(File(gameRoot, "${product.flavorDir}/WTF/Config.wtf").readLines()) }.getOrNull()
             ?.takeIf { it.isNotBlank() } ?: installPortal(gameRoot, product)
         val locale = installLocale(gameRoot, product)
         BattleNetSignIn.removeLoginFile(gameRoot)
         check(!File(gameRoot, "${product.flavorDir}/login.txt").exists()) {
-            "Remove the old login.txt before using browser login"
+            context.getString(R.string.fw_browser_login_remove_file)
         }
 
         val directory = File(container.rootDir, ".wine/drive_c/wow-session")
-        check(directory.isDirectory || directory.mkdirs()) { "Cannot prepare browser login" }
+        check(directory.isDirectory || directory.mkdirs()) { context.getString(R.string.fw_browser_login_prepare_failed) }
         // The prefix is in Android's app-private directory, never shared game storage.
         val helper = File(directory, ASSET)
         context.assets.open(ASSET).use { input -> helper.outputStream().use { input.copyTo(it) } }
@@ -108,24 +110,25 @@ internal object BattleNetBrowserLogin {
             request.setReadable(false, false)
             request.setWritable(false, false)
             check(request.setReadable(true, true) && request.setWritable(true, true)) {
-                "Cannot protect the browser login request"
+                context.getString(R.string.fw_browser_login_protect_failed)
             }
             val log = File(gameRoot, "${product.flavorDir}/Logs/BrowserLogin.log")
-            val attempt = Attempt(bridge, request, "${portal.lowercase()}.actual.battle.net", build, locale, log)
+            val localizedContext = context.applicationContext.createConfigurationContext(context.resources.configuration)
+            val attempt = Attempt(localizedContext, bridge, request, "${portal.lowercase()}.actual.battle.net", build, locale, log)
             diag(attempt, "browser login started (app ${app.gamenative.BuildConfig.VERSION_NAME}, portal $portal, $locale, build $build)")
             active = attempt
-            mutableUi.value = Ui.Waiting("Starting Battle.net browser login…")
+            mutableUi.value = Ui.Waiting(context.getString(R.string.fw_browser_login_starting))
             // One deadline covers Wine startup, queues and browser interaction, below the helper's 15 minutes.
             attempt.watchdog = scope.launch {
                 delay(10 * 60_000L)
-                fail(attempt, "Browser login timed out. Please try again.")
+                fail(attempt, attempt.context.getString(R.string.fw_browser_login_timeout))
             }
             attempt.job = scope.launch { run(attempt) }
             // These arguments contain paths and public switches only. The token travels over the authenticated socket.
             // No quotes: ProcessHelper.splitCommand keeps quote characters, so Wine would get them as part of each
             // path and couldn't find the helper. None of these paths contain spaces.
             val gamePath = container.executablePath
-            check(' ' !in gamePath) { "The game path can't contain spaces for browser login" }
+            check(' ' !in gamePath) { context.getString(R.string.fw_browser_login_path_spaces) }
             val command = "C:\\wow-session\\$ASSET C:\\wow-session\\${request.name} " +
                 "$gamePath -launcherlogin -uid ${product.code}"
             return Launch(command) { status -> guestExited(attempt, status) }
@@ -152,7 +155,7 @@ internal object BattleNetBrowserLogin {
                 val ticket = withTimeout(15 * 60_000L) { attempt.ticket.await() }
                 diag(attempt, "sign-in page finished")
                 try {
-                    publish(attempt, Ui.Waiting("Completing Battle.net sign-in…"))
+                    publish(attempt, Ui.Waiting(attempt.context.getString(R.string.fw_browser_login_finishing)))
                     // A fresh connection avoids holding a BGS socket open while the user handles CAPTCHA or 2FA.
                     val token = withClient(attempt) { client ->
                         client.connect()
@@ -161,7 +164,7 @@ internal object BattleNetBrowserLogin {
                     }
                     try {
                         diag(attempt, "Battle.net issued a game session; handing it to the helper")
-                        publish(attempt, Ui.Waiting("Starting WoW with the Battle.net session…"))
+                        publish(attempt, Ui.Waiting(attempt.context.getString(R.string.fw_browser_login_launching)))
                         peer.launch(token)
                     } finally {
                         token.fill(0)
@@ -174,19 +177,24 @@ internal object BattleNetBrowserLogin {
                 publish(attempt, Ui.Idle)
             }
         } catch (_: TimeoutCancellationException) {
-            fail(attempt, "Browser login timed out. Please try again.")
+            fail(attempt, attempt.context.getString(R.string.fw_browser_login_timeout))
         } catch (_: CancellationException) {
             // User cancellation does not turn into a password-login attempt.
         } catch (error: BgsException) {
             diag(attempt, "Battle.net error: ${error.message}")
-            fail(attempt, error.message ?: "Battle.net sign-in failed.")
+            val message = when (val status = error.status) {
+                33L -> attempt.context.getString(R.string.fw_browser_login_build_unavailable)
+                null -> attempt.context.getString(R.string.fw_browser_login_failed)
+                else -> attempt.context.getString(R.string.fw_browser_login_rejected, status)
+            }
+            fail(attempt, message)
         } catch (error: Exception) {
             // Closing the listener during exit/cancellation can interrupt accept with SocketException.
             if (attempt.cancelled) return
             // The exception type only: messages can carry provider payloads or addresses.
             diag(attempt, "stopped: ${error.javaClass.simpleName}")
             // Never expose provider payloads, redirect URLs, credentials or arbitrary peer output.
-            fail(attempt, "Browser sign-in could not start the game. You can retry or switch back to password login in the launcher.")
+            fail(attempt, attempt.context.getString(R.string.fw_browser_login_start_failed))
         } finally {
             attempt.close()
             synchronized(this) { if (active === attempt) active = null }
@@ -292,13 +300,14 @@ internal object BattleNetBrowserLogin {
         if (active !== attempt || attempt.cancelled) return
         if (mutableUi.value !is Ui.Idle && mutableUi.value !is Ui.Failed) {
             mutableUi.value = Ui.Failed(
-                "The Wine login helper stopped before sign-in completed (status $status). Details are in _forever_/Logs/BrowserLogin.log in your game folder.",
+                attempt.context.getString(R.string.fw_browser_login_helper_stopped, status),
             )
         }
         cancel(preserveFailure = true)
     }
 
     private class Attempt(
+        val context: Context,
         val bridge: SessionBridge,
         val request: File,
         val host: String,
@@ -340,7 +349,7 @@ internal fun BattleNetBrowserLoginHost() {
         )
         else -> AlertDialog(
             onDismissRequest = { BattleNetBrowserLogin.abort(current) },
-            title = { Text("Battle.net browser login") },
+            title = { Text(stringResource(R.string.fw_browser_login_title)) },
             text = { Text(when (current) {
                 is BattleNetBrowserLogin.Ui.Waiting -> current.text
                 is BattleNetBrowserLogin.Ui.Failed -> current.text
@@ -348,7 +357,7 @@ internal fun BattleNetBrowserLoginHost() {
             }) },
             confirmButton = {
                 TextButton(onClick = { BattleNetBrowserLogin.abort(current) }) {
-                    Text(if (current is BattleNetBrowserLogin.Ui.Failed) "Close" else "Cancel")
+                    Text(stringResource(if (current is BattleNetBrowserLogin.Ui.Failed) R.string.close else R.string.cancel))
                 }
             },
         )

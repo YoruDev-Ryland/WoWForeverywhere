@@ -27,10 +27,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import app.gamenative.R
 import java.io.ByteArrayInputStream
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -46,18 +48,18 @@ internal fun BattleNetWebDialog(
     onCancel: () -> Unit,
     onError: (String) -> Unit,
 ) {
+    val context = LocalContext.current
     val ticketCallback by rememberUpdatedState(onTicket)
     val cancelCallback by rememberUpdatedState(onCancel)
     val errorCallback by rememberUpdatedState(onError)
     val completed = remember(url) { AtomicBoolean(false) }
     if (!BrowserAuthUrl.isInitialUrl(url)) {
         LaunchedEffect(url) {
-            if (completed.compareAndSet(false, true)) errorCallback("Battle.net returned an unsupported sign-in address.")
+            if (completed.compareAndSet(false, true)) errorCallback(context.getString(R.string.fw_browser_login_bad_address))
         }
         return
     }
 
-    val context = LocalContext.current
     var origin by remember(url) { mutableStateOf(BrowserAuthUrl.displayOrigin(url) ?: "Battle.net") }
     val webView = remember(url) {
         WebView(context).apply {
@@ -95,7 +97,7 @@ internal fun BattleNetWebDialog(
                     if (address == "about:blank") return true
                     if (!BrowserAuthUrl.isNavigationUrl(address)) {
                         BattleNetBrowserLogin.note("sign-in page refused ${BrowserAuthUrl.describe(address)}")
-                        fail(view, "Sign-in tried to open an unsupported address. Cancel and try again.")
+                        fail(view, context.getString(R.string.fw_browser_login_bad_redirect))
                         return true
                     }
                     origin = BrowserAuthUrl.displayOrigin(address) ?: "Battle.net"
@@ -122,15 +124,15 @@ internal fun BattleNetWebDialog(
 
                 override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
                     handler.cancel()
-                    fail(view, "The sign-in page's secure connection could not be verified.")
+                    fail(view, context.getString(R.string.fw_browser_login_insecure))
                 }
 
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                    if (request.isForMainFrame && !completed.get()) fail(view, "The sign-in page could not load. Check your connection and try again.")
+                    if (request.isForMainFrame && !completed.get()) fail(view, context.getString(R.string.fw_browser_login_load_failed))
                 }
 
                 override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, errorResponse: WebResourceResponse) {
-                    if (request.isForMainFrame && !completed.get()) fail(view, "Battle.net could not complete this sign-in page. Try again later.")
+                    if (request.isForMainFrame && !completed.get()) fail(view, context.getString(R.string.fw_browser_login_page_failed))
                 }
             }
             loadUrl(url)
@@ -156,7 +158,7 @@ internal fun BattleNetWebDialog(
             Column {
                 Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                     Text(origin, modifier = Modifier.weight(1f))
-                    TextButton(onClick = cancel) { Text("Cancel") }
+                    TextButton(onClick = cancel) { Text(stringResource(R.string.cancel)) }
                 }
                 AndroidView(factory = { webView }, modifier = Modifier.weight(1f).fillMaxSize())
             }

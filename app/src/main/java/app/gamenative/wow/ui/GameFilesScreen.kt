@@ -95,7 +95,7 @@ fun GameFilesScreen(launcher: LauncherController, onBack: () -> Unit, onInstall:
 
         FwSection(stringResource(R.string.fw_install_or_repair)) {
             Text(
-                "Downloads ${launcher.version.displayName} from Blizzard's servers. Repair checks every file and only downloads what's missing or damaged.",
+                stringResource(R.string.fw_game_files_repair_description, launcher.version.displayName),
                 style = Fw.Secondary,
             )
             FwButton(
