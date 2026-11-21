@@ -12,7 +12,10 @@ interface AndroidEvent<T> : Event<T> {
     data class KeyEvent(val event: android.view.KeyEvent) : AndroidEvent<Boolean>
     data class MotionEvent(val event: android.view.MotionEvent?) : AndroidEvent<Boolean>
     data object EndProcess : AndroidEvent<Unit>
-    data class SetBootingSplashText(val text: String) : AndroidEvent<Unit>
+    data class SetBootingSplashText @JvmOverloads constructor(
+        val text: String,
+        val fraction: Float = -1f,
+    ) : AndroidEvent<Unit>
     data object ClearBootingSplash : AndroidEvent<Unit>
     data object ForceCloseApp : AndroidEvent<Unit>
 }

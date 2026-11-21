@@ -8,7 +8,7 @@ import app.gamenative.BuildConfig;
 import app.gamenative.R;
 import app.gamenative.utils.ContainerUtils;
 import app.gamenative.utils.downloader.ContainerFilesDownloaderKt;
-import app.gamenative.utils.downloader.ProgressCallback;
+import app.gamenative.ui.components.BootComponentProgress;
 
 // import com.winlator.MainActivity;
 // import com.winlator.R;
@@ -208,16 +208,9 @@ public abstract class ImageFsInstaller {
         if (app.gamenative.BuildConfig.MODERN_ANDROID) {
             try {
                 // Modern variant: download and extract
-                java.io.File extrasFile = ContainerFilesDownloaderKt.ensureContainerFileAvailableBlocking(
-                    ctx,
-                    "extras",
-                    new ProgressCallback() {
-                        @Override
-                        public void onProgress(float progress) {
-                            Log.d("ImageFsInstaller", "Downloading extras.tzst: " + (int)(progress * 100) + "%");
-                        }
-                    }
-                );
+                BootComponentProgress progress = new BootComponentProgress(ctx, "extras.tzst");
+                File extrasFile = ContainerFilesDownloaderKt.ensureContainerFileAvailableBlocking(ctx, "extras", progress);
+                progress.prepare();
 
                 if (extrasFile != null && extrasFile.exists()) {
                     TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, extrasFile, imagefs);

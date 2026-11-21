@@ -49,7 +49,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import app.gamenative.wow.product.DeviceClock
@@ -62,6 +66,7 @@ import app.gamenative.wow.product.DeviceClock
 class LauncherController(
     private val context: Context,
     private val scope: CoroutineScope,
+    private val onPreparation: (String?, Float) -> Unit = { _, _ -> },
     private val onLaunch: (appId: String) -> Unit,
 ) {
     val registry = InstallRegistry(context)
@@ -146,6 +151,8 @@ class LauncherController(
         private set
 
     private var launchJob: Job? = null
+    // A canceled preparation may still be finishing a blocking file operation.
+    private val launchPreparationLock = Mutex()
     private var pendingInstallPermission = false
 
     val filesMissing get() = !(files.dataExists && files.buildInfoExists)
@@ -282,26 +289,39 @@ class LauncherController(
         val product = files.product
         if (isLaunching || product == null) return
         if (!supportedGpu && !confirmedUnsupported) {
+            onPreparation(null, -1f)
             unsupportedDeviceWarning = true
             return
         }
         if (!confirmedRestart && DeviceClock.needsRestart(SystemClock.elapsedRealtime())) {
+            onPreparation(null, -1f)
             restartWarningDays = DeviceClock.days(SystemClock.elapsedRealtime())
             return
         }
         if (!files.hasStorageAccess) {
+            onPreparation(null, -1f)
             needsStoragePermission = true
             return
         }
         isLaunching = true
         errorMessage = null
         statusText = context.getString(R.string.fw_preparing_components)
+        onPreparation(statusText, -1f)
         launchJob = scope.launch {
+            val preparationJob = coroutineContext.job
             try {
                 val screenSize = fitScreenSizeToWindow(context, gpu.screenSize)
                 val containerId = withContext(Dispatchers.IO) {
-                    prepareLaunch(context, File(gamePath), product, gpu, screenSize) { msg ->
-                        scope.launch(Dispatchers.Main) { statusText = msg }
+                    launchPreparationLock.withLock {
+                        prepareLaunch(context, File(gamePath), product, gpu, screenSize) { message, fraction ->
+                            preparationJob.ensureActive()
+                            scope.launch(Dispatchers.Main) {
+                                if (preparationJob.isActive) {
+                                    statusText = message
+                                    onPreparation(message, fraction)
+                                }
+                            }
+                        }
                     }
                 }
                 statusText = context.getString(R.string.fw_booting_game)
@@ -316,6 +336,8 @@ class LauncherController(
                 errorMessage = e.message ?: context.getString(R.string.fw_launch_failed)
                 statusText = context.getString(R.string.fw_launch_failed)
                 isLaunching = false
+            } finally {
+                if (preparationJob.isActive) onPreparation(null, -1f)
             }
         }
     }
@@ -323,6 +345,7 @@ class LauncherController(
     fun resetLaunch() {
         launchJob?.cancel()
         launchJob = null
+        onPreparation(null, -1f)
         isLaunching = false
         statusText = READY
     }
@@ -510,6 +533,7 @@ class LauncherController(
     fun onPause() {
         launchJob?.cancel()
         launchJob = null
+        onPreparation(null, -1f)
     }
 
     fun onGameEnded() {
@@ -545,8 +569,9 @@ class LauncherController(
                 val updateJob = async { fetchAppUpdate() }
                 fetchVersionStatus()
                 val update = updateJob.await()
+                val autoLaunch = WoWLauncherState.shouldAutoLaunch
                 WoWLauncherState.shouldAutoLaunch = false
-                if (shouldAutoLaunch(versionStatus?.isOutdated == true, update != null, canConvertToLaunch, supportedGpu, DebugLog.isEnabled(context))) {
+                if (autoLaunch && shouldAutoLaunch(versionStatus?.isOutdated == true, update != null, canConvertToLaunch, supportedGpu, DebugLog.isEnabled(context))) {
                     launchGame()
                 } else {
                     PluviaApp.events.emit(AndroidEvent.ClearBootingSplash)

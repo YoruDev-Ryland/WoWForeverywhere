@@ -991,6 +991,13 @@
     <string name="fw_error_clear_data">无法清除游戏数据：%1$s</string>
     <string name="fw_error_wrong_game">此文件夹包含 %1$s，而非 %2$s。</string>
     <string name="fw_error_save_login">无法在此设备保存登录信息。您仍可在游戏内登录。</string>
+    <string name="fw_launch_looking_up_files">正在查找游戏客户端文件…</string>
+    <string name="fw_launch_downloading_client">正在下载 %1$s · 已完成 %2$d/%3$d 个文件</string>
+    <string name="fw_launch_client_downloaded">游戏客户端文件已下载</string>
+    <string name="fw_launch_syncing_indexes">正在同步游戏索引 · 已处理 %1$d/%2$d</string>
+    <string name="fw_launch_downloading_component">正在下载 %1$s…</string>
+    <string name="fw_launch_downloading_component_percent">正在下载 %1$s · %2$d%%</string>
+    <string name="fw_launch_preparing_component">正在准备 %1$s…</string>
     <string name="fw_preparing_components">正在准备组件…</string>
     <string name="fw_booting_game">正在启动魔兽世界…</string>
     <string name="fw_launch_failed">启动失败</string>

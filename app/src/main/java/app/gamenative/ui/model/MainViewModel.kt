@@ -71,9 +71,7 @@ class MainViewModel @Inject constructor(
 
 
     private val onSetBootingSplashText: (AndroidEvent.SetBootingSplashText) -> Unit = {
-        if (_state.value.showBootingSplash) {
-            setBootingSplashText(it.text)
-        }
+        updateBootingSplash(it.text, it.fraction)
     }
 
     private val onClearBootingSplash: (AndroidEvent.ClearBootingSplash) -> Unit = {
@@ -127,11 +125,22 @@ class MainViewModel @Inject constructor(
 
     fun setShowBootingSplash(value: Boolean) {
         PluviaApp.isBootingSplashShowing = value
-        _state.update { it.copy(showBootingSplash = value) }
+        _state.update { it.copy(showBootingSplash = value, bootingSplashProgress = -1f) }
     }
 
-    fun setBootingSplashText(value: String) {
-        _state.update { it.copy(bootingSplashText = value) }
+    fun setLaunchPreparation(text: String?, fraction: Float) {
+        _state.update { it.copy(launchPreparation = text?.let { message -> message to fraction }) }
+    }
+
+    private fun updateBootingSplash(text: String, fraction: Float) {
+        _state.update {
+            when {
+                it.showBootingSplash -> it.copy(bootingSplashText = text, bootingSplashProgress = fraction)
+                it.loadingDialogVisible -> it.copy(loadingDialogMessage = text, loadingDialogProgress = fraction)
+                it.launchPreparation != null -> it.copy(launchPreparation = text to fraction)
+                else -> it
+            }
+        }
     }
 
     fun setCurrentScreen(currentScreen: String?) {
@@ -166,6 +175,7 @@ class MainViewModel @Inject constructor(
         launchAppJob?.cancel()
         launchAppJob = viewModelScope.launch {
             setShowBootingSplash(true)
+            updateBootingSplash(context.getString(R.string.fw_preparing_components), -1f)
             PluviaApp.events.emit(AndroidEvent.SetAllowedOrientation(PrefManager.allowedOrientation))
 
             val apiJob = viewModelScope.async(Dispatchers.IO) {

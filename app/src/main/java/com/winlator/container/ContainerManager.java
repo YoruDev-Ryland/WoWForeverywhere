@@ -7,7 +7,7 @@ import android.util.Log;
 // import com.winlator.R;
 import app.gamenative.R;
 import app.gamenative.utils.downloader.ContainerFilesDownloaderKt;
-import app.gamenative.utils.downloader.ProgressCallback;
+import app.gamenative.ui.components.BootComponentProgress;
 import app.gamenative.wow.install.ContainerRepair;
 import com.winlator.box86_64.Box86_64Preset;
 import com.winlator.contents.ContentsManager;
@@ -376,14 +376,16 @@ public class ContainerManager {
                 selectedWfm[0].isFile() && selectedWfm[0].length() > 0;
     }
 
+    private File downloadContainerPattern(String componentId) {
+        BootComponentProgress progress = new BootComponentProgress(context, componentId);
+        File file = ContainerFilesDownloaderKt.ensureContainerFileAvailableBlocking(context, componentId, progress);
+        progress.prepare();
+        return file;
+    }
+
     private boolean extractContainerPatternCommonArchive(File containerDir, OnExtractFileListener onExtractFileListener) {
         Log.d("Extraction", "extracting container_pattern_common.tzst");
-        File componentFile = ContainerFilesDownloaderKt.ensureContainerFileAvailableBlocking(context, "container_pattern_common", new ProgressCallback() {
-            @Override
-            public void onProgress(float progress) {
-                Log.d("Extraction", "Downloading container_pattern_common: " + (int)(progress * 100) + "%");
-            }
-        });
+        File componentFile = downloadContainerPattern("container_pattern_common");
 
         if (componentFile == null) {
             Log.d("Extraction", "Using bundled asset for container_pattern_common");
@@ -398,12 +400,7 @@ public class ContainerManager {
         WineInfo wineInfo = WineInfo.fromIdentifier(context, contentsManager, wineVersion);
         if (WineInfo.isMainWineVersion(wineVersion)) {
             Log.d("Extraction", "extracting container_pattern_gamenative.tzst");
-            File componentFile = ContainerFilesDownloaderKt.ensureContainerFileAvailableBlocking(context, "container_pattern_gamenative", new ProgressCallback() {
-                @Override
-                public void onProgress(float progress) {
-                    Log.d("Extraction", "Downloading container_pattern_gamenative: " + (int)(progress * 100) + "%");
-                }
-            });
+            File componentFile = downloadContainerPattern("container_pattern_gamenative");
             boolean result;
             if (componentFile == null) {
                 Log.d("Extraction", "Using bundled asset for container_pattern_gamenative");
@@ -441,12 +438,7 @@ public class ContainerManager {
             boolean result = false;
 
             try {
-                File componentFile = ContainerFilesDownloaderKt.ensureContainerFileAvailableBlocking(context, containerPatternId, new ProgressCallback() {
-                    @Override
-                    public void onProgress(float progress) {
-                        Log.d("Extraction", "Downloading " + containerPatternId + ": " + (int)(progress * 100) + "%");
-                    }
-                });
+                File componentFile = downloadContainerPattern(containerPatternId);
 
                 if (componentFile == null) {
                     Log.d("Extraction", "Using bundled asset for " + containerPatternId);

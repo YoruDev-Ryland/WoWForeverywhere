@@ -1,5 +1,7 @@
 package app.gamenative.ui.screen.wow
 
+import android.content.Context
+import app.gamenative.R
 import app.gamenative.utils.Net
 import app.gamenative.wow.product.BuildInfo
 import app.gamenative.wow.product.GameRegions
@@ -124,12 +126,18 @@ object WowClientDownloader {
             ?: rows.firstOrNull { it[column].equals("us", ignoreCase = true) }
             ?: rows.firstOrNull()
 
-    fun updateGame(gameRoot: File, product: WowProduct, target: VersionCheckResult, onStatus: (String) -> Unit) {
+    fun updateGame(
+        context: Context,
+        gameRoot: File,
+        product: WowProduct,
+        target: VersionCheckResult,
+        onProgress: (String, Float) -> Unit,
+    ) {
         val cdn = Cdn(
             hosts = target.remoteCdnHosts.ifEmpty { DEFAULT_CDN_HOSTS },
             path = target.remoteCdnPath.ifEmpty { DEFAULT_CDN_PATH },
         )
-        onStatus("Fetching build ${target.remoteVersion} manifest...")
+        onProgress(context.getString(R.string.fw_reading_build, target.remoteVersion), -1f)
         val buildConfigRaw = cdn.require("config", target.remoteBuildConfig)
         val cdnConfigRaw = target.remoteCdnConfig.takeIf { it.isNotBlank() }?.let { cdn.require("config", it) }
 
@@ -138,28 +146,33 @@ object WowClientDownloader {
 
         val cdnConfig = cdnConfigRaw?.let { TactConfig.parse(String(it)) }
         syncClient(
+            context = context,
             gameRoot = gameRoot,
             product = product,
             cdn = cdn,
             buildConfig = TactConfig.parse(String(buildConfigRaw)),
             archives = lazy { cdnConfig?.let { ArchiveLocator(cdn, gameRoot, it.getValue("archives")) } },
-            onStatus = onStatus,
+            onProgress = onProgress,
         )
-        cdnConfig?.let { syncIndices(gameRoot, cdn, it, onStatus) }
+        cdnConfig?.let { syncIndices(context, gameRoot, cdn, it, onProgress) }
 
-        onStatus("Updating build information...")
+        onProgress(context.getString(R.string.fw_finishing_update), -1f)
         updateBuildInfo(gameRoot, product, target)
     }
 
-    fun download(gameRoot: File, product: WowProduct, onStatus: (String) -> Unit) {
+    fun download(context: Context, gameRoot: File, product: WowProduct, onProgress: (String, Float) -> Unit) {
         val row = activeBuild(File(gameRoot, BUILD_INFO), product)
         check(row["Product"] == product.code) { "Incompatible game product: ${row["Product"]}. Expected ${product.code}." }
+        onProgress(context.getString(R.string.fw_connecting_blizzard), -1f)
         val latest = checkVersion(gameRoot, product)
-        if (latest != null && latest.remoteBuildConfig.isNotBlank()) return updateGame(gameRoot, product, latest, onStatus)
+        if (latest != null && latest.remoteBuildConfig.isNotBlank()) {
+            return updateGame(context, gameRoot, product, latest, onProgress)
+        }
 
         val cdn = Cdn(hosts = splitHosts(row.getValue("CDN Hosts")), path = row.getValue("CDN Path"))
-        onStatus("Reading build ${row["Version"].orEmpty()} manifest...")
+        onProgress(context.getString(R.string.fw_reading_build, row["Version"].orEmpty()), -1f)
         syncClient(
+            context = context,
             gameRoot = gameRoot,
             product = product,
             cdn = cdn,
@@ -167,17 +180,18 @@ object WowClientDownloader {
             archives = lazy {
                 ArchiveLocator(cdn, gameRoot, TactConfig.parse(String(cdn.require("config", row.getValue("CDN Key")))).getValue("archives"))
             },
-            onStatus = onStatus,
+            onProgress = onProgress,
         )
     }
 
     private fun syncClient(
+        context: Context,
         gameRoot: File,
         product: WowProduct,
         cdn: Cdn,
         buildConfig: Map<String, List<String>>,
         archives: Lazy<ArchiveLocator?>,
-        onStatus: (String) -> Unit,
+        onProgress: (String, Float) -> Unit,
     ) {
         val files = InstallManifest.parse(Blte.decode(cdn.require("data", buildConfig.getValue("install")[1]))).filter { it.isClientBinary() }
         check(files.isNotEmpty()) { "No Windows ARM64 client files in this build" }
@@ -186,14 +200,18 @@ object WowClientDownloader {
         val pending = files.filter { md5Hex(File(clientDir, it.relativePath)) != it.ckey }
         if (pending.isEmpty()) return
 
-        onStatus("Looking up client files...")
+        onProgress(context.getString(R.string.fw_launch_looking_up_files), -1f)
         val ekeys = EncodingLookup(cdn, buildConfig.getValue("encoding")[1]).find(pending.map { it.ckey }.toSet())
         pending.forEachIndexed { index, entry ->
-            onStatus("Downloading ${entry.name} (${index + 1}/${pending.size})...")
+            onProgress(
+                context.getString(R.string.fw_launch_downloading_client, entry.name, index, pending.size),
+                index.toFloat() / pending.size,
+            )
             val ekey = ekeys[entry.ckey] ?: throw IOException("${entry.name} is missing from the encoding table")
             val encoded = cdn.fetch("data", ekey) ?: archives.value?.read(ekey) ?: throw IOException("${entry.name} not found on the CDN")
             writeVerified(File(clientDir, entry.relativePath), entry, encoded)
         }
+        onProgress(context.getString(R.string.fw_launch_client_downloaded), 1f)
     }
 
     private fun writeVerified(dest: File, entry: InstallEntry, encoded: ByteArray) {
@@ -215,14 +233,23 @@ object WowClientDownloader {
         File(dir, key).writeBytes(bytes)
     }
 
-    private fun syncIndices(gameRoot: File, cdn: Cdn, cdnConfig: Map<String, List<String>>, onStatus: (String) -> Unit) {
+    private fun syncIndices(
+        context: Context,
+        gameRoot: File,
+        cdn: Cdn,
+        cdnConfig: Map<String, List<String>>,
+        onProgress: (String, Float) -> Unit,
+    ) {
         val indicesDir = File(gameRoot, "Data/indices")
         indicesDir.mkdirs()
         val required = listOf("archives", "patch-archives").flatMap { cdnConfig[it].orEmpty() } +
             listOf("file-index", "patch-file-index", "archive-group", "patch-archive-group").mapNotNull { cdnConfig[it]?.firstOrNull() }
         val missing = required.distinct().filter { !File(indicesDir, "$it.index").isFile }
         missing.forEachIndexed { index, hash ->
-            onStatus("Syncing index archive (${index + 1}/${missing.size})...")
+            onProgress(
+                context.getString(R.string.fw_launch_syncing_indexes, index, missing.size),
+                index.toFloat() / missing.size,
+            )
             cdn.fetch("data", "$hash.index")?.let { File(indicesDir, "$hash.index").writeBytes(it) }
         }
     }
