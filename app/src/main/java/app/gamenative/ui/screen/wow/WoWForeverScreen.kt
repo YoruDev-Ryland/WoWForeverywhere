@@ -1045,14 +1045,14 @@ internal fun prepareLaunch(
         }
     }
 
-    onStatus("Configuring ${gpu.label} container...")
+    onStatus(context.getString(R.string.fw_configuring_container, gpu.label))
     val containerManager = ContainerManager(context)
     val launchGpu = app.gamenative.wow.GraphicsDrivers.applyTo(context, gpu)
     Timber.i("Graphics driver: ${launchGpu.driver}${if (launchGpu.driver != gpu.driver) " (picked in Settings)" else ""}")
     val config = containerConfig(gameRoot, product, launchGpu, screenSize)
     val container = containerManager.getContainerById(CONTAINER_ID)
     if (container == null) {
-        onStatus("Creating prefix environment (first boot)...")
+        onStatus(context.getString(R.string.fw_creating_prefix))
         containerManager.createContainer(CONTAINER_ID, config)
     } else {
         container.loadData(config)
@@ -1065,13 +1065,13 @@ internal fun prepareLaunch(
         val frameGeneration = FrameGeneration.isArmed(context) && (FrameGeneration.hasShaders(context) || run {
             Timber.w("Frame generation skipped: Lossless.dll is missing its shaders")
             app.gamenative.ui.util.SnackbarManager.show(
-                "Frame generation is off for this session: your Lossless.dll doesn't have the shaders it needs. Choose another in Settings.",
+                context.getString(R.string.fw_frame_generation_session_missing_shaders),
             )
             false
         }) && (!FrameGeneration.sitsOutAfterRebuildCrash(context, File(gameRoot, "${product.flavorDir}/Logs/gx.log")) || run {
             Timber.w("Frame generation skipped: the last start crashed while the game rebuilt its graphics device")
             app.gamenative.ui.util.SnackbarManager.show(
-                "Frame generation is off for this start: the game crashed last time while applying a graphics update. It's back on next time.",
+                context.getString(R.string.fw_frame_generation_after_crash),
             )
             false
         })
@@ -1317,7 +1317,7 @@ private fun installBundledComponents(context: Context, onStatus: (String) -> Uni
 
     val protonDir = File(ImageFs.getSharedProtonDir(context), PROTON_VERSION)
     if (!File(protonDir, "profile.json").exists() || !File(protonDir, "bin/wine").exists()) {
-        onStatus("Extracting Proton 11 ARM64EC (takes ~10s)...")
+        onStatus(context.getString(R.string.fw_extracting_proton))
         check(extractBundledWcp(context, "$PROTON_VERSION.wcp", protonDir)) { "Failed to extract Proton or graphics components." }
         File(protonDir, "bin").listFiles()?.forEach {
             it.setExecutable(true, false)
@@ -1327,7 +1327,7 @@ private fun installBundledComponents(context: Context, onStatus: (String) -> Uni
 
     val dxvkDir = File(ContentsManager.getContentTypeDir(context, ContentProfile.ContentType.CONTENT_TYPE_DXVK), DXVK_VERSION)
     if (!File(dxvkDir, "profile.json").exists()) {
-        onStatus("Extracting DXVK ARM64...")
+        onStatus(context.getString(R.string.fw_extracting_dxvk))
         if (!extractBundledWcp(context, "dxvk-$DXVK_VERSION.wcp", dxvkDir)) Timber.e("Failed to extract DXVK")
     }
 
@@ -1338,7 +1338,7 @@ private fun installBundledComponents(context: Context, onStatus: (String) -> Uni
 private fun installDriver(context: Context, driverName: String, assetZip: String, onStatus: (String) -> Unit) {
     val driverDir = File(context.filesDir, "contents/adrenotools/$driverName")
     if (File(driverDir, "meta.json").exists()) return
-    onStatus("Installing $driverName driver...")
+    onStatus(context.getString(R.string.fw_installing_driver, driverName))
     driverDir.mkdirs()
     if (!FileUtils.extractZipFromAssets(context, "bundled_components/$assetZip", driverDir)) {
         Timber.e("Error extracting driver $driverName from $assetZip")

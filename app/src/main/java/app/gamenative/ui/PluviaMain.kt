@@ -478,7 +478,7 @@ fun preLaunchApp(
         try {
             val imageFsArchive = "imagefs_bionic.txz"
             if (!File(context.filesDir, imageFsArchive).exists() && context.assets.list("")?.contains(imageFsArchive) != true) {
-                setLoadingMessage("Downloading first-time files")
+                setLoadingMessage(context.getString(R.string.fw_first_time_files))
                 Net.fetchFileWithFallback(imageFsArchive, File(context.filesDir, imageFsArchive), setLoadingProgress)
             }
         } catch (e: Exception) {
