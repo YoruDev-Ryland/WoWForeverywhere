@@ -11,5 +11,6 @@ data class MainState(
     val loadingDialogMessage: String = "Loading...",
     val launchedAppId: String = "",
     val showBootingSplash: Boolean = false,
+    val bootingSplashProgress: Float = -1f,
     val bootingSplashText: String = "Booting...",
 )

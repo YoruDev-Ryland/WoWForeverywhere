@@ -52,10 +52,13 @@ object Routes {
 
 /** The app's own screens. Hosted by upstream's NavHost in place of `WoWForeverScreen`. */
 @Composable
-fun ForeverywhereApp(onLaunch: (appId: String) -> Unit) {
+fun ForeverywhereApp(
+    onPreparation: (String?, Float) -> Unit,
+    onLaunch: (appId: String) -> Unit,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val launcher = remember { LauncherController(context, scope, onLaunch) }
+    val launcher = remember { LauncherController(context, scope, onPreparation, onLaunch) }
     val nav = rememberNavController()
     var showLoginDialog by remember { mutableStateOf(false) }
     val addonsNow = remember(launcher.gamePath, launcher.files.product) { addonsControllerFor(launcher.gamePath, launcher.files.product, scope, context) }

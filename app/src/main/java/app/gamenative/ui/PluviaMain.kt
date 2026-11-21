@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -276,6 +277,7 @@ fun PluviaMain(
             var initialSplash by remember {
                 mutableStateOf(WoWLauncherState.shouldAutoLaunch && GamePath.isReady(context))
             }
+            var preparation by remember { mutableStateOf<Pair<String, Float>?>(null) }
             var preLaunchJob by remember { mutableStateOf<Job?>(null) }
 
             DisposableEffect(Unit) {
@@ -297,10 +299,15 @@ fun PluviaMain(
 
             Box(modifier = Modifier.zIndex(10f)) {
                 BootingSplash(
-                    visible = state.showBootingSplash || initialSplash,
-                    text = if (state.showBootingSplash) state.bootingSplashText else "Booting into World of Warcraft...",
+                    visible = state.showBootingSplash || preparation != null || initialSplash,
+                    text = when {
+                        state.showBootingSplash -> state.bootingSplashText
+                        else -> preparation?.first ?: stringResource(R.string.fw_booting_game)
+                    },
+                    progress = if (state.showBootingSplash) state.bootingSplashProgress else preparation?.second ?: -1f,
                     onAbort = {
                         BattleNetBrowserLogin.cancel()
+                        preparation = null
                         initialSplash = false
                         preLaunchJob?.cancel()
                         preLaunchJob = null
@@ -320,6 +327,10 @@ fun PluviaMain(
             ) {
                 composable(route = PluviaScreen.WoWLauncher.route) {
                     ForeverywhereApp(
+                        onPreparation = { message, fraction ->
+                            initialSplash = false
+                            preparation = message?.let { it to fraction }
+                        },
                         onLaunch = { appId ->
                             viewModel.setLaunchedAppId(appId)
                             viewModel.setOffline(true)
@@ -428,6 +439,8 @@ fun preLaunchApp(
     setMessageDialogState: (MessageDialogState) -> Unit,
     onSuccess: KFunction2<Context, String, Unit>,
 ): Job {
+    setLoadingProgress(-1f)
+    setLoadingMessage(context.getString(R.string.fw_preparing_components))
     setLoadingDialogVisible(true)
 
     return CoroutineScope(Dispatchers.IO).launch {
@@ -501,6 +514,7 @@ fun preLaunchApp(
         } else {
             context.getString(R.string.main_installing_bionic)
         }
+        setLoadingProgress(-1f)
         setLoadingMessage(loadingMessage)
         val imageFsInstallSuccess =
             ImageFsInstaller.installIfNeededFuture(context, context.assets, container) { progress ->

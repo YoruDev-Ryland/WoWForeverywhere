@@ -981,6 +981,13 @@
     <string name="fw_error_clear_data">無法清除遊戲資料：%1$s</string>
     <string name="fw_error_wrong_game">此資料夾包含 %1$s，而非 %2$s。</string>
     <string name="fw_error_save_login">無法在此裝置儲存登入資訊。您仍可在遊戲內登入。</string>
+    <string name="fw_launch_looking_up_files">正在查找遊戲用戶端檔案…</string>
+    <string name="fw_launch_downloading_client">正在下載 %1$s · 已完成 %2$d/%3$d 個檔案</string>
+    <string name="fw_launch_client_downloaded">遊戲用戶端檔案已下載</string>
+    <string name="fw_launch_syncing_indexes">正在同步遊戲索引 · 已處理 %1$d/%2$d</string>
+    <string name="fw_launch_downloading_component">正在下載 %1$s…</string>
+    <string name="fw_launch_downloading_component_percent">正在下載 %1$s · %2$d%%</string>
+    <string name="fw_launch_preparing_component">正在準備 %1$s…</string>
     <string name="fw_preparing_components">正在準備元件…</string>
     <string name="fw_booting_game">正在啟動魔獸世界…</string>
     <string name="fw_launch_failed">啟動失敗</string>
