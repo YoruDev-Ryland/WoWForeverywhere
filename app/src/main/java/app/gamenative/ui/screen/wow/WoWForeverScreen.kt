@@ -211,7 +211,7 @@ fun WoWForeverScreen(
             try {
                 val screenSize = fitScreenSizeToWindow(context, gpu.screenSize)
                 val containerId = withContext(Dispatchers.IO) {
-                    prepareLaunch(context, File(gamePath), product, gpu, screenSize) { msg ->
+                    prepareLaunch(context, File(gamePath), product, gpu, screenSize) { msg, _ ->
                         scope.launch(Dispatchers.Main) { statusText = msg }
                     }
                 }
@@ -302,7 +302,7 @@ fun WoWForeverScreen(
         scope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    WowClientDownloader.updateGame(File(gamePath), product, target) { msg ->
+                    WowClientDownloader.updateGame(context, File(gamePath), product, target) { msg, _ ->
                         scope.launch(Dispatchers.Main) { updateStatusText = msg }
                     }
                 }
@@ -1011,8 +1011,9 @@ internal fun prepareLaunch(
     product: WowProduct,
     gpu: GpuProfile,
     screenSize: String,
-    onStatus: (String) -> Unit,
+    onProgress: (String, Float) -> Unit,
 ): String {
+    val onStatus: (String) -> Unit = { onProgress(it, -1f) }
     // On an SD card set up as internal storage (/mnt/expand/<id>/...) the game's display socket path is too long for
     // Linux, so the game would close as it opens its window (#70). Say so instead.
     check(fitsSocketPath(xSocketPath(ImageFs.find(context).rootDir))) { context.getString(R.string.fw_adopted_storage_path_too_long) }
@@ -1038,7 +1039,9 @@ internal fun prepareLaunch(
     }
     if (!arm64Exe.exists()) {
         try {
-            WowClientDownloader.download(gameRoot, product, onStatus)
+            WowClientDownloader.download(context, gameRoot, product, onProgress)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             if (!arm64Exe.exists()) throw IllegalStateException("Couldn't download ${product.armExe}: ${e.message}", e)
             Timber.w(e, "Client update check failed, launching the existing ${product.armExe}")

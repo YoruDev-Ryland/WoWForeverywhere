@@ -3,6 +3,7 @@ package app.gamenative.utils
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -69,17 +70,24 @@ object Net {
         }
     }
 
+    /** Reports -1 at the start of each attempt until the total size is known. */
     suspend fun fetchFileWithFallback(
         fileName: String,
         dest: File,
         onProgress: (Float) -> Unit,
     ) = withContext(Dispatchers.IO) {
         try {
+            onProgress(-1f)
             fetchFile("https://downloads.gamenative.app/$fileName", dest, onProgress)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.w(e, "Primary download failed; retrying with fallback URL")
             try {
+                onProgress(-1f)
                 fetchFile("https://pub-9fcd5294bd0d4b85a9d73615bf98f3b5.r2.dev/$fileName", dest, onProgress)
+            } catch (e2: CancellationException) {
+                throw e2
             } catch (e2: Exception) {
                 dest.delete()
                 throw IOException(

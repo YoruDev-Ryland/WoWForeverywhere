@@ -996,6 +996,13 @@
     <string name="fw_error_clear_data">Couldn\'t clear the game data: %1$s</string>
     <string name="fw_error_wrong_game">This folder holds %1$s, not %2$s.</string>
     <string name="fw_error_save_login">Couldn\'t save your login on this device. You can still sign in inside the game.</string>
+    <string name="fw_launch_looking_up_files">Looking up game client files…</string>
+    <string name="fw_launch_downloading_client">Downloading %1$s · %2$d/%3$d files complete</string>
+    <string name="fw_launch_client_downloaded">Game client files downloaded</string>
+    <string name="fw_launch_syncing_indexes">Syncing game indexes · %1$d/%2$d processed</string>
+    <string name="fw_launch_downloading_component">Downloading %1$s…</string>
+    <string name="fw_launch_downloading_component_percent">Downloading %1$s · %2$d%%</string>
+    <string name="fw_launch_preparing_component">Preparing %1$s…</string>
     <string name="fw_preparing_components">Preparing components...</string>
     <string name="fw_booting_game">Booting into World of Warcraft...</string>
     <string name="fw_launch_failed">Launch failed</string>

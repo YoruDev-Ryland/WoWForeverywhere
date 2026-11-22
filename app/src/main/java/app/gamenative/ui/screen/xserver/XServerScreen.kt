@@ -106,6 +106,7 @@ import app.gamenative.ui.data.PerformanceHudConfig
 import app.gamenative.ui.data.PerformanceHudSize
 import app.gamenative.ui.data.XServerState
 import app.gamenative.GameSessionService
+import app.gamenative.ui.components.BootComponentProgress
 import app.gamenative.ui.screen.wow.auth.BattleNetBrowserLogin
 import app.gamenative.ui.widget.PerformanceHudView
 import app.gamenative.utils.AssetUtils
@@ -192,6 +193,8 @@ import com.winlator.xserver.extensions.PresentExtension
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -4076,8 +4079,8 @@ private suspend fun setupWineSystemFiles(
             val windowsDir = File(imageFs.rootDir, ImageFs.WINEPREFIX + "/drive_c/windows")
 
             // Download or use cached/bundled openal component
-            val openalFile = WinComponentDownloader.ensureWinComponentAvailable(context, "openal") { progress ->
-                Timber.d("Downloading openal component: ${(progress * 100).toInt()}%")
+            val openalFile = downloadBootComponent(context, "OpenAL") { progress ->
+                WinComponentDownloader.ensureWinComponentAvailable(context, "openal", progress)
             }
 
             if (openalFile == null) {
@@ -4196,6 +4199,21 @@ private fun refreshComponentsFiles(context: Context) {
     )
 }
 
+private suspend fun downloadBootComponent(
+    context: Context,
+    component: String,
+    download: suspend ((Float) -> Unit) -> File?,
+): File? {
+    val launchContext = currentCoroutineContext()
+    val progress = BootComponentProgress(context, component)
+    val file = download { fraction ->
+        launchContext.ensureActive()
+        progress.onProgress(fraction)
+    }
+    progress.prepare()
+    return file
+}
+
 /**
  * Helper function to extract a graphics driver component, downloading if needed (modern variant)
  * or using bundled assets (legacy variant).
@@ -4206,8 +4224,8 @@ private suspend fun extractGraphicsDriverComponent(
     rootDir: File,
     onExtractFileListener: OnExtractFileListener? = null
 ) {
-    val componentFile = GraphicsDriverDownloader.ensureGraphicsDriverAvailable(context, componentId) { progress ->
-        Timber.d("Downloading graphics driver $componentId: ${(progress * 100).toInt()}%")
+    val componentFile = downloadBootComponent(context, componentId) { progress ->
+        GraphicsDriverDownloader.ensureGraphicsDriverAvailable(context, componentId, progress)
     }
 
     if (componentFile == null) {
@@ -4254,8 +4272,8 @@ private suspend fun extractDXWrapperComponent(
     windowsDir: File,
     onExtractFileListener: OnExtractFileListener?
 ) {
-    val componentFile = DXWrapperDownloader.ensureDXWrapperAvailable(context, componentId) { progress ->
-        Timber.d("Downloading dxwrapper $componentId: ${(progress * 100).toInt()}%")
+    val componentFile = downloadBootComponent(context, componentId) { progress ->
+        DXWrapperDownloader.ensureDXWrapperAvailable(context, componentId, progress)
     }
 
     if (componentFile == null) {
@@ -4481,10 +4499,8 @@ private suspend fun extractWinComponentFiles(
             // Note: GameNative do not bundle directinput and directinput8 dlls, need to skip them and use wine/proton dll instead
             if (useNative && (identifier != "directinput8" && identifier != "directinput")) {
                 // Download or use cached/bundled wincomponent
-                val componentFile = WinComponentDownloader.ensureWinComponentAvailable(
-                    context, identifier
-                ) { progress ->
-                    Timber.d("Downloading wincomponent $identifier: ${(progress * 100).toInt()}%")
+                val componentFile = downloadBootComponent(context, identifier) { progress ->
+                    WinComponentDownloader.ensureWinComponentAvailable(context, identifier, progress)
                 }
 
                 if (componentFile == null) {
@@ -4641,8 +4657,8 @@ private suspend fun extractGraphicsDriverFiles(
             )
 
             // Download or get cached core driver
-            val driverFile = CoreDriverDownloader.ensureCoreDriverAvailable(context, assetZip) { progress ->
-                Timber.d("Downloading core driver $assetZip: ${(progress * 100).toInt()}%")
+            val driverFile = downloadBootComponent(context, assetZip) { progress ->
+                CoreDriverDownloader.ensureCoreDriverAvailable(context, assetZip, progress)
             }
 
             // Read manifest name from zip to determine folder name
