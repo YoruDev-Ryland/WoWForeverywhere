@@ -27,6 +27,10 @@ class Cdn(
     @Volatile
     var onBytes: ((Long) -> Unit)? = null
 
+    /** Called with a response's length in bytes (-1 if the server didn't say) just before its body is read. */
+    @Volatile
+    var onLength: ((Long) -> Unit)? = null
+
     fun url(host: String, kind: String, key: String) =
         "$scheme://${if (scheme == "https") sslHost(host) else host}/$path/$kind/${key.substring(0, 2)}/${key.substring(2, 4)}/$key"
 
@@ -113,7 +117,10 @@ class Cdn(
             try {
                 http.newCall(request).execute().use { response ->
                     when {
-                        answered(response, range) -> return read(response)
+                        answered(response, range) -> {
+                            onLength?.invoke(response.body!!.contentLength())
+                            return read(response)
+                        }
                         response.isSuccessful -> failure = IOException("$host ignored the byte range")
                         response.code == 403 || response.code == 404 -> missing = true
                         else -> failure = IOException("HTTP ${response.code} from $host")

@@ -1,5 +1,6 @@
 package app.gamenative.ui.screen.wow.auth
 
+import app.gamenative.R
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
@@ -107,8 +108,11 @@ internal object BgsProtocol {
     fun fixed32(number: Int, value: Long): ByteArray = tag(number, 5) +
         ByteArray(4) { (value ushr (8 * it)).toByte() }
 
-    private fun fail(): Nothing = throw BgsException("Battle.net returned an invalid protocol message.")
+    private fun fail(): Nothing = throw BgsException("Battle.net returned an invalid protocol message.", messageRes = R.string.fw_bgs_invalid_message)
 }
 
-/** Contains only fixed descriptions and numeric status codes, never remote text or credentials. */
-class BgsException(message: String, val status: Long? = null) : IOException(message)
+/**
+ * Contains only fixed descriptions and numeric status codes, never remote text or credentials. [messageRes] is the same
+ * description for the player, in their language; the English [message] goes to BrowserLogin.log.
+ */
+class BgsException(message: String, val status: Long? = null, @androidx.annotation.StringRes val messageRes: Int? = null) : IOException(message)

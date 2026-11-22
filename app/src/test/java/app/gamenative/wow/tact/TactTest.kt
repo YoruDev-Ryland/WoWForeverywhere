@@ -139,6 +139,20 @@ class TactTest {
     }
 
     @Test
+    fun cdnReportsTheLengthBeforeTheBytes() {
+        val body = "x".repeat(300_000)
+        val s = server { MockResponse().setBody(body) }
+        val cdn = Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient(), "http")
+        val events = mutableListOf<String>()
+        var received = 0L
+        cdn.onLength = { events += "length $it" }
+        cdn.onBytes = { if (received == 0L) events += "bytes"; received += it }
+        cdn.fetch("data", "abcdef")
+        assertEquals(listOf("length 300000", "bytes"), events)
+        assertEquals(300_000L, received)
+    }
+
+    @Test
     fun cdnSendsRange() {
         val s = server { MockResponse().setResponseCode(206).setBody("x") }
         Cdn(listOf(hostOf(s)), "tpr/wow", OkHttpClient(), "http").fetch("data", "abcdef", 10L until 20L)

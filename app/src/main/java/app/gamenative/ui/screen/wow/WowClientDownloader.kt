@@ -202,14 +202,35 @@ object WowClientDownloader {
 
         onProgress(context.getString(R.string.fw_launch_looking_up_files), -1f)
         val ekeys = EncodingLookup(cdn, buildConfig.getValue("encoding")[1]).find(pending.map { it.ckey }.toSet())
-        pending.forEachIndexed { index, entry ->
-            onProgress(
-                context.getString(R.string.fw_launch_downloading_client, entry.name, index, pending.size),
-                index.toFloat() / pending.size,
-            )
-            val ekey = ekeys[entry.ckey] ?: throw IOException("${entry.name} is missing from the encoding table")
-            val encoded = cdn.fetch("data", ekey) ?: archives.value?.read(ekey) ?: throw IOException("${entry.name} not found on the CDN")
-            writeVerified(File(clientDir, entry.relativePath), entry, encoded)
+        try {
+            pending.forEachIndexed { index, entry ->
+                val label = context.getString(R.string.fw_launch_downloading_client, entry.name, index, pending.size)
+                onProgress(label, index.toFloat() / pending.size)
+                // The client is usually one 80 MB file, so the bar follows its bytes rather than the file count. Index
+                // reads for an archive fallback briefly count as the file too, which only nudges the bar.
+                var length = -1L
+                var received = 0L
+                var shown = -1
+                cdn.onLength = { length = it; received = 0 }
+                cdn.onBytes = { bytes ->
+                    received += bytes
+                    if (length > 0) {
+                        val fraction = (index + (received.toFloat() / length).coerceAtMost(1f)) / pending.size
+                        // One update per whole percent: each one redraws the splash.
+                        val percent = (fraction * 100).toInt()
+                        if (percent != shown) {
+                            shown = percent
+                            onProgress(label, fraction)
+                        }
+                    }
+                }
+                val ekey = ekeys[entry.ckey] ?: throw IOException("${entry.name} is missing from the encoding table")
+                val encoded = cdn.fetch("data", ekey) ?: archives.value?.read(ekey) ?: throw IOException("${entry.name} not found on the CDN")
+                writeVerified(File(clientDir, entry.relativePath), entry, encoded)
+            }
+        } finally {
+            cdn.onLength = null
+            cdn.onBytes = null
         }
         onProgress(context.getString(R.string.fw_launch_client_downloaded), 1f)
     }

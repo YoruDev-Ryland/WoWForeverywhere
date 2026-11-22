@@ -184,7 +184,8 @@ internal object BattleNetBrowserLogin {
             diag(attempt, "Battle.net error: ${error.message}")
             val message = when (val status = error.status) {
                 33L -> attempt.context.getString(R.string.fw_browser_login_build_unavailable)
-                null -> attempt.context.getString(R.string.fw_browser_login_failed)
+                // No status: the reason itself (queue too long, connection ended...), so the player knows what to do.
+                null -> attempt.context.getString(error.messageRes ?: R.string.fw_browser_login_failed)
                 else -> attempt.context.getString(R.string.fw_browser_login_rejected, status)
             }
             fail(attempt, message)

@@ -1,5 +1,6 @@
 package app.gamenative.ui.screen.wow.auth
 
+import app.gamenative.R
 import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
@@ -56,7 +57,7 @@ class BgsClient internal constructor(
     fun webChallenge(device: ByteArray, build: Int, locale: String = "enUS"): String = safe {
         checkState(State.CONNECTED)
         if (device.isEmpty() || device.size > 8192 || build <= 0) {
-            throw BgsException("The installed client or device identity is unavailable.")
+            throw BgsException("The installed client or device identity is unavailable.", messageRes = R.string.fw_bgs_identity_unavailable)
         }
         val options = BgsProtocol.bytes(3, device)
         val request = BgsProtocol.integer(1, WOW_TITLE) + BgsProtocol.text(2, platform) +
@@ -70,12 +71,12 @@ class BgsClient internal constructor(
             } else when (packet.method) {
                 4L -> {
                     if (!packet.body.bytes(2).contentEquals("web_auth_url".toByteArray())) {
-                        throw BgsException("Battle.net requires an unsupported sign-in challenge.")
+                        throw BgsException("Battle.net requires an unsupported sign-in challenge.", messageRes = R.string.fw_bgs_unsupported_challenge)
                     }
                     val raw = packet.body.bytes(3) ?: protocolError()
                     if (raw.size > 8192) protocolError()
                     val url = raw.toString(Charsets.UTF_8)
-                    if (!isTrustedSignInUrl(url)) throw BgsException("Battle.net returned an unsupported sign-in address.")
+                    if (!isTrustedSignInUrl(url)) throw BgsException("Battle.net returned an unsupported sign-in address.", messageRes = R.string.fw_browser_login_bad_address)
                     state = State.CHALLENGE
                     return@safe url
                 }
@@ -92,7 +93,7 @@ class BgsClient internal constructor(
      */
     fun verifyAndGenerateGameToken(ticket: ByteArray): ByteArray = safe {
         checkState(State.CHALLENGE)
-        if (ticket.isEmpty() || ticket.size > 2048) throw BgsException("The browser sign-in ticket is invalid.")
+        if (ticket.isEmpty() || ticket.size > 2048) throw BgsException("The browser sign-in ticket is invalid.", messageRes = R.string.fw_bgs_ticket_invalid)
         call(AUTHENTICATION_SERVICE, 2, BgsProtocol.bytes(1, ticket))
         var deadline = afterSeconds(30)
         var authenticated = false
@@ -102,7 +103,7 @@ class BgsClient internal constructor(
                 deadline = queueDeadline()
                 continue
             }
-            if (packet.method == 4L) throw BgsException("Battle.net did not accept the sign-in. Sign in again.")
+            if (packet.method == 4L) throw BgsException("Battle.net did not accept the sign-in. Sign in again.", messageRes = R.string.fw_bgs_not_accepted)
             if (packet.method != 1L) protocolError()
             val status = packet.body.integer(1)
             if (status != 0L) reject(status)
@@ -127,7 +128,7 @@ class BgsClient internal constructor(
     }
 
     private fun checkState(expected: State) {
-        if (state != expected) throw BgsException("The Battle.net sign-in attempt is no longer active.")
+        if (state != expected) throw BgsException("The Battle.net sign-in attempt is no longer active.", messageRes = R.string.fw_bgs_attempt_inactive)
     }
 
     private inline fun <T> safe(action: () -> T): T = try {
@@ -138,7 +139,7 @@ class BgsClient internal constructor(
     } catch (_: IOException) {
         close()
         // In particular do not surface TLS/IO response text or secret-bearing request contents.
-        throw BgsException("The Battle.net connection ended. Check your connection and try again.")
+        throw BgsException("The Battle.net connection ended. Check your connection and try again.", messageRes = R.string.fw_bgs_connection_ended)
     }
 
     private fun call(service: Long, method: Long, body: ByteArray): BgsProtocol.Message {
@@ -167,7 +168,7 @@ class BgsClient internal constructor(
                 if (pending.size >= 64) protocolError()
                 pending.addLast(packet)
             } else if (packet.serviceHash == CONNECTION_SERVICE && packet.method == 4L) {
-                throw BgsException("Battle.net closed the sign-in connection. Try again.")
+                throw BgsException("Battle.net closed the sign-in connection. Try again.", messageRes = R.string.fw_bgs_connection_closed)
             }
             // Unrelated listener events cannot complete an authentication RPC or change its state.
         }
@@ -180,7 +181,7 @@ class BgsClient internal constructor(
             if (packet.serviceId == RESPONSE_SERVICE) protocolError()
             if (packet.serviceHash == AUTHENTICATION_LISTENER) return packet
             if (packet.serviceHash == CONNECTION_SERVICE && packet.method == 4L) {
-                throw BgsException("Battle.net closed the sign-in connection. Try again.")
+                throw BgsException("Battle.net closed the sign-in connection. Try again.", messageRes = R.string.fw_bgs_connection_closed)
             }
         }
         protocolError()
@@ -192,7 +193,7 @@ class BgsClient internal constructor(
         val now = nanoTime()
         if (queueStarted == null) queueStarted = now
         val end = queueStarted!! + 30L * 60 * 1_000_000_000
-        if (now >= end) throw BgsException("Battle.net's login queue took too long. Try again later.")
+        if (now >= end) throw BgsException("Battle.net's login queue took too long. Try again later.", messageRes = R.string.fw_bgs_queue_timeout)
         return min(end, now + 120L * 1_000_000_000)
     }
 
@@ -204,7 +205,7 @@ class BgsClient internal constructor(
             var offset = 0
             while (offset < size) {
                 val remaining = deadline - nanoTime()
-                if (remaining <= 0) throw BgsException("Battle.net did not respond in time. Try again.")
+                if (remaining <= 0) throw BgsException("Battle.net did not respond in time. Try again.", messageRes = R.string.fw_bgs_no_response)
                 transport.setReadTimeout(min(120_000L, (remaining / 1_000_000).coerceAtLeast(1)).toInt())
                 val count = transport.input.read(bytes, offset, size - offset)
                 if (count <= 0) throw IOException("Connection ended")
@@ -227,7 +228,7 @@ class BgsClient internal constructor(
     private fun throwLogonFailure(body: BgsProtocol.Message): Nothing {
         val status = body.integer(1)
         if (status != 0L) reject(status)
-        throw BgsException("Battle.net did not offer a browser sign-in.")
+        throw BgsException("Battle.net did not offer a browser sign-in.", messageRes = R.string.fw_bgs_no_browser_sign_in)
     }
 
     private fun reject(status: Long): Nothing {
@@ -235,7 +236,7 @@ class BgsClient internal constructor(
         throw BgsException("Battle.net rejected the sign-in (status $status).", status)
     }
 
-    private fun protocolError(): Nothing = throw BgsException("Battle.net returned an invalid protocol message.")
+    private fun protocolError(): Nothing = throw BgsException("Battle.net returned an invalid protocol message.", messageRes = R.string.fw_bgs_invalid_message)
 
     private data class Packet(
         val serviceId: Long, val serviceHash: Long, val method: Long, val token: Long, val status: Long,

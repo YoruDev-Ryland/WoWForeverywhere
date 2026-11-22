@@ -1115,6 +1115,17 @@
     <string name="fw_browser_login_path_spaces">The game path cannot contain spaces for browser login.</string>
     <string name="fw_browser_login_bad_address">Battle.net returned an unsupported sign-in address.</string>
     <string name="fw_browser_login_bad_redirect">Sign-in tried to open an unsupported address. Cancel and try again.</string>
+    <string name="fw_bgs_identity_unavailable">The installed client or device identity is unavailable.</string>
+    <string name="fw_bgs_unsupported_challenge">Battle.net requires an unsupported sign-in challenge.</string>
+    <string name="fw_bgs_ticket_invalid">The browser sign-in ticket is invalid.</string>
+    <string name="fw_bgs_not_accepted">Battle.net did not accept the sign-in. Sign in again.</string>
+    <string name="fw_bgs_attempt_inactive">The Battle.net sign-in attempt is no longer active.</string>
+    <string name="fw_bgs_connection_ended">The Battle.net connection ended. Check your connection and try again.</string>
+    <string name="fw_bgs_connection_closed">Battle.net closed the sign-in connection. Try again.</string>
+    <string name="fw_bgs_queue_timeout">Battle.net\'s login queue took too long. Try again later.</string>
+    <string name="fw_bgs_no_response">Battle.net did not respond in time. Try again.</string>
+    <string name="fw_bgs_no_browser_sign_in">Battle.net did not offer a browser sign-in.</string>
+    <string name="fw_bgs_invalid_message">Battle.net returned an invalid protocol message.</string>
     <string name="fw_browser_login_insecure">The sign-in page’s secure connection could not be verified.</string>
     <string name="fw_browser_login_load_failed">The sign-in page could not load. Check your connection and try again.</string>
     <string name="fw_browser_login_page_failed">Battle.net could not complete this sign-in page. Try again later.</string>
