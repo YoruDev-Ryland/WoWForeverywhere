@@ -49,6 +49,19 @@ class IMEInputReceiver(
             ')', '!', '@', '#', '$', '%', '^', '&', '*', '(',
             '_', '+', '{', '}', '|', ':', '"', '<', '>', '?', '~',
         )
+
+        /**
+         * Text this long, committed at once, is a paste rather than typing (a guide import string, #84). Typing it
+         * key by key makes the game handle every character as a separate change, which can take minutes. Voice typing
+         * commits a sentence at a time, well under this.
+         */
+        const val PASTE_LENGTH = 200
+
+        /**
+         * Wine checks the X clipboard every 2 seconds while a Windows program hasn't copied anything itself, and only
+         * then knows there's new text. Ctrl+V waits that long, with a margin.
+         */
+        const val PASTE_DELAY_MS = 2_600L
     }
 
     private var imeSessionActive = false
@@ -89,8 +102,16 @@ class IMEInputReceiver(
 
         return object : BaseInputConnection(this, false) {
             override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
+                val committed = text?.toString().orEmpty()
+                if (committed.length >= PASTE_LENGTH) {
+                    Timber.d("IMEInputReceiver: commitText of %d characters, pasting it", committed.length)
+                    replaceComposing("")
+                    composing.finish()
+                    pasteText(committed)
+                    return true
+                }
                 Timber.d("IMEInputReceiver: commitText called with: '$text'")
-                replaceComposing(text?.toString().orEmpty())
+                replaceComposing(committed)
                 composing.finish()
                 return true
             }
@@ -117,6 +138,16 @@ class IMEInputReceiver(
                 return true
             }
 
+            // The keyboard's own Paste button, on keyboards that send it as an action rather than as text.
+            override fun performContextMenuAction(id: Int): Boolean {
+                if (id == android.R.id.paste || id == android.R.id.pasteAsPlainText) {
+                    composing.finish()
+                    pasteFromClipboard()
+                    return true
+                }
+                return super.performContextMenuAction(id)
+            }
+
             override fun sendKeyEvent(event: KeyEvent): Boolean {
                 if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_DEL) {
                     composing.finish()
@@ -127,6 +158,34 @@ class IMEInputReceiver(
                 return super.sendKeyEvent(event)
             }
         }
+    }
+
+    /**
+     * Pastes [text] into the game the way Ctrl+V does on a PC: it becomes the X clipboard, and once Wine has had time
+     * to see it, Ctrl+V goes to the game, which then gets the whole text at once.
+     */
+    fun pasteText(text: String) {
+        if (text.isEmpty()) return
+        xServer.lock(XServer.Lockable.WINDOW_MANAGER).use {
+            xServer.selectionManager.offerClipboardText(text, xServer.windowManager.rootWindow)
+        }
+        typing.execute {
+            Thread.sleep(PASTE_DELAY_MS)
+            xServer.injectKeyPress(XKeycode.KEY_CTRL_L, 0)
+            xServer.injectKeyPress(XKeycode.KEY_V, 0)
+            xServer.injectKeyRelease(XKeycode.KEY_V)
+            xServer.injectKeyRelease(XKeycode.KEY_CTRL_L)
+        }
+    }
+
+    /** Pastes the Android clipboard's text into the game. False when there's no text to paste. */
+    fun pasteFromClipboard(): Boolean {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager ?: return false
+        val text = runCatching { clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString() }
+            .getOrNull()
+        if (text.isNullOrEmpty()) return false
+        pasteText(text)
+        return true
     }
 
     private fun replaceComposing(text: String) {

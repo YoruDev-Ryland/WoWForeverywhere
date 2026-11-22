@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Gamepad
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material.icons.filled.QueryStats
@@ -122,6 +123,7 @@ object QuickMenuAction {
     const val SHOOTER_MODE = 9
     const val RADIAL_MENU = 10
     const val GYRO = 11
+    const val PASTE = 12
 }
 
 private object QuickMenuTab {
@@ -367,6 +369,14 @@ fun QuickMenu(
                 id = QuickMenuAction.KEYBOARD,
                 icon = Icons.Default.Keyboard,
                 labelResId = R.string.keyboard,
+                accentColor = PluviaTheme.colors.accentPurple,
+            )
+        )
+        add(
+            QuickMenuItem(
+                id = QuickMenuAction.PASTE,
+                icon = Icons.Default.ContentPaste,
+                labelResId = R.string.fw_paste,
                 accentColor = PluviaTheme.colors.accentPurple,
             )
         )

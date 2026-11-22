@@ -263,6 +263,11 @@ public class XClientRequestHandler implements RequestHandler {
                         SelectionRequests.getSelectionOwner(client, inputStream, outputStream);
                     }
                     break;
+                case ClientOpcodes.CONVERT_SELECTION:
+                    try (XLock lock = client.xServer.lock(XServer.Lockable.WINDOW_MANAGER)) {
+                        SelectionRequests.convertSelection(client, inputStream, outputStream);
+                    }
+                    break;
                 case ClientOpcodes.SEND_EVENT:
                     try (XLock lock = client.xServer.lockAll()) {
                         WindowRequests.sendEvent(client, inputStream, outputStream);

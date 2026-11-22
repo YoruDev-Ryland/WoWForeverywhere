@@ -1147,6 +1147,15 @@ fun XServerScreen(
                 true
             }
 
+            // Pastes the Android clipboard into the game's focused text box, such as an addon's import box (#84).
+            QuickMenuAction.PASTE -> {
+                val pasted = imeInputReceiver?.pasteFromClipboard() == true
+                app.gamenative.ui.util.SnackbarManager.show(
+                    context.getString(if (pasted) R.string.fw_paste_pasting else R.string.fw_paste_nothing),
+                )
+                true
+            }
+
             QuickMenuAction.INPUT_CONTROLS -> {
                 if (areControlsVisible) {
                     hideInputControls()

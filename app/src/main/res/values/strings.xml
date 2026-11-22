@@ -802,6 +802,9 @@
     <string name="fw_choose_lossless_dll">Choose Lossless.dll</string>
     <string name="fw_resolution">Resolution</string>
     <string name="fw_adopted_storage_path_too_long">The game can\'t start while the app is installed on an SD card set up as internal storage: the paths there are too long for the game\'s window. Move the app to the phone\'s own storage (Settings > Apps > WoW Foreverywhere > Storage > Change) and try again.</string>
+    <string name="fw_paste">Paste</string>
+    <string name="fw_paste_pasting">Pasting into the game in a moment. Keep the text box selected.</string>
+    <string name="fw_paste_nothing">There\'s no text on the clipboard to paste.</string>
     <string name="fw_graphics_driver">Graphics driver</string>
     <string name="fw_graphics_driver_explanation">The Vulkan driver the game runs on. Automatic picks the one that works best on this device. If the game won\'t start or looks wrong after a change, go back to Automatic. Changes apply the next time you press Play.</string>
     <string name="fw_graphics_driver_system">This device\'s own driver</string>

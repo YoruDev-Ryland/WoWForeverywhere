@@ -123,10 +123,11 @@ public class Window extends XResource {
             modified = true;
         }
         else if (mode == Property.Mode.REPLACE) {
-            if (property.format == format) {
+            // A replace can change the type too (STRING to UTF8_STRING keeps the format), and readers check the type.
+            if (property.format == format && property.type == type) {
                 property.replace(data);
             }
-            else properties.put(atom, new Property(atom, type, format, data));
+            else properties.put(atom, (property = new Property(atom, type, format, data)));
             modified = true;
         }
         else if (property.format == format && property.type == type) {
