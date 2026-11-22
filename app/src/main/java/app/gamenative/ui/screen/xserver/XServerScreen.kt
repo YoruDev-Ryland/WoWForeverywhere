@@ -3709,7 +3709,7 @@ private fun setupXEnvironment(
                 container.saveData()
             }
             if (!isExiting.get()) {
-                PluviaApp.events.emit(AndroidEvent.SetBootingSplashText("Launching game..."))
+                PluviaApp.events.emit(AndroidEvent.SetBootingSplashText(context.getString(R.string.fw_launching_game)))
             }
         }
 
