@@ -133,7 +133,8 @@ fun AddonsScreen(c: AddonsController, onBack: () -> Unit, onSettings: (() -> Uni
             ) {
                 // Each item centred in its line (FlowRow's itemVerticalAlignment needs Compose 1.8; release is on 1.7)
                 Box(Modifier.align(Alignment.CenterVertically)) { back() }
-                Box(Modifier.align(Alignment.CenterVertically)) { modes() }
+                // A Box would draw the two chips on top of each other (#86).
+                Row(Modifier.align(Alignment.CenterVertically), horizontalArrangement = Arrangement.spacedBy(10.dp)) { modes() }
                 Box(Modifier.align(Alignment.CenterVertically)) { updateAll() }
             }
             Row(
@@ -265,6 +266,7 @@ private fun AddonList(c: AddonsController, modifier: Modifier, onOpen: () -> Uni
 }
 
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifier) {
     val localSource = stringResource(R.string.fw_this_device)
     val remote = listing.remote
@@ -331,9 +333,10 @@ private fun Detail(c: AddonsController, listing: AddonListing, modifier: Modifie
                 }
             }
             if (remote.categories.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                // Wraps on a narrow portrait screen instead of squeezing the last tag to one letter per line (#86).
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     remote.categories.take(3).forEach { cat ->
-                        Text(categoryLabel(cat), style = Fw.Label.copy(fontSize = 12.sp, color = Fw.Ash), modifier = Modifier.background(Fw.Stone2, Fw.Pill).padding(horizontal = 12.dp, vertical = 5.dp))
+                        Text(categoryLabel(cat), style = Fw.Label.copy(fontSize = 12.sp, color = Fw.Ash), maxLines = 1, modifier = Modifier.background(Fw.Stone2, Fw.Pill).padding(horizontal = 12.dp, vertical = 5.dp))
                     }
                 }
             }
