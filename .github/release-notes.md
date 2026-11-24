@@ -1,16 +1,10 @@
-Paste into the game, a progress bar while WoW starts, and the launcher fully in Chinese.
-
-## Added
-
-- **Paste into the game.** Copy text on your phone, click a text box in the game, then open the quick menu and tap **Paste**. The whole text goes in at once, like Ctrl+V on a PC, so long addon import strings (RestedXP guides, WeakAuras) no longer freeze the game. It takes a couple of seconds to land. Long pastes from the on-screen keyboard go in the same way (#84).
-- **See what's happening while WoW starts.** The start-up screen shows the game client and component downloads with a progress bar, instead of a still "Launching game…". Thanks @AreChen (#81).
-- **The launcher is fully translated into Simplified and Traditional Chinese,** including sign-in messages and launch steps. Thanks @AreChen (#80).
+Fixes for phones held upright.
 
 ## Fixed
 
-- **Cancelling a launch stops its downloads,** and starting again no longer runs over the cancelled one.
-- **Backing out of the automatic start** while the app checks for updates no longer launches the game anyway.
-- **Battle.net sign-in errors say what went wrong** again (login queue too long, connection dropped and so on) instead of a general failure message.
+- **The launcher stays clear of the camera cutout in portrait.** On phones with a punch-hole camera, like the Galaxy S26 Ultra, the top row of buttons sat under the camera. The game still uses the whole screen (#86).
+- **The Installed and Browse tabs no longer overlap** on narrow screens; before, Browse covered the Installed count.
+- **Category tags on an addon's page wrap to a new line** instead of squeezing the last one into a column of single letters.
 
 ## Install
 
